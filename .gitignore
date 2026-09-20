@@ -1,0 +1,23 @@
+# Roblox place files (the map lives here, not in git)
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+*.rbxm.lock
+
+# Rojo / luau-lsp generated
+sourcemap.json
+*.rbxlx.bak
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/settings.json
+
+# Local scratch
+*.log
