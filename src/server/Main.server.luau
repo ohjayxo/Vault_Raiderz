@@ -19,7 +19,7 @@ local Services = script.Parent.Services
 require(Services.PlayerDataService).start()
 require(Services.PresenceService).start()
 
--- Step 2: nodes, Grade rolls, broadcasts. VaultService is minimal until step 3.
+-- Step 2: nodes, Grade rolls, broadcasts. Step 3: VaultService (Bank/Exposed).
 require(Services.VaultService).start()
 require(Services.BroadcastQueue).start()
 require(Services.NodeService).start()

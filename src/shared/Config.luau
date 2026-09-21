@@ -388,13 +388,59 @@ local Config = {
 	-- ── Step 3 ── Vault Core + Bank/Exposed ────────────────────────────
 	-- Bank capacity, Exposed, separate Scrap cap. 02-core-loop.md § Bank vs Exposed.
 	Bank = {
-		-- Step 2 (early): per-player limit on the GetResources remote.
+		-- Banked capacity in TOTAL units (Stone + Ore + Riftsalt, any Grade),
+		-- indexed by Vault Core tier. Tier 0 = no Vault Core = nothing can be
+		-- banked. "Capped, upgradeable" (02 § Bank vs Exposed); the unit
+		-- measure is Josh's call, step 3. Tiers 1-7 only in the slice
+		-- (10-roadmap.md § Vertical Slice); a higher tier uses the last entry.
+		CapacityByTier = { 500, 1_000, 2_000, 3_500, 5_000, 7_500, 10_000 }, -- [PH] invented
+		-- 02 § Special cases: Research Scrap has its own, much smaller cap,
+		-- "~20% [PH] of normal" (Q38). Rounded down.
+		ScrapCapFraction = 0.2,
+		-- 02 § Special cases; 05-items.md § Auto-bank protection: these
+		-- Grades go straight into the bank on pickup if there's room.
+		AutoBankGrades = { "Prismatic", "Vaultborn" },
+		-- Pressing Bank moves Exposed into the bank, best first, until full
+		-- (Josh's call, step 3): Grade first, then the rarer resource.
+		BankOrderGrades = { "Vaultborn", "Prismatic", "Volatile", "Dense", "Standard" },
+		BankOrderResources = { "Riftsalt", "Ore", "Stone" },
+
+		-- Banking happens at a Vault Core (Josh's call, step 3). Step 3 uses one
+		-- shared greybox core in the Homestead; step 4 gives each plot its own
+		-- (Model attribute OwnerUserId, which VaultService already checks).
+		VaultCoreTag = "VaultCore", -- greybox contract (13-build-guide.md § Part D)
+		BankDistance = 12, -- [PH] invented: studs from the core's Hitbox
+		BankCooldownSeconds = 1, -- [PH] invented: per-player limit on banking
+		PromptHoldSeconds = 0.5, -- [PH] invented: hold time on the Bank prompt
+
+		-- Per-player limit on the GetVaultState remote.
 		SnapshotCooldownSeconds = 0.5, -- [PH] invented
-		-- Temporary debug HUD start-up: ask for resources until the profile has
+		-- Meter start-up: ask for the vault state until the profile has
 		-- loaded. Must wait longer than SnapshotCooldownSeconds between tries.
-		-- [PH] invented, REVISIT when the step 3 meter replaces the HUD (review L2).
+		-- [PH] invented, REVISIT (step 2 review L2).
 		HudStartupTries = 10,
 		HudStartupRetrySeconds = 1,
+
+		-- The Banked/Exposed meter. 02-core-loop.md § FTUE spec: it appears at
+		-- 2:30-4:00, hidden before that (R4). The server shows/hides it by
+		-- setting this attribute on the Player (VaultService.setMeterVisible).
+		Meter = {
+			VisibleAttribute = "HudVaultMeter",
+			-- TEMPORARY until step 14 (FTUE): show the meter as soon as the
+			-- profile loads so it can be tested. Step 14 sets this false and
+			-- reveals the meter at 2:30 instead.
+			ShowBeforeFtue = true,
+			-- Look only. [PH] invented, REVISIT with real UI (step 2 review L2).
+			Width = 230,
+			BarHeight = 14,
+			BankedColor = Color3.fromRGB(70, 170, 230),
+			ExposedColor = Color3.fromRGB(235, 90, 80),
+			BarBackColor = Color3.fromRGB(35, 35, 45),
+		},
+
+		-- Studio-only debug grants (keys F and G).
+		DebugResourceGrant = 200, -- [PH] invented: Standard Stone into Exposed
+		DebugScrapGrant = 25, -- [PH] invented: Scrap has no source until step 6
 	},
 
 	-- ── Step 4 ── Base building + build budget ─────────────────────────

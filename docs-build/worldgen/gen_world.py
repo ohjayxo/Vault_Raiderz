@@ -45,6 +45,12 @@ def part(name, size, pos, color, material="SmoothPlastic", yaw=0.0, cls="Part", 
     return {"name": name, "className": cls, "properties": props}
 
 
+def visual_part(name, size, pos, color, material, yaw=0.0, cls="Part"):
+    # Visual parts never collide or catch clicks: the Hitbox does both.
+    return part(name, size, pos, color, material, yaw=yaw, cls=cls,
+                CanCollide=False, CanQuery=False, CanTouch=False, CastShadow=True)
+
+
 def spawn_point(name, x, z, node_type):
     # Invisible marker at ground level. NodeService reads its position and
     # NodeType attribute; nothing collides with or clicks it.
@@ -80,6 +86,31 @@ for i, (x, z) in enumerate(ring(8, 60, *HOMESTEAD_C, start_deg=112.5)):
     homestead_spawns.append(spawn_point(f"Stone{i + 1}", x, z, "Stone"))
 for i, (x, z) in enumerate(ring(4, 88, *HOMESTEAD_C, start_deg=225)):
     homestead_spawns.append(spawn_point(f"Ore{i + 1}", x, z, "Ore"))
+
+# TEMPORARY shared Vault Core (step 3). Everyone banks into their OWN vault
+# here until step 4 gives each plot its own placed core (with OwnerUserId).
+# Greybox contract: Hitbox (code) + Visual (players). VaultService adds the
+# Bank prompt to the Hitbox.
+VAULT_CORE_POS = (0, 35)  # between the spawn (z=70) and the island centre
+VAULT_CORE_HITBOX = (8, 8, 8)
+
+
+def vault_core():
+    x, z = VAULT_CORE_POS
+    hitbox = part("Hitbox", VAULT_CORE_HITBOX, (x, GROUND_TOP + VAULT_CORE_HITBOX[1] / 2, z), rgb(255, 0, 0),
+                  Transparency=1, CanCollide=True, CanQuery=True, CanTouch=False, CastShadow=False)
+    visuals = [
+        visual_part("Plinth", (8, 1.5, 8), (x, GROUND_TOP + 0.75, z), rgb(90, 90, 100), "DiamondPlate"),
+        visual_part("Safe", (6, 6, 6), (x, GROUND_TOP + 4.5, z), rgb(150, 150, 165), "Metal"),
+        visual_part("Door", (4, 4, 0.4), (x, GROUND_TOP + 4.5, z + 3.1), rgb(70, 170, 230), "Neon"),
+    ]
+    return {
+        "name": "VaultCore",
+        "className": "Model",
+        "properties": {"Tags": ["VaultCore"]},
+        "children": [hitbox, {"name": "Visual", "className": "Folder", "children": visuals}],
+    }
+
 
 homestead = {
     "className": "Model",
@@ -130,6 +161,7 @@ bridge = {
     ],
 }
 
+homestead["children"].append(vault_core())
 write(os.path.join(WORLD_DIR, "Homestead.model.json"), homestead)
 write(os.path.join(WORLD_DIR, "Reaches.model.json"), reaches)
 write(os.path.join(WORLD_DIR, "Bridge.model.json"), bridge)
@@ -137,12 +169,6 @@ write(os.path.join(WORLD_DIR, "Bridge.model.json"), bridge)
 # ── Node templates (greybox contract: Hitbox + Visual) ─────────────────────
 # Pivot/Hitbox sit at the origin, bottom at Y=0; NodeService moves the clone.
 HITBOX = (5, 6, 5)
-
-
-def visual_part(name, size, pos, color, material, yaw=0.0, cls="Part"):
-    # Visual parts never collide or catch clicks: the Hitbox does both.
-    return part(name, size, pos, color, material, yaw=yaw, cls=cls,
-                CanCollide=False, CanQuery=False, CanTouch=False, CastShadow=True)
 
 
 templates = {

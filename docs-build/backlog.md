@@ -18,7 +18,19 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
   Moved into Config and tagged "REVISIT (step 2 review L2)":
   `Config.Nodes.PickRangeStuds`, `.WalkCloserHintSeconds`,
   `Config.Grade.FxLook` (particles, light, beam), `Config.Broadcast.BannerColors`
-  / `.DefaultBannerColor`, `Config.Bank.HudStartupTries` / `.HudStartupRetrySeconds`.
+  / `.DefaultBannerColor`, `Config.Bank.HudStartupTries` / `.HudStartupRetrySeconds`,
+  `Config.Bank.Meter` look values (Width, BarHeight, colours).
 - **L3: Terrain and line of sight.** NodeService's line-of-sight ray only
   checks `Workspace.World`. If Terrain is ever used, add
   `workspace.Terrain` to `losParams.FilterDescendantsInstances`.
+
+## From step 3 (2026-09-20)
+
+- **Temporary shared Vault Core → step 4.** `gen_world.py` puts one
+  `VaultCore` in the Homestead that everyone banks at. Step 4 removes it and
+  places one per plot with an `OwnerUserId` attribute (VaultService already
+  rejects banking at a core you don't own). Step 4's BaseService must call
+  `VaultService.refresh(player)` whenever `Base.VaultTier` changes.
+- **FTUE (step 14):** set `Config.Bank.Meter.ShowBeforeFtue = false` and call
+  `VaultService.setMeterVisible(player, true)` at 2:30. The "Bank" prompt
+  label is text; check it against FTUE hard rule 1 (no text before 2:30).

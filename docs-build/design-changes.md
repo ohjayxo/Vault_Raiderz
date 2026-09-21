@@ -51,6 +51,22 @@ Josh's calls while building nodes + Grade. Bring them to the design project;
    after a random 45–90 s [PH] at a *different* spawn point; Homestead nodes
    return at the same spot after a fixed 30 s [PH].
 
+## Step 3 design-gap answers (2026-09-20) — NOT yet in `docs/`
+
+Josh's calls while building Bank/Exposed (`02-core-loop.md § Bank vs Exposed`
+says "Capped, upgradeable" / "overflow above cap" but not how banking works).
+
+1. **Banking is manual, at the Vault Core.** Everything mined lands in
+   Exposed; the player uses their Vault Core ("Bank") to move it in until the
+   cap is full. Only Prismatic/Vaultborn skip this (§ Special cases). This is
+   what makes "one more run, or bank now?" a real choice. Suggest the doc's
+   table say "Exposed = not yet banked, or above cap".
+2. **Capacity counts total units** of all resources and Grades combined
+   (not per resource, not by value). Research Scrap keeps its own cap
+   (20% [PH] of this).
+3. **Bank order when it doesn't all fit: best first.** Highest Grade first
+   (Vaultborn → Standard), then rarer resource (Riftsalt → Ore → Stone).
+
 ## Flagged for redesign (step 2 review, 2026-09-20) — Josh will revisit
 
 Not decided yet. Take these to the design project; the build keeps the

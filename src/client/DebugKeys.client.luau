@@ -27,6 +27,10 @@ local KEYS: { [Enum.KeyCode]: string } = {
 	[Enum.KeyCode.X] = "GrantMinerXP",
 	[Enum.KeyCode.V] = "ForceVaultborn",
 	[Enum.KeyCode.B] = "BroadcastTest",
+	[Enum.KeyCode.T] = "NextVaultTier",
+	[Enum.KeyCode.F] = "GrantExposedStone",
+	[Enum.KeyCode.G] = "GrantScrap",
+	[Enum.KeyCode.H] = "ToggleMeter",
 }
 
 -- Key M: the rate-limit test. Fires the REAL MineNode remote many times in
@@ -73,4 +77,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
-print("[Debug] Studio keys: P = print profile, C = +Credits, L = presence, X = +Miner XP, M = spam mine remote, V = next hit Vaultborn, B = test broadcasts")
+print("[Debug] Studio keys: P = print profile, C = +Credits, L = presence, X = +Miner XP, M = spam mine remote, V = next hit Vaultborn, B = test broadcasts, T = next Vault tier, F = +Stone (Exposed), G = +Scrap, H = toggle meter")

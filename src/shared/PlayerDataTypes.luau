@@ -9,8 +9,18 @@
 export type GradeCounts = { [string]: number }
 -- resource name (Config.Resources.Types) -> grade -> count
 export type ResourceStore = { [string]: GradeCounts }
--- The Resources section as sent to its owner's HUD (ResourcesChanged remote).
+-- The Resources section of a profile.
 export type ResourceSnapshot = { Banked: ResourceStore, Exposed: ResourceStore }
+-- What the owner's Banked/Exposed meter gets (VaultChanged / GetVaultState).
+-- Capacities are totals in units (Config.Bank.CapacityByTier).
+export type VaultState = {
+	Banked: ResourceStore,
+	Exposed: ResourceStore,
+	Capacity: number,
+	ScrapBanked: number,
+	ScrapExposed: number,
+	ScrapCapacity: number,
+}
 
 -- One placed build piece. Real format is decided in step 4.
 export type PlacedPiece = { Kind: string, X: number, Y: number, Z: number, Yaw: number }

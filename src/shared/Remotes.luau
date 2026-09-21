@@ -33,9 +33,12 @@ local definitions: { [string]: RemoteKind } = {
 	MineNode = "Event", -- client -> server: (node: Model) "I want to mine this"
 	MineResult = "Event", -- server -> miner: (resource, grade, amount, hitsLeft)
 	GradeFx = "Event", -- server -> all: (grade, position) play the Grade effect there
-	ResourcesChanged = "Event", -- server -> owner: (snapshot) their own Banked/Exposed
-	GetResources = "Function", -- client -> server: () -> snapshot? (for HUD start-up)
 	Announcement = "Event", -- server -> clients: (kind, text) from BroadcastQueue (D58)
+
+	-- Step 3: Vault Core + Bank/Exposed. (Banking itself is the Vault Core's
+	-- ProximityPrompt, which the server listens to directly: no remote.)
+	VaultChanged = "Event", -- server -> owner: (VaultState) their own Banked/Exposed/Scrap
+	GetVaultState = "Function", -- client -> server: () -> VaultState? (for meter start-up)
 }
 
 local Remotes = {}
