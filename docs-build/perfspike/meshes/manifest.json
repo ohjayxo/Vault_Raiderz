@@ -1,0 +1,42 @@
+{
+  "Island": {
+    "file": "spike_island.obj",
+    "triangles": 5000,
+    "vertices": 2502
+  },
+  "Vault": {
+    "file": "spike_vault.obj",
+    "triangles": 4000,
+    "vertices": 2002
+  },
+  "Wall": {
+    "file": "spike_wall.obj",
+    "triangles": 500,
+    "vertices": 252
+  },
+  "Gate": {
+    "file": "spike_gate.obj",
+    "triangles": 1000,
+    "vertices": 502
+  },
+  "Defense": {
+    "file": "spike_defense.obj",
+    "triangles": 800,
+    "vertices": 402
+  },
+  "Workshop": {
+    "file": "spike_workshop.obj",
+    "triangles": 2500,
+    "vertices": 1252
+  },
+  "Decor": {
+    "file": "spike_decor.obj",
+    "triangles": 400,
+    "vertices": 202
+  },
+  "Node": {
+    "file": "spike_node.obj",
+    "triangles": 300,
+    "vertices": 152
+  }
+}

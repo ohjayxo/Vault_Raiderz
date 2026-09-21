@@ -21,7 +21,11 @@ local CLIENT_WAIT_SECONDS = 10
 -- name -> kind. Each build step adds its own remotes here, e.g.
 --   MineNode = "Event",
 --   GetProfileSummary = "Function",
-local definitions: { [string]: RemoteKind } = {}
+local definitions: { [string]: RemoteKind } = {
+	-- THROWAWAY (build step 0B): client asks for a perf-spike test preset by
+	-- name. Delete with src/server/PerfSpike.
+	PerfSpikeSetPreset = "Event",
+}
 
 local Remotes = {}
 
