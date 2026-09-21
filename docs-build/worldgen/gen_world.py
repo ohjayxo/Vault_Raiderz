@@ -5,8 +5,9 @@ Run from the repo root:  python3 docs-build/worldgen/gen_world.py
 Outputs (overwritten every run - edit THIS file, not the JSON):
   src/world/*.model.json                -> Workspace.World (Rojo)
   src/assets/NodeTemplates/*.model.json -> ServerStorage.NodeTemplates
+  src/assets/PieceTemplates/*.model.json -> ServerStorage.PieceTemplates
 
-Step 2 (docs/13-build-guide.md § Part E). Placeholder parts only (greybox
+Step 2 (nodes), step 4 (plots + base pieces) (docs/13-build-guide.md § Part E). Placeholder parts only (greybox
 contract, CLAUDE.md). All positions/sizes are [PH] invented layout.
 """
 import json
@@ -16,6 +17,7 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 WORLD_DIR = os.path.join(ROOT, "src", "world")
 TEMPLATE_DIR = os.path.join(ROOT, "src", "assets", "NodeTemplates")
+PIECE_DIR = os.path.join(ROOT, "src", "assets", "PieceTemplates")
 
 GROUND_TOP = 50  # every island's walkable surface is at Y = 50
 
@@ -87,31 +89,6 @@ for i, (x, z) in enumerate(ring(8, 60, *HOMESTEAD_C, start_deg=112.5)):
 for i, (x, z) in enumerate(ring(4, 88, *HOMESTEAD_C, start_deg=225)):
     homestead_spawns.append(spawn_point(f"Ore{i + 1}", x, z, "Ore"))
 
-# TEMPORARY shared Vault Core (step 3). Everyone banks into their OWN vault
-# here until step 4 gives each plot its own placed core (with OwnerUserId).
-# Greybox contract: Hitbox (code) + Visual (players). VaultService adds the
-# Bank prompt to the Hitbox.
-VAULT_CORE_POS = (0, 35)  # between the spawn (z=70) and the island centre
-VAULT_CORE_HITBOX = (8, 8, 8)
-
-
-def vault_core():
-    x, z = VAULT_CORE_POS
-    hitbox = part("Hitbox", VAULT_CORE_HITBOX, (x, GROUND_TOP + VAULT_CORE_HITBOX[1] / 2, z), rgb(255, 0, 0),
-                  Transparency=1, CanCollide=True, CanQuery=True, CanTouch=False, CastShadow=False)
-    visuals = [
-        visual_part("Plinth", (8, 1.5, 8), (x, GROUND_TOP + 0.75, z), rgb(90, 90, 100), "DiamondPlate"),
-        visual_part("Safe", (6, 6, 6), (x, GROUND_TOP + 4.5, z), rgb(150, 150, 165), "Metal"),
-        visual_part("Door", (4, 4, 0.4), (x, GROUND_TOP + 4.5, z + 3.1), rgb(70, 170, 230), "Neon"),
-    ]
-    return {
-        "name": "VaultCore",
-        "className": "Model",
-        "properties": {"Tags": ["VaultCore"]},
-        "children": [hitbox, {"name": "Visual", "className": "Folder", "children": visuals}],
-    }
-
-
 homestead = {
     "className": "Model",
     "attributes": {"Zone": "Homestead"},
@@ -147,6 +124,66 @@ reaches = {
     ],
 }
 
+
+# ── Player plots (step 4) ───────────────────────────────────────────────────
+# 02-core-loop.md § World Structure: the Homestead Ring holds player plots.
+# One small floating island per plot, in an arc around the Homestead (the
+# north side is left free for the Reaches bridge), each with its own bridge.
+# PLOT_COUNT and PLOT_SIZE must match Config.Plots (Count, SizeStuds).
+# Greybox contract: Hitbox = the build/walk surface code uses; Visual = looks.
+PLOT_COUNT = 8        # [PH] invented
+PLOT_SIZE = 48        # [PH] invented: 12 x 12 cells of 4 studs
+PLOT_RING = 200       # [PH] invented: studs from the Homestead centre
+PLOT_ARC = (-30.0, 210.0)  # degrees; x = cos, z = sin, so north (-z) = 270 stays free
+
+
+def plot_model(index, cx, cz):
+    top = GROUND_TOP
+    hitbox = part("Hitbox", (PLOT_SIZE, 2, PLOT_SIZE), (cx, top - 1, cz), rgb(255, 0, 0),
+                  Transparency=1, CanCollide=True, CanQuery=True, CanTouch=False, CastShadow=False)
+    visuals = [
+        visual_part("Ground", (PLOT_SIZE, 2, PLOT_SIZE), (cx, top - 1.02, cz), rgb(120, 140, 80), "Grass"),
+        visual_part("Underside", (PLOT_SIZE - 10, 16, PLOT_SIZE - 10), (cx, top - 10, cz), rgb(99, 95, 98), "Slate"),
+        visual_part("Marker", (4, 0.2, 4), (cx, top + 0.1, cz), rgb(200, 200, 90), "Neon"),
+    ]
+    return {
+        "name": f"Plot{index}",
+        "className": "Model",
+        "attributes": {"PlotIndex": index},
+        "properties": {"Tags": ["Plot"]},
+        "children": [hitbox, {"name": "Visual", "className": "Folder", "children": visuals}],
+    }
+
+
+def plot_bridge(index, angle_deg):
+    a = math.radians(angle_deg)
+    dx, dz = math.cos(a), math.sin(a)
+    # Where the radial line leaves the square Homestead, and where it meets
+    # the (axis-aligned) plot's near edge.
+    half_h = HOMESTEAD_SIZE / 2
+    start = half_h / max(abs(dx), abs(dz))
+    end = PLOT_RING - (PLOT_SIZE / 2) / max(abs(dx), abs(dz))
+    start -= 2  # overlap each island slightly so there's no gap to fall in
+    end += 2
+    length = end - start
+    mid = (start + end) / 2
+    # A part's length runs along its local Z; yaw a points it at (sin a, cos a).
+    yaw = 90 - angle_deg
+    return part(f"Bridge{index}", (8, 1, round(length, 2)),
+                (round(dx * mid, 2), GROUND_TOP - 0.5, round(dz * mid, 2)),
+                rgb(124, 92, 70), "WoodPlanks", yaw=yaw)
+
+
+plot_children = []
+lo, hi = PLOT_ARC
+for i in range(PLOT_COUNT):
+    angle = lo + (hi - lo) * i / (PLOT_COUNT - 1)
+    a = math.radians(angle)
+    cx, cz = round(PLOT_RING * math.cos(a), 2), round(PLOT_RING * math.sin(a), 2)
+    plot_children.append(plot_model(i + 1, cx, cz))
+    plot_children.append(plot_bridge(i + 1, angle))
+plots = {"className": "Model", "children": plot_children}
+
 # Walkable bridge from Homestead's north edge to the Reaches' south edge.
 z_start = -HOMESTEAD_SIZE / 2
 z_end = rz + REACHES_SIZE / 2
@@ -161,10 +198,10 @@ bridge = {
     ],
 }
 
-homestead["children"].append(vault_core())
 write(os.path.join(WORLD_DIR, "Homestead.model.json"), homestead)
 write(os.path.join(WORLD_DIR, "Reaches.model.json"), reaches)
 write(os.path.join(WORLD_DIR, "Bridge.model.json"), bridge)
+write(os.path.join(WORLD_DIR, "Plots.model.json"), plots)
 
 # ── Node templates (greybox contract: Hitbox + Visual) ─────────────────────
 # Pivot/Hitbox sit at the origin, bottom at Y=0; NodeService moves the clone.
@@ -198,3 +235,43 @@ for node_type, visuals in templates.items():
         "children": [hitbox, {"name": "Visual", "className": "Folder", "children": visuals}],
     }
     write(os.path.join(TEMPLATE_DIR, f"{node_type}Node.model.json"), model)
+
+# ── Base piece templates (step 4; greybox contract: Hitbox + Visual) ────────
+# Hitbox bottom at Y=0, centred on X/Z; PlotService moves the clone. The
+# footprint in grid cells lives in Config.Base.Pieces (Cells); Hitbox sizes
+# here must fit inside it. Budget cost / price are Config, not art.
+PIECES = {
+    "Wall": {
+        "hitbox": (4, 6, 1),
+        "visuals": [visual_part("Panel", (4, 6, 1), (0, 3, 0), rgb(160, 160, 155), "Concrete")],
+    },
+    "Gate": {
+        "hitbox": (4, 6, 1),
+        "visuals": [
+            visual_part("PostL", (0.6, 6.5, 1.2), (-1.7, 3.25, 0), rgb(91, 93, 105), "Metal"),
+            visual_part("PostR", (0.6, 6.5, 1.2), (1.7, 3.25, 0), rgb(91, 93, 105), "Metal"),
+            visual_part("Door", (2.8, 5, 0.4), (0, 2.5, 0), rgb(140, 100, 60), "WoodPlanks"),
+        ],
+    },
+    "VaultCore": {
+        "hitbox": (8, 8, 8),
+        "visuals": [
+            visual_part("Plinth", (8, 1.5, 8), (0, 0.75, 0), rgb(90, 90, 100), "DiamondPlate"),
+            visual_part("Safe", (6, 6, 6), (0, 4.5, 0), rgb(150, 150, 165), "Metal"),
+            visual_part("Door", (4, 4, 0.4), (0, 4.5, 3.1), rgb(70, 170, 230), "Neon"),
+        ],
+    },
+}
+PIECE_TAGS = {"Wall": ["BasePiece"], "Gate": ["BasePiece", "BaseGate"], "VaultCore": ["BasePiece", "VaultCore"]}
+
+for kind, spec in PIECES.items():
+    hb = spec["hitbox"]
+    hitbox = part("Hitbox", hb, (0, hb[1] / 2, 0), rgb(255, 0, 0),
+                  Transparency=1, CanCollide=True, CanQuery=True, CanTouch=False, CastShadow=False)
+    model = {
+        "className": "Model",
+        "attributes": {"Kind": kind},
+        "properties": {"Tags": PIECE_TAGS[kind]},
+        "children": [hitbox, {"name": "Visual", "className": "Folder", "children": spec["visuals"]}],
+    }
+    write(os.path.join(PIECE_DIR, f"{kind}.model.json"), model)

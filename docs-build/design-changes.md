@@ -67,6 +67,31 @@ Josh's calls while building Bank/Exposed. Applied with double confirmation:
 3. **Bank order when it doesn't all fit: best first.** Highest Grade first
    (Vaultborn → Standard), then rarer resource (Riftsalt → Ore → Stone).
 
+## Step 4 design-gap answers (2026-09-21) — NOT yet in `docs/`
+
+1. **Band metric scales (D66 / D79 / D92):** gear score is converted to tier
+   units, floor(gear score / 10), before taking the highest of vault tier,
+   lifetime peak and gear score. Raw, gear score (a Wooden pickaxe alone = 10)
+   would always win. Suggest adding this to `02-core-loop.md § Preconditions`
+   or D66.
+2. **Removing a base piece refunds 50% [PH]** (as Standard, into Exposed).
+   A full refund would let players hide resources from raiders inside walls.
+   The Vault Core can be moved but never removed (tier and bank never drop,
+   R2). Suggest a line in `02-core-loop.md § Base / Home`.
+3. **Spending takes Exposed before Banked, lowest Grade first.** Suggest a
+   line in `02-core-loop.md § Bank vs Exposed`.
+4. **Placing the Vault Core = vault tier 1; tiers 2–7 are bought with an
+   "Upgrade Vault" action** (costs [PH]). Interpretation of § Base / Home
+   ("Tier 1 wooden shack → Tier 10").
+5. **Owner walks through their own gates**; everyone else is blocked until
+   step 7 breaching. Interpretation of § Buildable elements.
+6. **Step 4 built before the cheap-phone test** (Josh accepted). Step 0B
+   finding for the design project: **D57's "piece count" is the wrong budget
+   unit.** Identical pieces batch almost free; triangles and unique materials
+   cost frame time (`docs-build/perfspike/results.md`). The build counts a
+   per-piece `BudgetCost` meant as render weight. Suggest rewording D57 to
+   "render-weight budget (triangles + unique materials)".
+
 ## Flagged for redesign (step 2 review, 2026-09-20) — Josh will revisit
 
 Not decided yet. Take these to the design project; the build keeps the

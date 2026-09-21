@@ -26,11 +26,26 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
 
 ## From step 3 (2026-09-20)
 
-- **Temporary shared Vault Core → step 4.** `gen_world.py` puts one
-  `VaultCore` in the Homestead that everyone banks at. Step 4 removes it and
-  places one per plot with an `OwnerUserId` attribute (VaultService already
-  rejects banking at a core you don't own). Step 4's BaseService must call
-  `VaultService.refresh(player)` whenever `Base.VaultTier` changes.
 - **FTUE (step 14):** set `Config.Bank.Meter.ShowBeforeFtue = false` and call
   `VaultService.setMeterVisible(player, true)` at 2:30. The "Bank" prompt
   label is text; check it against FTUE hard rule 1 (no text before 2:30).
+
+## From step 4 (2026-09-21)
+
+- **Offline bases → step 7.** Plots and pieces exist only while their owner
+  is on the server (PlotService spawns on join, clears on leave). Offline
+  raids need the victim's base built from their saved `Base.Pieces` on the
+  raider's server (13-build-guide.md § Part D pattern). Also, a player joining
+  a full server (more players than `Config.Plots.Count`) gets no plot: set the
+  place's Max Players to 8 until real sharding exists.
+- **Budget numbers wait on the cheap-phone test** (step 0 still not fully
+  met). `Config.Base.Pieces[*].BudgetCost` and `.BudgetByTier` are render
+  weight [PH]; set them from real triangle/material numbers once measured.
+- **FTUE (step 14):** `Config.Base.BuildUi.ShowBeforeFtue = false`, show the
+  Build button via `PlotService.setBuildUiVisible` at 0:45 ("BUILD VAULT").
+  Build-mode messages are text; check against FTUE hard rule 1.
+- **L4: NodeInput tap coordinates.** `NodeInput.client.luau` passes tap/click
+  positions (GUI coordinates, below the top bar) to `ViewportPointToRay`,
+  which expects coordinates that include the top bar, so a tap aims ~36-58 px
+  too high. Nodes are big enough that it worked in testing. Fix: use
+  `ScreenPointToRay` (as BuildMode does). Tiny change; do it with step 5.

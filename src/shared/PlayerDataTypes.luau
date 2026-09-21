@@ -22,8 +22,21 @@ export type VaultState = {
 	ScrapCapacity: number,
 }
 
--- One placed build piece. Real format is decided in step 4.
-export type PlacedPiece = { Kind: string, X: number, Y: number, Z: number, Yaw: number }
+-- One placed base piece (step 4). Id = GUID so remove/move target one exact
+-- piece. Kind = a key of Config.Base.Pieces. X/Z = the footprint's lowest
+-- grid cell on the owner's plot (0-based); Rot = quarter turns 0-3.
+export type PlacedPiece = { Id: string, Kind: string, X: number, Z: number, Rot: number }
+
+-- What the owner's build UI gets (BaseChanged / GetBaseState).
+-- UpgradeCost is nil at the top tier or before a Vault Core exists.
+export type BaseState = {
+	Tier: number,
+	MaxTier: number,
+	HasVaultCore: boolean,
+	BudgetUsed: number,
+	Budget: number,
+	UpgradeCost: { [string]: number }?,
+}
 
 -- Tier = index into Config.Combat.PickaxeTiers; Slot = one of Config.Combat.ArmorSlots.
 export type ArmorPiece = { Tier: number, Slot: string }

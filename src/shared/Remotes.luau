@@ -39,6 +39,15 @@ local definitions: { [string]: RemoteKind } = {
 	-- ProximityPrompt, which the server listens to directly: no remote.)
 	VaultChanged = "Event", -- server -> owner: (VaultState) their own Banked/Exposed/Scrap
 	GetVaultState = "Function", -- client -> server: () -> VaultState? (for meter start-up)
+
+	-- Step 4: plots + base building. Each build intent returns (ok, reason?);
+	-- reason is a short code the build UI turns into text.
+	PlacePiece = "Function", -- (kind, x, z, rot) -> (ok, reason?)
+	MovePiece = "Function", -- (pieceId, x, z, rot) -> (ok, reason?)
+	RemovePiece = "Function", -- (pieceId) -> (ok, reason?)
+	UpgradeVault = "Function", -- () -> (ok, reason?)
+	GetBaseState = "Function", -- () -> BaseState? (build UI start-up)
+	BaseChanged = "Event", -- server -> owner: (BaseState)
 }
 
 local Remotes = {}

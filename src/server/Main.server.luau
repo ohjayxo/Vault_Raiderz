@@ -24,6 +24,9 @@ require(Services.VaultService).start()
 require(Services.BroadcastQueue).start()
 require(Services.NodeService).start()
 
+-- Step 4: plots, base building, build budget (sharding is a stub inside).
+require(Services.PlotService).start()
+
 require(Services.DebugService).start() -- ignores commands outside Studio
 
 -- THROWAWAY build step 0B (mobile perf spike). Delete with src/server/PerfSpike.

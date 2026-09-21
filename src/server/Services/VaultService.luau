@@ -15,7 +15,8 @@
 --   Scrap has its own, smaller cap (~20% [PH], Q38) and is banked the same way.
 -- * Capacity only ever gates what goes IN. If it were ever lower than what's
 --   already banked, nothing is pushed back out to Exposed (R2).
--- * Vault tier belongs to BaseService (step 4). This service only reads it.
+-- * Vault tier belongs to PlotService (step 4). This service only reads it.
+-- * Paying for things (spend) takes Exposed before Banked, lowest Grade first.
 -- * The Banked/Exposed meter is hidden until the FTUE reveals it (R4,
 --   02 § FTUE spec). setMeterVisible is the switch.
 
@@ -102,7 +103,7 @@ function VaultService.getState(player: Player): Types.VaultState?
 end
 
 -- Sends the player their vault state. Call after anything that changes it,
--- including a vault tier change (BaseService, step 4).
+-- including a vault tier change (PlotService).
 function VaultService.refresh(player: Player)
 	local state = VaultService.getState(player)
 	if state then
@@ -154,6 +155,69 @@ function VaultService.depositScrap(player: Player, amount: number): boolean
 	local ok = PlayerDataService.update(player, "Scrap", OWNER, function(scrap)
 		scrap.Exposed += amount
 		return scrap
+	end)
+	if ok then
+		VaultService.refresh(player)
+	end
+	return ok
+end
+
+local function checkAmounts(amounts: { [string]: number }, caller: string)
+	for resource, amount in amounts do
+		assert(isResource[resource], `VaultService.{caller}: unknown resource "{resource}"`)
+		assert(amount >= 0 and amount == math.floor(amount), `VaultService.{caller}: bad amount {amount}`)
+	end
+end
+
+-- Takes a price (resource -> units) from Exposed before Banked, lowest
+-- Grade first (Config.Bank.SpendOrderGrades; Josh's call, step 4). All or
+-- nothing: returns false and takes nothing if the player can't afford it.
+function VaultService.spend(player: Player, cost: { [string]: number }): boolean
+	checkAmounts(cost, "spend")
+	local affordable = false
+	local ok = PlayerDataService.update(player, "Resources", OWNER, function(resources: Types.ResourceSnapshot)
+		for resource, amount in cost do
+			local have = 0
+			for _, count in resources.Exposed[resource] do
+				have += count
+			end
+			for _, count in resources.Banked[resource] do
+				have += count
+			end
+			if have < amount then
+				return resources -- unchanged
+			end
+		end
+		for resource, amount in cost do
+			local left = amount
+			for _, store in { resources.Exposed[resource], resources.Banked[resource] } do
+				for _, grade in bankCfg.SpendOrderGrades do
+					local take = math.min(store[grade] or 0, left)
+					store[grade] = (store[grade] or 0) - take
+					left -= take
+				end
+			end
+		end
+		affordable = true
+		return resources
+	end)
+	if ok and affordable then
+		VaultService.refresh(player)
+		return true
+	end
+	return false
+end
+
+-- Adds Standard-grade units to Exposed (refunds). One save, one refresh.
+function VaultService.grant(player: Player, amounts: { [string]: number }): boolean
+	checkAmounts(amounts, "grant")
+	local standard = Config.Grade.Names[1]
+	local ok = PlayerDataService.update(player, "Resources", OWNER, function(resources: Types.ResourceSnapshot)
+		for resource, amount in amounts do
+			local grades = resources.Exposed[resource]
+			grades[standard] = (grades[standard] or 0) + amount
+		end
+		return resources
 	end)
 	if ok then
 		VaultService.refresh(player)
@@ -229,10 +293,10 @@ local function onBankTriggered(core: Model, hitbox: BasePart, player: Player)
 	if not allowBank(player) then
 		return
 	end
-	-- Step 4 plots set OwnerUserId; the step 3 shared core has none.
-	local ownerId = core:GetAttribute("OwnerUserId")
-	if ownerId ~= nil and ownerId ~= player.UserId then
-		logAnomaly(player, "tried to bank at someone else's Vault Core")
+	-- Every Vault Core is a placed base piece with its owner's UserId. Clients
+	-- hide the prompt on other people's cores (OwnBase.client.luau), but a
+	-- fair press can still slip through as it hides, so this isn't logged.
+	if core:GetAttribute("OwnerUserId") ~= player.UserId then
 		return
 	end
 	local character = player.Character
@@ -282,20 +346,22 @@ local function setUpCore(instance: Instance)
 	end)
 end
 
--- A Grade or resource missing from the bank order could never be banked.
+-- A Grade or resource missing from these orders could never be banked/spent.
 local function selfTestBankOrder()
 	local function sameSet(listed: { string }, all: { string }, what: string)
 		local seen: { [string]: boolean } = {}
 		for _, name in listed do
 			seen[name] = true
 		end
-		assert(#listed == #all, `Config.Bank.BankOrder{what} has {#listed} entries, expected {#all}`)
+		assert(#listed == #all, `Config.Bank.{what} has {#listed} entries, expected {#all}`)
 		for _, name in all do
-			assert(seen[name], `Config.Bank.BankOrder{what} is missing "{name}"`)
+			assert(seen[name], `Config.Bank.{what} is missing "{name}"`)
 		end
 	end
-	sameSet(bankCfg.BankOrderGrades, Config.Grade.Names, "Grades")
-	sameSet(bankCfg.BankOrderResources, Config.Resources.Types, "Resources")
+	sameSet(bankCfg.BankOrderGrades, Config.Grade.Names, "BankOrderGrades")
+	sameSet(bankCfg.BankOrderResources, Config.Resources.Types, "BankOrderResources")
+	-- A Grade missing from the spend order could never be spent.
+	sameSet(bankCfg.SpendOrderGrades, Config.Grade.Names, "SpendOrderGrades")
 end
 
 function VaultService.start()

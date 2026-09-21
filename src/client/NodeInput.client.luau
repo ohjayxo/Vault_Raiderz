@@ -66,6 +66,10 @@ local function nodeHitboxes(): { Instance }
 end
 
 local function tryMineAt(screenPosition: Vector2)
+	-- In build mode a tap means "put it here" (BuildMode.client.luau).
+	if player:GetAttribute(Config.Base.BuildUi.ClientModeAttribute) then
+		return
+	end
 	local camera = workspace.CurrentCamera
 	if not camera then
 		return

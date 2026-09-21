@@ -31,6 +31,10 @@
       "NodeTemplates": {
         "$className": "Folder",
         "$path": "src/assets/NodeTemplates"
+      },
+      "PieceTemplates": {
+        "$className": "Folder",
+        "$path": "src/assets/PieceTemplates"
       }
     }
   }

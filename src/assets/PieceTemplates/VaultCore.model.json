@@ -1,0 +1,221 @@
+{
+  "className": "Model",
+  "attributes": {
+    "Kind": "VaultCore"
+  },
+  "properties": {
+    "Tags": [
+      "BasePiece",
+      "VaultCore"
+    ]
+  },
+  "children": [
+    {
+      "name": "Hitbox",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          8,
+          8,
+          8
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              4.0,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": true,
+        "CanQuery": true,
+        "CanTouch": false,
+        "CastShadow": false
+      }
+    },
+    {
+      "name": "Visual",
+      "className": "Folder",
+      "children": [
+        {
+          "name": "Plinth",
+          "className": "Part",
+          "properties": {
+            "Anchored": true,
+            "Size": [
+              8,
+              1.5,
+              8
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  0,
+                  0.75,
+                  0
+                ],
+                "orientation": [
+                  [
+                    1.0,
+                    0,
+                    0.0
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    -0.0,
+                    0,
+                    1.0
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.3529,
+              0.3529,
+              0.3922
+            ],
+            "Material": "DiamondPlate",
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth",
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "CastShadow": true
+          }
+        },
+        {
+          "name": "Safe",
+          "className": "Part",
+          "properties": {
+            "Anchored": true,
+            "Size": [
+              6,
+              6,
+              6
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  0,
+                  4.5,
+                  0
+                ],
+                "orientation": [
+                  [
+                    1.0,
+                    0,
+                    0.0
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    -0.0,
+                    0,
+                    1.0
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.5882,
+              0.5882,
+              0.6471
+            ],
+            "Material": "Metal",
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth",
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "CastShadow": true
+          }
+        },
+        {
+          "name": "Door",
+          "className": "Part",
+          "properties": {
+            "Anchored": true,
+            "Size": [
+              4,
+              4,
+              0.4
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  0,
+                  4.5,
+                  3.1
+                ],
+                "orientation": [
+                  [
+                    1.0,
+                    0,
+                    0.0
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    -0.0,
+                    0,
+                    1.0
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.2745,
+              0.6667,
+              0.902
+            ],
+            "Material": "Neon",
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth",
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "CastShadow": true
+          }
+        }
+      ]
+    }
+  ]
+}

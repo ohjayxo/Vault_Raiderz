@@ -40,7 +40,7 @@ local Config = {
 			Scrap = "VaultService", -- step 3 (separate small Scrap cap)
 			Credits = "EconomyService", -- step 9 (06-economy.md § Currencies)
 			Items = "InventoryService", -- charges, gadgets, components (05-items.md § Taxonomy)
-			Base = "BaseService", -- step 4 (02-core-loop.md § Base / Home)
+			Base = "PlotService", -- step 4 (02-core-loop.md § Base / Home; named in 14 § Prompt 4)
 			Gear = "PickaxeService", -- step 5 (02-core-loop.md § Pickaxe upgrade tree)
 			Armor = "ArmorService", -- step 5 (D112: craftable armor pieces)
 			TechPath = "TechPathService", -- step 10 (Tier 1 only, permanent - D72)
@@ -62,7 +62,7 @@ local Config = {
 			},
 			-- R6 / D66: raid band uses lifetime peak vault tier.
 			Progress = {
-				{ Name = "LifetimePeakVaultTier", Bits = 4, Owner = "BaseService" }, -- tiers 0-10 fit in 4 bits
+				{ Name = "LifetimePeakVaultTier", Bits = 4, Owner = "PlotService" }, -- tiers 0-10 fit in 4 bits
 			},
 		},
 
@@ -404,10 +404,12 @@ local Config = {
 		-- (Josh's call, step 3): Grade first, then the rarer resource.
 		BankOrderGrades = { "Vaultborn", "Prismatic", "Volatile", "Dense", "Standard" },
 		BankOrderResources = { "Riftsalt", "Ore", "Stone" },
+		-- Paying for something (building, step 4) takes Exposed before Banked,
+		-- lowest Grade first (Josh's call, step 4): "use it before you lose it".
+		SpendOrderGrades = { "Standard", "Dense", "Volatile", "Prismatic", "Vaultborn" },
 
-		-- Banking happens at a Vault Core (Josh's call, step 3). Step 3 uses one
-		-- shared greybox core in the Homestead; step 4 gives each plot its own
-		-- (Model attribute OwnerUserId, which VaultService already checks).
+		-- Banking happens at your own Vault Core (Josh's call, step 3). Each is
+		-- a placed base piece with an OwnerUserId attribute (step 4).
 		VaultCoreTag = "VaultCore", -- greybox contract (13-build-guide.md § Part D)
 		BankDistance = 12, -- [PH] invented: studs from the core's Hitbox
 		BankCooldownSeconds = 1, -- [PH] invented: per-player limit on banking
@@ -439,14 +441,94 @@ local Config = {
 		},
 
 		-- Studio-only debug grants (keys F and G).
-		DebugResourceGrant = 200, -- [PH] invented: Standard Stone into Exposed
+		-- Standard grade, into Exposed. [PH] invented: enough for a Vault Core,
+		-- a tier 2 upgrade and some walls/gates in one or two presses.
+		DebugResourceGrant = { Stone = 200, Ore = 100, Riftsalt = 20 },
 		DebugScrapGrant = 25, -- [PH] invented: Scrap has no source until step 6
 	},
 
-	-- ── Step 4 ── Base building + build budget ─────────────────────────
-	-- Walls, gates, Vault Core placement, budget. 02-core-loop.md § Base / Home,
-	-- § Build budget (D57).
-	Base = {},
+	-- ── Step 4 ── Plots, base building + build budget ──────────────────
+	-- 02-core-loop.md § World Structure (Homestead Ring = player plots).
+	-- Count and SizeStuds must match docs-build/worldgen/gen_world.py.
+	Plots = {
+		Tag = "Plot", -- greybox contract: Hitbox = build surface
+		-- One plot per player on a server, so set the place's Max Players to
+		-- this (Game Settings) or later joiners get no plot.
+		Count = 8, -- [PH] invented
+		SizeStuds = 48, -- [PH] invented
+		GridStuds = 4, -- [PH] invented: one build cell (12 x 12 cells per plot)
+		-- Studs from your character to your plot's edge within which you may
+		-- build (a fair client builds while standing on it).
+		BuildReach = 30, -- [PH] invented
+	},
+	-- Walls, gates, Vault Core. 02-core-loop.md § Base / Home, § Build budget (D57).
+	Base = {
+		LiveFolderName = "BasePieces", -- Workspace folder placed pieces go into
+		TemplateFolderName = "PieceTemplates", -- ServerStorage (src/assets/PieceTemplates)
+		PieceTag = "BasePiece",
+		GateTag = "BaseGate",
+		-- Per piece: footprint in grid cells {W, D} before rotation, ghost
+		-- height (client preview), price, and budget cost.
+		-- BudgetCost is RENDER weight (D57's "piece/draw-call budget"): the
+		-- step 0B spike showed identical pieces batch almost free and that
+		-- triangles and unique materials are what cost frame time, so cost
+		-- is meant to track those, not piece count (docs-build/perfspike/
+		-- results.md). All [PH] invented until a cheap-phone test.
+		Pieces = {
+			VaultCore = { Cells = { 2, 2 }, Height = 8, Cost = { Stone = 50 }, BudgetCost = 5 },
+			Wall = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 20 }, BudgetCost = 2 },
+			Gate = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 30, Ore = 10 }, BudgetCost = 3 },
+		},
+		PieceOrder = { "VaultCore", "Wall", "Gate" }, -- build menu order
+		MaxVaultCores = 1, -- one Vault Core per plot
+		-- D57: budget per Vault Core tier (index = tier; tier 0 uses tier 1's).
+		-- Same length as Config.Bank.CapacityByTier (tiers 1-7 in the slice).
+		BudgetByTier = { 40, 60, 90, 130, 180, 240, 300 }, -- [PH] invented
+		-- Placing the Vault Core = tier 1 (FTUE "BUILD VAULT", 02 § FTUE spec).
+		-- Upgrading to tier n costs UpgradeCostByTier[n]; [1] is unused.
+		UpgradeCostByTier = { -- [PH] invented
+			{},
+			{ Stone = 150, Ore = 30 },
+			{ Stone = 300, Ore = 80 },
+			{ Stone = 500, Ore = 150 },
+			{ Stone = 800, Ore = 250 },
+			{ Stone = 1_200, Ore = 400 },
+			{ Stone = 1_800, Ore = 600 },
+		},
+		-- Removing a piece refunds this share of its price, as Standard, to
+		-- Exposed (Josh's call, step 4). Under 1 so walls can't be used to hide
+		-- resources from raiders and dismantle them later (a bank bypass).
+		-- The Vault Core can be moved but never removed.
+		RemoveRefundFraction = 0.5, -- [PH] invented
+		-- Anti-spam on the build remotes (13-build-guide.md § Part D).
+		BuildRateLimit = { Burst = 6, PerSecond = 3 }, -- [PH] invented
+		StateCooldownSeconds = 0.5, -- [PH] invented: GetBaseState limit
+
+		-- Build UI. Hidden until shown by the server (player attribute), like
+		-- the vault meter, so the FTUE (step 14) can control it (R4).
+		BuildUi = {
+			VisibleAttribute = "HudBuildButton",
+			ShowBeforeFtue = true, -- TEMPORARY until step 14, same as Bank.Meter
+			-- Set by the build UI on its own client only; NodeInput ignores taps
+			-- while it's true. Never replicated, never trusted by the server.
+			ClientModeAttribute = "ClientBuildMode",
+			-- Look only. [PH] invented, REVISIT with real UI (step 2 review L2).
+			ButtonSize = 72, -- px: big enough for thumbs
+			GhostTransparency = 0.5,
+			GhostColor = Color3.fromRGB(80, 220, 120),
+			SelectColor = Color3.fromRGB(255, 210, 60),
+			MessageSeconds = 2,
+		},
+	},
+
+	-- Neighborhood sharding + the raid band. 02-core-loop.md § Server
+	-- sharding (D56, D79); § Preconditions (D66); 05-items.md § Gear score (D92).
+	Sharding = {
+		-- D66 takes the highest of vault tier, lifetime peak and gear score, but
+		-- gear score is on a ~10x bigger scale. Josh's call, step 4: convert it
+		-- to tier units first: floor(gear score / this).
+		GearScorePerBandTier = 10,
+	},
 
 	-- ── Step 5 ── Combat + pickaxe + upgrade tree ──────────────────────
 	-- 3-hit combo, knockback, upgrade branches, respec, gear score.

@@ -6,8 +6,9 @@
 -- Keys (src/client/DebugKeys.client.luau): P = print profile,
 -- C = +credits, L = print presence, X = +Miner XP (to test the level curve),
 -- V = next hit is Vaultborn, B = burst of test broadcasts (D58 drop rule),
--- T = next Vault Core tier (0-7, wraps), F = +Stone into Exposed,
--- G = +Research Scrap into Exposed, H = show/hide the Banked/Exposed meter.
+-- T = next Vault Core tier (0-7, wraps), F = +Stone/Ore/Riftsalt into Exposed,
+-- G = +Research Scrap into Exposed, H = show/hide the Banked/Exposed meter,
+-- N = print your raid/neighborhood band and gear score (server-only numbers).
 -- (M = mine-remote spam lives entirely on the client: it fires the real
 -- MineNode remote, exactly like an exploit script would.)
 
@@ -18,11 +19,14 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RateLimiter = require(ServerScriptService.Util.RateLimiter)
+local BandMetric = require(ServerScriptService.Util.BandMetric)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 local PresenceService = require(script.Parent.PresenceService)
 local NodeService = require(script.Parent.NodeService)
 local BroadcastQueue = require(script.Parent.BroadcastQueue)
 local VaultService = require(script.Parent.VaultService)
+local PlotService = require(script.Parent.PlotService)
+local ShardService = require(script.Parent.ShardService)
 
 -- Key B: more items than MaxPending (6), mixed priorities, all at once.
 -- Expected with the step 2 Config: flex 1 goes out at once; Vaultborn 2
@@ -68,8 +72,9 @@ local commands: { [string]: (Player) -> () } = {
 		NodeService.debugForceNextGrade(player, "Vaultborn")
 		print(`[Debug] {player.Name}'s next successful hit will be Vaultborn`)
 	end,
-	-- Vault tier belongs to BaseService (step 4), so this writes it through
-	-- the Studio debug path, then tells VaultService the capacity changed.
+	-- Vault tier belongs to PlotService, so this writes it through the
+	-- Studio debug path, then tells both UIs. It skips the lifetime peak on
+	-- purpose (only real upgrades raise it; rejoining syncs it).
 	NextVaultTier = function(player)
 		local tierCount = #Config.Bank.CapacityByTier
 		local ok = PlayerDataService.debugUpdate(player, "Base", function(base)
@@ -77,13 +82,15 @@ local commands: { [string]: (Player) -> () } = {
 			return base
 		end)
 		VaultService.refresh(player)
+		PlotService.refresh(player)
 		local state = VaultService.getState(player)
 		local base = PlayerDataService.get(player, "Base")
 		print(`[Debug] {player.Name} Vault tier: {if ok then "ok" else "FAILED"}, now {base and base.VaultTier}, capacity {state and state.Capacity}, Scrap cap {state and state.ScrapCapacity}`)
 	end,
-	GrantExposedStone = function(player)
-		local ok = VaultService.deposit(player, "Stone", Config.Grade.Names[1], Config.Bank.DebugResourceGrant)
-		print(`[Debug] +{Config.Bank.DebugResourceGrant} Standard Stone (Exposed) for {player.Name}: {if ok then "ok" else "FAILED"}`)
+	GrantExposedResources = function(player)
+		local grant = Config.Bank.DebugResourceGrant
+		local ok = VaultService.grant(player, grant)
+		print(`[Debug] +{grant.Stone} Stone, +{grant.Ore} Ore, +{grant.Riftsalt} Riftsalt (Standard, Exposed) for {player.Name}: {if ok then "ok" else "FAILED"}`)
 	end,
 	GrantScrap = function(player)
 		local ok = VaultService.depositScrap(player, Config.Bank.DebugScrapGrant)
@@ -93,6 +100,14 @@ local commands: { [string]: (Player) -> () } = {
 		local visible = not VaultService.isMeterVisible(player)
 		VaultService.setMeterVisible(player, visible)
 		print(`[Debug] {player.Name}'s Banked/Exposed meter {if visible then "shown" else "hidden"}`)
+	end,
+	PrintBand = function(player)
+		local gear = PlayerDataService.get(player, "Gear")
+		local armor = PlayerDataService.get(player, "Armor")
+		local base = PlayerDataService.get(player, "Base")
+		local peak = PlayerDataService.getPacked(player, "LifetimePeakVaultTier")
+		local score = if gear and armor then BandMetric.gearScore(gear, armor) else nil
+		print(`[Debug] {player.Name}: band {ShardService.getBand(player)} = highest of vault tier {base and base.VaultTier}, peak {peak}, gear score {score} / {Config.Sharding.GearScorePerBandTier}`)
 	end,
 	BroadcastTest = function(player)
 		print(`[Debug] {player.Name} pushed {#BROADCAST_TEST} test broadcasts`)
