@@ -128,7 +128,7 @@ insurance against a collision.
 | Series | Home file | Currently in use | Next available |
 |---|---|---|---|
 | **R (non-negotiable rules)** | `01-pillars.md` | R1–R8 | **R9** |
-| **D (locked decisions)** | `07-decisions.md` | D1–D110 | **D111** |
+| **D (locked decisions)** | `07-decisions.md` | D1–D112 | **D113** |
 | **Q (open questions)** | `08-questions.md` | up to Q70 | **Q71** |
 
 ---
@@ -200,3 +200,5 @@ creep in on a future edit.
 | v1.4 | 2026-09-19 | Registry: D1–D109 (next D110). Slice locked (D107–D109). Seed drift risk marked resolved; Seasons drift note updated. |
 | v1.5 | 2026-09-19 | Added `13-build-guide.md` and `14-claude-code-prompts.md` (build phase) to the Concept Ownership Index. Repo-root `CLAUDE.md` is a build artifact, not a design file. |
 | v1.6 | 2026-09-19 | Registry: D1–D110 (next D111). D110 resolves the offline-production slice gap. |
+| v1.7 | 2026-09-20 | Registry: D1–D111 (next D112). D111 (pickaxes untradeable, skins tradeable) supersedes D21; made during the build phase. |
+| v1.8 | 2026-09-20 | Registry: D1–D112 (next D113). D112 adds armor to the slice (amends D107, D92). |

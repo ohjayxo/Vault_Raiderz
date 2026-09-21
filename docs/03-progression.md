@@ -492,6 +492,17 @@ tracks. **Never resets** (not at season, not at rebirth). Jobs:
    **Level 10 [PH]** (`06-economy.md § Access gating`)
 3. Rewards titles, cosmetics, and slots — never stats
 
+**Level curve `[PH — placeholder, D111 round]`:** each Reputation track turns
+XP into a track level, where the XP to **reach** track level *n* is
+`floor(100 × n^1.5)` (levels 1 / 2 / 3 / 5 / 10 / 20 need 100 / 282 / 519 /
+1,118 / 3,162 / 8,944 XP). **Vaultbreaker Level = the sum of the three track
+levels**; everyone starts at Level 0. Because each level costs more than the
+last, spreading XP across tracks is faster — Level 10 from one track takes
+3,162 XP, split 4/3/3 takes 1,838 — which is the "hybrid gets there faster"
+rule above. For Level 10 in ~2–3 sessions (`06-economy.md § Access gating`,
+~90–135 min), XP grants should total roughly **15–30 XP per minute of active
+play**. Level is derived from XP, never stored separately (D80 note).
+
 **Each season ships a free season track, plus a premium track (D83)** —
 both hold only account-bound, non-random cosmetics (R3, R7). Premium is
 purely a faster/richer cosmetic path, never a different reward category.

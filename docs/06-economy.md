@@ -194,10 +194,10 @@ themselves. Five mechanisms enforce that:
    Even inside a crew that shares Tech Path nodes, elite recipes stay
    individually earned.
 
-**Gear and Fragments are now tradeable (D21, D22)**, which loosens pure
+**Fragments are now tradeable (D22)**, which loosens pure
 self-sufficiency further than earlier drafts intended — a rich Trader can
-buy their way into better gear and faster Workshop tiers without
-personally grinding for either. This is an accepted tradeoff: it deepens
+buy their way into faster Workshop tiers without personally grinding for
+them. (Gear itself does not trade — D111; pickaxe skins do, as cosmetics.) This is an accepted tradeoff: it deepens
 the market and strengthens the pacifist-viability path, at the cost of
 some of the "you must touch world content yourself" pressure. The
 remaining four mechanisms above still keep genuine scarcity in the

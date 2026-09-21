@@ -12,7 +12,8 @@ Every item type, with its economic role and loss rules.
 | **Components** | No | Yes | Yes | Crafting gate — loot only |
 | **Gadgets** | No | Yes | Yes | Consumable sink |
 | **Breach Charges** | No | Yes | Yes | Raid cost sink |
-| **Gear / Pickaxes** | Condition + Pattern | **Yes — D21** | **No** | Power + flex |
+| **Gear / Pickaxes** | No — a per-player tier, not an item | **No — D111** | **No** | Power (skins carry the flex — see Cosmetics) |
+| **Armor** | No — tier fixed when crafted | **No — D112** (armor skins trade) | **Spare pieces: yes · worn piece: no (R1)** | Defense + a loss stake |
 | **Cosmetics** | Rarity tier + Condition + Pattern | Earned: yes · **Robux-bought: swap-only, Robux pool (D65)** | **No** | Pure collector layer |
 | **Blueprints** | No | Tiered — see `03-progression.md` | Yes (unlearned) | Knowledge scarcity |
 | **Cases** | Contents hidden | Yes | **Yes (sealed)** | Speculation good |
@@ -23,10 +24,9 @@ Every item type, with its economic role and loss rules.
 | **Seed packs** | No | Yes | Yes (Exposed) | Farming input — foraged or cache loot (D73) |
 
 **The governing split (R1):** anything carrying identity is never
-stealable. Anything fungible or sealed is. **Gear is the interesting
-exception:** it's tradeable (a power good, deepening the economy) but
-never stealable (equipped items are always identity-protected). You can
-sell your old pickaxe; nobody can take the one in your hands.
+stealable. Anything fungible or sealed is. Gear is neither tradeable nor
+stealable (D111): the pickaxe is your tier, not an item. What trades is
+its look — pickaxe skins are cosmetics.
 
 ---
 
@@ -262,7 +262,9 @@ Extraction / Combat / Mobility.
 
 ## Gear score `[LOCKED — D92]`
 **Formula:** `pickaxe tier index × 10, plus 1 point per purchased
-upgrade node across all three branches` [PH — coefficients to be tuned
+pickaxe upgrade node across all three branches` (Extraction / Combat /
+Mobility; Tech Path nodes don't count — D92), **plus the highest armor tier
+owned × 10** (D112) [PH — coefficients to be tuned
 against real Tech Path costs]. Used only for raid-matchmaking band
 (R6, `07-decisions.md § D66`) and, by extension, Homestead sharding
 (D79) — never for combat power itself, which stays server-authoritative
@@ -273,25 +275,32 @@ it only ever manifests as which raid targets they're offered.
 actually make a player "stronger" for raid purposes, and both are
 already tracked server-side — no new state to add.
 
-## Gear is tradeable `[LOCKED — D21 (Q17)]`
+## Armor `[LOCKED — D112]`
 
-**Gear can be bought and sold on the market.** This was a deliberate
-loosening from the original cosmetic-only trading stance: tradeable gear
-creates a genuinely deeper economy — a max-Mastery crafter's Riftedge
-picks become a real product, not just a personal accomplishment.
+The slice has armor pieces crafted from resources, one **chest** slot in the slice.
+Each piece has a tier using the pickaxe's names (Wooden → Iron → Voltsteel →
+Riftedge; only Wooden and Iron are reachable in the slice, since the top two
+need Voltstone). A piece never upgrades — you craft a better one. Each tier
+gives **knockback resistance plus a small damage reduction** [PH], kept small
+so fights still resolve in 5–10 s (`02-core-loop.md § Combat feel`). The
+**worn piece is never stealable** (R1); **spare pieces are stealable** in
+raids like other loot (how many a raid takes is step-7 theft math, [PH]).
+Armor pieces **don't trade** (same reason as D111); **armor skins trade** as
+cosmetics. Gear score adds the highest armor tier **owned** × 10 [PH], so
+taking armor off can't lower a raid band (R6).
 
-**The risk this accepts:** a power market that can read as pay-adjacent,
-since Credits (earned or, indirectly, cashed out from selling cosmetics
-bought with Robux) can now buy combat-relevant items. This is mitigated
-by R3/R7 remaining fully intact — Robux still never buys Credits or
-gear directly, only cosmetics and convenience. A player still has to
-*earn or trade for* Credits through gameplay before they can buy gear
-with them.
+## Pickaxes are not tradeable `[LOCKED — D111, supersedes D21]`
+
+The pickaxe is a per-player tier, not an item: it can't be traded, sold or
+stolen. Power stays earned. **Pickaxe skins** are the tradeable product —
+they are cosmetics (§ Cosmetics), so earned skins trade freely (including
+on the market), Robux-bought ones are swap-only (D65), and none are ever
+stealable (R1). A crafter's product is now the look, not the tool.
 
 ## Loss rules
-- **Equipped gear is never stolen** (R1) — tradeable is not the same as
-  stealable; see the Taxonomy table above
-- Gear rolls Condition + Pattern for looks only
+- **Gear is never stolen or traded** (R1, D111); see the Taxonomy table above
+- Pickaxe **skins** roll Condition + Pattern for looks only (cosmetics;
+  out of the vertical slice)
 
 ---
 

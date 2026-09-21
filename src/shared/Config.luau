@@ -18,7 +18,79 @@ local Config = {
 	-- DataStore/MemoryStore retry + backoff, presence/raid-lock TTLs, per-remote
 	-- rate limits. docs/13-build-guide.md § Part D; 06-economy.md § The hard
 	-- architectural constraint; D54, D55, D80.
-	Data = {},
+	Data = {
+		-- DataStore name for player profiles. Changing it means every player
+		-- starts fresh, so only change it on purpose.
+		StoreName = "PlayerData",
+		-- Studio Play/tests use separate stores, so debug Credits/XP and test
+		-- players never reach the live game's saves.
+		StudioStoreName = "PlayerData_Studio",
+		KeyPrefix = "Player_", -- profile key = KeyPrefix .. UserId (also the presence key)
+		-- Bump when a migration is added in PlayerDataService/Migrations.luau.
+		-- Adding a NEW field doesn't need a bump: Reconcile() fills it in.
+		SchemaVersion = 1,
+
+		-- Which service may write each profile section. CLAUDE.md: "Only a
+		-- system's own service mutates its data." Services that don't exist
+		-- yet are named after the build step that creates them.
+		SectionOwners = {
+			Meta = "PlayerDataService",
+			Packed = "PlayerDataService", -- written only through setPacked (per-field owners below)
+			Resources = "VaultService", -- step 3 (02-core-loop.md § Bank vs Exposed)
+			Scrap = "VaultService", -- step 3 (separate small Scrap cap)
+			Credits = "EconomyService", -- step 9 (06-economy.md § Currencies)
+			Items = "InventoryService", -- charges, gadgets, components (05-items.md § Taxonomy)
+			Base = "BaseService", -- step 4 (02-core-loop.md § Base / Home)
+			Gear = "PickaxeService", -- step 5 (02-core-loop.md § Pickaxe upgrade tree)
+			Armor = "ArmorService", -- step 5 (D112: craftable armor pieces)
+			TechPath = "TechPathService", -- step 10 (Tier 1 only, permanent - D72)
+			Blueprints = "ResearchService", -- step 10 (Common only)
+			Crew = "CrewService", -- step 11
+			Shields = "RaidProtectionService", -- step 8 (R6, D67, D75)
+		},
+
+		-- D80: small per-player fields bitpacked from the start. Each word is one
+		-- saved number (max 53 bits). Bit widths are [PH] invented; a value past
+		-- its maximum is clamped and logged, and widening one needs a migration.
+		Packed = {
+			-- 03-progression.md § Reputation tracks (D81). Vaultbreaker Level is
+			-- the sum of these tracks (D82), so it is derived, not stored.
+			Reputation = {
+				{ Name = "MinerXP", Bits = 17, Owner = "ReputationService" }, -- [PH] invented: max 131,071
+				{ Name = "TraderXP", Bits = 17, Owner = "ReputationService" }, -- [PH] invented
+				{ Name = "RaiderXP", Bits = 17, Owner = "ReputationService" }, -- [PH] invented
+			},
+			-- R6 / D66: raid band uses lifetime peak vault tier.
+			Progress = {
+				{ Name = "LifetimePeakVaultTier", Bits = 4, Owner = "BaseService" }, -- tiers 0-10 fit in 4 bits
+			},
+		},
+
+		-- D55 / 02-core-loop.md § Plot lifecycle: archive after ~1 year [PH].
+		ArchiveAfterDays = 365,
+
+		-- Retries for DataStore/MemoryStore calls (CLAUDE.md; 13-build-guide.md
+		-- § B8: Studio quota is tiny, never spam). All [PH] invented.
+		Backoff = {
+			BaseSeconds = 1, -- first retry waits ~1 s, then 2, 4, 8...
+			MaxSeconds = 30,
+			MaxAttempts = 5,
+			Jitter = 0.25, -- +/- 25% so many servers don't retry in lockstep
+		},
+
+		-- Presence keys for offline raids (13-build-guide.md § Part D, step 1).
+		Presence = {
+			MapName = "Presence",
+			StudioMapName = "Presence_Studio", -- Studio presence can't block live offline raids
+			TtlSeconds = 60, -- [PH] invented: a crashed server's keys vanish within a minute
+			RefreshSeconds = 20, -- [PH] invented: 3 writes/min/player, well inside quota
+		},
+
+		-- Studio-only debug commands.
+		DebugCooldownSeconds = 0.5, -- [PH] invented
+		DebugCreditGrant = 10, -- [PH] invented
+		DebugXPGrant = 500, -- [PH] invented: 7 presses = Miner level 10 (3,162 XP)
+	},
 
 	-- ── Step 0B ── THROWAWAY mobile performance spike ──────────────────
 	-- Delete this whole section with src/server/PerfSpike,
@@ -188,14 +260,19 @@ local Config = {
 	-- (Covered mostly by Data above; split out if it grows.)
 
 	-- ── Step 2 ── Node collection + Grade ──────────────────────────────
-	-- Resources: Stone, Ore, Riftsalt. 05-items.md § Resources.
-	Resources = {},
+	-- Resources: Stone, Ore, Riftsalt. 05-items.md § Resources (Voltstone is
+	-- out of the slice, 10-roadmap.md § Vertical Slice).
+	Resources = {
+		Types = { "Stone", "Ore", "Riftsalt" },
+	},
 	-- Node mining, respawn, rich-node landmarks. 05-items.md § Node respawn,
 	-- § Rich-node landmarks; D46.
 	Nodes = {},
 	-- Grade rolls + Vaultborn announcement. 05-items.md § Roll 1 - Grade.
-	-- Server-only odds stay out of this file (R5).
-	Grade = {},
+	-- Server-only odds stay out of this file (R5). Names only here.
+	Grade = {
+		Names = { "Standard", "Dense", "Volatile", "Prismatic", "Vaultborn" }, -- 05-items.md § Roll 1
+	},
 
 	-- ── World ───────────────────────────────────────────────────────────
 	-- Homestead + small Reaches, server sharding / neighborhoods.
@@ -215,7 +292,24 @@ local Config = {
 	-- 3-hit combo, knockback, upgrade branches, respec, gear score.
 	-- 02-core-loop.md § Combat, § Pickaxe upgrade tree, § Combat feel;
 	-- 05-items.md § Gear score (D92).
-	Combat = {},
+	Combat = {
+		PickaxeTiers = { "Wooden", "Iron", "Voltsteel", "Riftedge" }, -- 05-items.md § Pickaxe tiers
+		StartingPickaxeTier = 1, -- index into PickaxeTiers (Wooden)
+		-- D92 / 05-items.md § Gear score: tier index x 10 + 1 per purchased
+		-- PICKAXE upgrade node (the three branches above). Server-only use,
+		-- never shown to players. Coefficients [PH] per D92. Built in step 5.
+		GearScore = {
+			PointsPerTier = 10,
+			PointsPerUpgradeNode = 1,
+			-- D112: highest armor tier OWNED (worn or spare), so taking armor
+			-- off can't lower your raid band (R6). [PH]
+			PointsPerArmorTier = 10,
+		},
+		PickaxeBranches = { "Extraction", "Combat", "Mobility" }, -- 02-core-loop.md § Pickaxe upgrade tree
+		-- D112: armor pieces use the same tier names as the pickaxe
+		-- (PickaxeTiers). One slot in the slice; add slots here later.
+		ArmorSlots = { "Chest" },
+	},
 
 	-- ── Step 6 ── Defenses + Scav Waves + Scav Captain ─────────────────
 	-- 02-core-loop.md § Defenses.
@@ -243,7 +337,24 @@ local Config = {
 	-- 06-economy.md § Zero-chat trade (D61), § Trade Safety, § Access gating (D82).
 	Trade = {},
 	-- 03-progression.md § Reputation tracks, § Vaultbreaker Level (D81, D82).
-	Progression = {},
+	Progression = {
+		-- Vaultbreaker Level = sum of the three track levels (D82). Each track
+		-- (Miner/Trader/Raider, D81) turns XP into a track level with:
+		--   XP needed to REACH track level n = floor(BaseXP * n ^ Exponent)
+		-- Exponent > 1 makes each level cost more than the last, which also
+		-- makes hybrid play faster to Level 10 than one track alone (03 § Ranked
+		-- ladder: "a hybrid gets there faster"). Everyone starts at Level 0.
+		--   Level 10 from one track: 3,162 XP. Spread 4/3/3: 1,838 XP.
+		-- Target: Level 10 in ~2-3 sessions of active play (06-economy.md §
+		-- Access gating) = ~90-135 min, so step 9 should grant roughly
+		-- 15-30 XP per minute of active play. Track max at the 17-bit XP cap
+		-- (Config.Data.Packed) is level 119.
+		LevelCurve = {
+			BaseXP = 100, -- [PH] invented
+			Exponent = 1.5, -- [PH] invented
+		},
+		TradeUnlockLevel = 10, -- 06-economy.md § Access gating (D82) [PH]
+	},
 
 	-- ── Step 10 ── Workshop I, Tech Path T1, Research, Blueprints ──────
 	-- 03-progression.md § The Workshop (Tier I only).

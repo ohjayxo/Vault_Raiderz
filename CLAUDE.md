@@ -6,8 +6,10 @@ in plain language, plan before building, and tell him exactly how to test
 each change in Studio.
 
 ## Source of truth
-- Design lives in `docs/` (files `00`–`14`). **Never edit anything in
-  `docs/`.** It's managed in a separate design project.
+- Design lives in `docs/` (files `00`–`14`). **Edit `docs/` only with
+  double confirmation from Josh**: he asks or agrees, you show the exact
+  files and text, he confirms again, then you edit. It's also managed in a
+  separate design project, so remind him to make the same change there.
 - Start from `docs/12-nexus.md` to find which file owns a topic.
 - Build process: `docs/13-build-guide.md`. Step prompts:
   `docs/14-claude-code-prompts.md`.

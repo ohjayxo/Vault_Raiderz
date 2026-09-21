@@ -13,6 +13,13 @@ print("Vaultbreakers server up")
 -- Remotes must exist before any client asks for them (clients WaitForChild).
 Remotes.init()
 
+local Services = script.Parent.Services
+
+-- Step 1: data layer first; everything else sits on it.
+require(Services.PlayerDataService).start()
+require(Services.PresenceService).start()
+require(Services.DebugService).start() -- ignores commands outside Studio
+
 -- THROWAWAY build step 0B (mobile perf spike). Delete with src/server/PerfSpike.
 if Config.PerfSpike.Enabled then
 	require(script.Parent.PerfSpike).start()

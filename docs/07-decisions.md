@@ -261,7 +261,7 @@ personally earns their raids — but less market depth).
 to "can't manufacture Riftsalt safely, but can buy it" — see
 `05-items.md § The Riftsalt rule`.
 
-## D21 — Gear (pickaxes) is tradeable `[LOCKED — Robux-cosmetic route closed by D65]`
+## D21 — Gear (pickaxes) is tradeable `[SUPERSEDED by D111]`
 **Decision:** pickaxes can be bought and sold, though never stolen while
 equipped.
 
@@ -829,7 +829,7 @@ mechanic. Earned cosmetics trade freely.
 
 **Why:** the previous state let Robux → cosmetic → Credits → Keys, gear,
 and Fragments. Roblox's Paid Random Items policy covers goods purchased
-with Robux, and R3 covers gear/Fragments now that they trade (D21, D22).
+with Robux, and R3 covers Fragments now that they trade (D22; gear no longer trades — D111).
 
 **Rejected:** fully tradeable Robux cosmetics (the pre-D65 state —
 leaks); swap-for-any-same-tier cosmetic (still leaks: the earned item
@@ -844,8 +844,10 @@ entirely).
 **Decision:** matchmaking uses the highest of current vault tier,
 lifetime peak vault tier, or gear score.
 
-**Why:** rebirth resets vault tier, and gear is tradeable (D21) — either
-alone let a veteran or a geared alt into the beginner band.
+**Why:** rebirth resets vault tier, and gear score captures strength that
+vault tier alone misses — either alone let a veteran or a geared alt into
+the beginner band. (Gear no longer trades — D111 — so a geared alt must
+now earn its gear, but the rule stands.)
 
 **Rejected:** vault tier only (original R6); gear score only (misses a
 rebirthed veteran who parks their gear); higher of tier or gear score
@@ -1018,6 +1020,11 @@ Vaultbreaker Level, Reputation values) are bitpacked from the start.
 Full payload compression for larger fields (Tech Path state, raid logs)
 still waits on real usage data, per D54.
 
+**Build note (D111 round):** Vaultbreaker Level is not stored — it is
+derived from the three packed Reputation XP values (D82: Level is the sum
+of the tracks; curve in `03-progression.md § Vaultbreaker Level`), so it
+can't drift from them. Only the XP values are packed.
+
 **Why:** cheap insurance for small, cheap-to-pack fields; doesn't
 contradict D54's actual concern (over-engineering the *complex* fields
 before real data exists).
@@ -1140,8 +1147,12 @@ what; the leader keeping the remainder.
 
 ## D92 — Gear score formula `[LOCKED]`
 **Decision:** `pickaxe tier index × 10, plus 1 point per purchased
-Tech Path upgrade node across all three branches` [PH — coefficients to
-be tuned]. Used only for the D66 matchmaking band, never exposed to
+pickaxe upgrade node across all three branches (Extraction / Combat /
+Mobility — 02-core-loop.md § Pickaxe upgrade tree)` [PH — coefficients to
+be tuned]. Tech Path nodes don't count (wording fixed in the D111 round:
+Tech Path Tier 1 has four branches, the pickaxe tree has three). **Plus
+the highest armor tier owned × 10** [PH] (D112) — owned, not worn, so
+unequipping can't lower the band. Used only for the D66 matchmaking band, never exposed to
 players as a number, never affecting actual combat power.
 
 **Why:** both inputs are already tracked server-side; no new state
@@ -1368,6 +1379,50 @@ what the slice exists to measure.
 doesn't exist in the design); cutting offline production from the slice
 (would test D1 without its main return hook).
 
+## D111 — Pickaxes are not tradeable; pickaxe skins are `[LOCKED]`
+**Decision:** the pickaxe is a per-player tier, not an item. It can't be
+traded, sold or stolen. Players get **pickaxe skins**, which are cosmetics
+and trade under the normal cosmetic rules: earned skins are tradeable
+(including on the market), Robux-bought skins are swap-only (D65), and
+cosmetics are never stealable (R1). In the slice, skins trade through the
+direct trade window only (no global Exchange) and carry no Condition/Pattern
+rolls.
+
+**Why:** keeps power earned rather than bought; the tradeable product
+becomes looks. Closes D21's accepted "pay-adjacent power market" risk.
+
+**Cost accepted:** D21's "a master crafter's output becomes a real
+product" now applies to skins, not pickaxes.
+
+**Rejected:** tradeable pickaxes (D21).
+
+**Supersedes:** D21.
+
+## D112 — Armor in the vertical slice `[LOCKED — build phase]`
+**Decision:** the slice adds armor pieces crafted from resources, one **chest** slot in the slice.
+Each piece has a tier using the pickaxe's names (Wooden → Iron → Voltsteel →
+Riftedge; only Wooden and Iron are reachable in the slice, since the top two
+need Voltstone). A piece never upgrades — you craft a better one. Each tier
+gives **knockback resistance plus a small damage reduction** [PH], kept small
+so fights still resolve in 5–10 s (`02-core-loop.md § Combat feel`). The
+**worn piece is never stealable** (R1); **spare pieces are stealable** in
+raids like other loot (how many a raid takes is step-7 theft math, [PH]).
+Armor pieces **don't trade** (same reason as D111); **armor skins trade** as
+cosmetics. Gear score adds the highest armor tier **owned** × 10 [PH], so
+taking armor off can't lower a raid band (R6).
+
+**Why:** gives defense a gear goal and a loss stake that the pickaxe
+(never lost, D111) doesn't — like Minecraft, you keep your tool but can
+lose your armor. The worn piece stays protected so R1 holds.
+
+**Rejected:** armor as an upgrade tier like the pickaxe (nothing to lose);
+tradeable armor (reopens the power market D111 closed); losing worn armor
+(breaks R1); four Minecraft slots in the slice (4× the UI and crafting work
+— add later if it plays well).
+
+**Amends:** D107 (adds a system to the "final" slice line, by the owner's
+call), D92.
+
 **Amends:** D107.
 
 ---
@@ -1390,9 +1445,9 @@ game needed real consequence to feel earned.
 ## R3 — Money buys convenience and looks, never power or safety
 Steal a Brainrot is publicly criticized for pay-to-win, with the best
 items available only for cash and purchasable server-admin abilities.
-This is the differentiator. **Remains fully intact even though gear and
-Fragments are now tradeable (D21, D22) — Robux still never buys Credits,
-gear, or Fragments directly; only cosmetics and convenience.** The
+This is the differentiator. **Remains fully intact even though
+Fragments are now tradeable (D22; gear is not — D111) — Robux still never
+buys Credits, gear, or Fragments directly; only cosmetics and convenience.** The
 indirect route (Robux cosmetic → Credits) is closed by D65; the rebirth
 skip token is cut by D70.
 
@@ -1438,7 +1493,7 @@ one-shotting them in a chase is churn.
 | **Firearms** | Mobile aiming; moderation and age-rating surface |
 | **Condition affecting stats** | Pay-to-win-by-luck (D10) |
 | **Permanent leaderboards** | One whale owns #1 forever; everyone else disengages |
-| **Cosmetic-and-resources-only trading** | Superseded — gear and Fragments now tradeable (D21, D22) |
+| **Cosmetic-and-resources-only trading** | Superseded — Fragments now tradeable (D22); gear stays untradeable, pickaxe skins trade as cosmetics (D111) |
 | **Untradeable Riftsalt** | Superseded — now tradeable, creates an arms-supplier role (D20) |
 | **Unrestricted instant Tech Path sharing in crews** | Exploitable via join-then-leave (D25's lockout fixes this) |
 | **Server-unique Prototype recipes** | Too harsh, first-mover lock-out; capped-per-player instead (D34) |

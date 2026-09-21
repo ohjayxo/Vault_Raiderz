@@ -375,3 +375,10 @@ Per-server is easy; global needs MemoryStore. I'll confirm from
 The mobile performance spike needs a real cheap phone, stand-in meshes with
 realistic triangle counts, and must be done and recorded **before step 4**.
 Its result can change step 4's size (L → XL) if base size or LOD rules move.
+
+## Scope change (2026-09-20)
+
+**D112 adds armor to the slice**, by Josh's call as owner. It adds roughly **+2
+sessions**: the data shape in step 1 (done), the crafting, equip and
+knockback/damage-reduction effect in step 5 (5 stays L), and spare-armor theft
+in step 7 (7 stays XL). The new total is ~65 sessions nominal.

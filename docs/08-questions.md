@@ -87,7 +87,7 @@ incentive (moot — D86).
 | Q14 | Do seasons wipe anything beyond rank? | Rank + Tech Path wipe; economy persists | D48 (reconciled with Q44/D19; amended by D68, D72) |
 | Q15 | Publish Grade odds? | No — kept hidden | D46 |
 | Q16 | Seed-sensitive skins at launch? | 2–3 | D47 |
-| Q17 | Is gear tradeable? | Yes | D21 |
+| Q17 | Is gear tradeable? | No — pickaxe skins trade instead (was Yes, D21) | D111 |
 | Q18 | Crew vaults? | Yes, shared Crew Vault | D49 |
 | Q19 | Crew raid loot split? | Contribution-weighted + gift option | D50 |
 | Q20 | Revisit tiered destruction | Too soft — real destruction added at tiers 8–10 | D23 |
