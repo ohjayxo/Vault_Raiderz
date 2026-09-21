@@ -127,7 +127,7 @@ update it after. Q-numbers are never reused.
 | **The Rift** | Deepest, most dangerous zone. Bosses, legendary materials. |
 | **Vault Core** | The structure that defines banked storage capacity. |
 | **Banked** | Resources inside the Vault Core. Cannot be stolen. Capacity-capped. |
-| **Exposed** | Resources above bank capacity. Fully stealable. |
+| **Exposed** | Resources not yet banked, or above bank capacity. Fully stealable. |
 | **Stone / Ore** | Common resources. Stone builds; Ore makes tools, Workshops, defenses. |
 | **Voltstone** | Scarce resource; trickles from Ore nodes, rich in the Reaches. Elite gear and Workshop III. |
 | **Riftsalt** | Contested-zone-only resource. Used only for Breach Charges. |

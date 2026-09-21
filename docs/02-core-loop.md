@@ -153,8 +153,13 @@ Single-use, crafted or bought. Skill expression without twitch aim.
 
 | State | Location | Stealable | Capacity |
 |---|---|---|---|
-| **Banked** | Inside Vault Core | **Never** | Capped, upgradeable |
-| **Exposed** | Overflow above cap | **Fully** | Unlimited |
+| **Banked** | Inside Vault Core | **Never** | Capped, upgradeable (total units, all resources and Grades) |
+| **Exposed** | Everything not yet banked, including overflow above cap | **Fully** | Unlimited |
+
+Mined resources land in **Exposed**. The player banks them by using their
+Vault Core, which moves them in best-first (highest Grade, then rarest
+resource) until the cap is full; whatever doesn't fit stays Exposed.
+Only Prismatic and Vaultborn skip the trip (§ Special cases).
 
 ### Why this carries so much weight
 - Creates a live decision every session: *"I have 4,000 exposed — one
