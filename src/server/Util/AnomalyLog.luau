@@ -11,15 +11,17 @@ local LOG_EVERY = 20
 
 local AnomalyLog = {}
 
--- Returns log(player, reason) for one system.
-function AnomalyLog.new(system: string): (Player, string) -> ()
+-- Returns log(player, reason, detail?) for one system. `reason` must be a
+-- FIXED string (it's the throttle key); put varying values (distances,
+-- names) in `detail`, or each new value would log again and grow memory.
+function AnomalyLog.new(system: string): (Player, string, string?) -> ()
 	local counts: { [Player]: { [string]: number } } = {}
 
 	Players.PlayerRemoving:Connect(function(player)
 		counts[player] = nil
 	end)
 
-	return function(player: Player, reason: string)
+	return function(player: Player, reason: string, detail: string?)
 		local perPlayer = counts[player]
 		if not perPlayer then
 			perPlayer = {}
@@ -28,7 +30,8 @@ function AnomalyLog.new(system: string): (Player, string) -> ()
 		local count = (perPlayer[reason] or 0) + 1
 		perPlayer[reason] = count
 		if count % LOG_EVERY == 1 then
-			warn(`[Anomaly] {system}: {player.Name} ({player.UserId}) {reason} (x{count})`)
+			local suffix = if detail then ` ({detail})` else ""
+			warn(`[Anomaly] {system}: {player.Name} ({player.UserId}) {reason}{suffix} (x{count})`)
 		end
 	end
 end

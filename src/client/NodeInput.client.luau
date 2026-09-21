@@ -20,9 +20,7 @@ local NodeMath = require(Shared:WaitForChild("NodeMath"))
 local player = Players.LocalPlayer
 local mineEvent = Remotes.getEvent("MineNode")
 
--- How far a tap ray reaches. Only picks the node; the server checks distance.
-local PICK_RANGE = 1000
-local HINT_SECONDS = 1.5
+local look = Config.Grade.FxLook
 
 -- ── "Walk closer" hint ───────────────────────────────────────────────────
 
@@ -47,7 +45,7 @@ local function showHint()
 	hintToken += 1
 	local token = hintToken
 	hint.Visible = true
-	task.delay(HINT_SECONDS, function()
+	task.delay(Config.Nodes.WalkCloserHintSeconds, function()
 		if hintToken == token then
 			hint.Visible = false
 		end
@@ -76,7 +74,7 @@ local function tryMineAt(screenPosition: Vector2)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
 	params.FilterDescendantsInstances = nodeHitboxes()
-	local result = workspace:Raycast(ray.Origin, ray.Direction * PICK_RANGE, params)
+	local result = workspace:Raycast(ray.Origin, ray.Direction * Config.Nodes.PickRangeStuds, params)
 	if not result then
 		return
 	end
@@ -148,17 +146,17 @@ local function playGradeFx(grade: string, position: Vector3)
 	local emitter = Instance.new("ParticleEmitter")
 	emitter.Color = ColorSequence.new(fx.Color)
 	emitter.LightEmission = 1
-	emitter.Speed = NumberRange.new(4, 10)
-	emitter.SpreadAngle = Vector2.new(180, 180)
-	emitter.Lifetime = NumberRange.new(0.5, 1)
-	emitter.Size = NumberSequence.new(0.4, 0)
-	emitter.Rate = 0
+	emitter.Speed = look.ParticleSpeed
+	emitter.SpreadAngle = Vector2.new(look.SpreadDegrees, look.SpreadDegrees)
+	emitter.Lifetime = look.ParticleLifetime
+	emitter.Size = NumberSequence.new(look.ParticleSize, 0)
+	emitter.Rate = 0 -- one burst via Emit, no continuous stream
 	emitter.Parent = core
-	emitter:Emit(if grade == "Dense" then 12 else 40)
+	emitter:Emit(if grade == "Dense" then look.ParticlesDense else look.ParticlesOther)
 	local light = Instance.new("PointLight")
 	light.Color = fx.Color
-	light.Range = 16
-	light.Brightness = 2
+	light.Range = look.LightRange
+	light.Brightness = look.LightBrightness
 	light.Parent = core
 	Debris:AddItem(core, fx.Seconds)
 
@@ -166,9 +164,9 @@ local function playGradeFx(grade: string, position: Vector3)
 	if fx.BeamHeight > 0 then
 		local beam = anchorPart(
 			position + Vector3.new(0, fx.BeamHeight / 2, 0),
-			Vector3.new(3, fx.BeamHeight, 3),
+			Vector3.new(look.BeamWidth, fx.BeamHeight, look.BeamWidth),
 			fx.Color,
-			0.3
+			look.BeamTransparency
 		)
 		Debris:AddItem(beam, fx.Seconds)
 		if grade == "Prismatic" then

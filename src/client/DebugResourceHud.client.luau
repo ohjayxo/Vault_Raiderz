@@ -13,8 +13,6 @@ local Types = require(Shared:WaitForChild("PlayerDataTypes"))
 
 local player = Players.LocalPlayer
 
-local STARTUP_TRIES = 10 -- profile may still be loading when we start
-local STARTUP_RETRY_SECONDS = 1
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "DebugResourceHud"
@@ -91,7 +89,8 @@ end)
 
 render()
 local getResources = Remotes.getFunction("GetResources")
-for _ = 1, STARTUP_TRIES do
+-- The profile may still be loading when we start (Config.Bank.HudStartup*).
+for _ = 1, Config.Bank.HudStartupTries do
 	if snapshot then
 		break
 	end
@@ -103,5 +102,5 @@ for _ = 1, STARTUP_TRIES do
 		render()
 		break
 	end
-	task.wait(STARTUP_RETRY_SECONDS)
+	task.wait(Config.Bank.HudStartupRetrySeconds)
 end

@@ -11,13 +11,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
--- Banner colour by kind; anything unlisted uses DEFAULT_COLOR.
-local KIND_COLORS: { [string]: Color3 } = {
-	RaidAlert = Color3.fromRGB(170, 30, 30),
-	ChasePing = Color3.fromRGB(170, 30, 30),
-	Vaultborn = Color3.fromRGB(150, 115, 20),
-}
-local DEFAULT_COLOR = Color3.fromRGB(40, 40, 50)
+local bannerColors: { [string]: Color3 } = Config.Broadcast.BannerColors :: any
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "AnnouncementBanner"
@@ -43,7 +37,7 @@ Remotes.getEvent("Announcement").OnClientEvent:Connect(function(kind: string, te
 	showToken += 1
 	local token = showToken
 	banner.Text = text
-	banner.BackgroundColor3 = KIND_COLORS[kind] or DEFAULT_COLOR
+	banner.BackgroundColor3 = bannerColors[kind] or Config.Broadcast.DefaultBannerColor
 	banner.Visible = true
 	task.delay(Config.Broadcast.BannerSeconds, function()
 		if showToken == token then

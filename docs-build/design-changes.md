@@ -50,3 +50,22 @@ Josh's calls while building nodes + Grade. Bring them to the design project;
 5. **Node migration interpretation (D38):** a depleted Reaches node returns
    after a random 45–90 s [PH] at a *different* spawn point; Homestead nodes
    return at the same spot after a fixed 30 s [PH].
+
+## Flagged for redesign (step 2 review, 2026-09-20) — Josh will revisit
+
+Not decided yet. Take these to the design project; the build keeps the
+current behavior until then.
+
+1. **Vaultborn beam vs "zone-level, not coordinates" (review M2).** The
+   beam appears at the exact node, instantly, for every player, while the
+   announcement is zone-only and 30 s late (`05-items.md § Vaultborn
+   announcement`, `§ Roll 1` Visual column). The beam gives away the
+   position the announcement hides. Options to weigh: beam seen only
+   nearby; beam delayed to match the announcement; no beam for Vaultborn;
+   keep as is (the holder can walk away).
+2. **Riftsalt placement is enforced only by map data (review L1).**
+   `05-items.md § The Riftsalt rule`: "contested zones only". Today it holds
+   only because no Homestead spawn point is a Riftsalt one. Design question
+   first: which zones count as "contested" (Reaches only? Rift later?) and
+   should zones carry that as data? Then a start-up check can refuse a
+   Riftsalt spawn anywhere else.

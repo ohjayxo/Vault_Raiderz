@@ -154,7 +154,7 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 
 	-- 2. The node must be one the server spawned and hasn't depleted.
 	if typeof(nodeArg) ~= "Instance" then
-		logAnomaly(player, `sent a {typeof(nodeArg)} instead of a node`)
+		logAnomaly(player, "sent a non-Instance instead of a node", typeof(nodeArg))
 		return
 	end
 	local instance = nodeArg :: Instance
@@ -163,7 +163,7 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 		-- A node depleted a moment ago is a normal race (lag, two miners):
 		-- ignore quietly. Anything else is not a node at all.
 		if not CollectionService:HasTag(instance, nodeCfg.Tag) then
-			logAnomaly(player, `tried to mine a non-node ({instance:GetFullName()})`)
+			logAnomaly(player, "tried to mine a non-node", instance:GetFullName())
 		end
 		return
 	end
@@ -178,7 +178,7 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 	end
 	local distance = NodeMath.distanceToHitbox(node.hitbox, root.Position)
 	if distance > nodeCfg.MineDistance then
-		logAnomaly(player, `too far from a node ({math.floor(distance)} > {nodeCfg.MineDistance} studs)`)
+		logAnomaly(player, "too far from a node", `{math.floor(distance)} > {nodeCfg.MineDistance} studs`)
 		return
 	end
 

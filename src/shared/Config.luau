@@ -299,6 +299,10 @@ local Config = {
 		-- random delay at a DIFFERENT spawn point, not on a predictable clock.
 		MigrateDelaySeconds = { Min = 45, Max = 90 }, -- [PH] invented
 		DebugSpamCount = 50, -- Studio-only rate-limit test (key M)
+		-- Client tap handling. UX only; the server re-checks distance.
+		-- [PH] invented, REVISIT (step 2 review L2).
+		PickRangeStuds = 1000, -- how far a tap ray looks for a node
+		WalkCloserHintSeconds = 1.5, -- how long "Walk closer to mine" shows
 	},
 	-- Grade rolls + Vaultborn announcement. 05-items.md § Roll 1 - Grade.
 	-- Server-only odds stay out of this file (R5, D46): they live in
@@ -316,6 +320,20 @@ local Config = {
 			Vaultborn = { Seconds = 8, BeamHeight = 500, Color = Color3.fromRGB(255, 235, 170) }, -- beam of light
 		},
 		RainbowCycleSeconds = 1.5, -- [PH] invented: Prismatic hue loop
+		-- Client-side look of every Grade burst. Visual only, never gameplay.
+		-- [PH] invented, REVISIT with real art (step 2 review L2).
+		FxLook = {
+			ParticlesDense = 12, -- Dense is a "faint shimmer" (05 § Roll 1)
+			ParticlesOther = 40, -- Volatile / Prismatic / Vaultborn
+			ParticleSpeed = NumberRange.new(4, 10),
+			ParticleLifetime = NumberRange.new(0.5, 1),
+			ParticleSize = 0.4, -- studs, shrinking to 0
+			SpreadDegrees = 180,
+			LightRange = 16, -- studs
+			LightBrightness = 2,
+			BeamWidth = 3, -- studs
+			BeamTransparency = 0.3,
+		},
 	},
 
 	-- ── World ───────────────────────────────────────────────────────────
@@ -354,6 +372,14 @@ local Config = {
 		MinGapSeconds = 4, -- [PH] invented: at most one banner per this many seconds
 		MaxPending = 6, -- [PH] invented: waiting-line length before drops start
 		BannerSeconds = 4, -- [PH] invented: how long the client shows one banner
+		-- Banner colour per kind; unlisted kinds use DefaultBannerColor.
+		-- [PH] invented, REVISIT with real UI (step 2 review L2).
+		BannerColors = {
+			RaidAlert = Color3.fromRGB(170, 30, 30),
+			ChasePing = Color3.fromRGB(170, 30, 30),
+			Vaultborn = Color3.fromRGB(150, 115, 20),
+		},
+		DefaultBannerColor = Color3.fromRGB(40, 40, 50),
 		-- 05-items.md § Vaultborn announcement: "Holder gets ~30 seconds [PH]
 		-- of head start" = the announcement goes out this long after the strike.
 		VaultbornHeadStartSeconds = 30,
@@ -364,6 +390,11 @@ local Config = {
 	Bank = {
 		-- Step 2 (early): per-player limit on the GetResources remote.
 		SnapshotCooldownSeconds = 0.5, -- [PH] invented
+		-- Temporary debug HUD start-up: ask for resources until the profile has
+		-- loaded. Must wait longer than SnapshotCooldownSeconds between tries.
+		-- [PH] invented, REVISIT when the step 3 meter replaces the HUD (review L2).
+		HudStartupTries = 10,
+		HudStartupRetrySeconds = 1,
 	},
 
 	-- ── Step 4 ── Base building + build budget ─────────────────────────

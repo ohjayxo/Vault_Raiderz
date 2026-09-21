@@ -85,7 +85,15 @@ local function pump()
 	while true do
 		local index = findNext()
 		if index then
-			deliver(table.remove(pending, index) :: Item)
+			local item = table.remove(pending, index) :: Item
+			-- One bad send must never kill the pump: every later announcement
+			-- (raid alerts included, D58) would silently stop.
+			local ok, err = pcall(function()
+				deliver(item)
+			end)
+			if not ok then
+				warn(`[Broadcast] failed to send {describe(item)}: {err}`)
+			end
 			task.wait(cfg.MinGapSeconds)
 		else
 			pumpIdle = true
