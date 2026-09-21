@@ -1,0 +1,31 @@
+--!strict
+-- Server-only tunables: numbers clients must NEVER see. This module lives in
+-- ServerScriptService, which doesn't replicate, unlike src/shared/Config.luau.
+-- CLAUDE.md: "Random rolls happen only on the server; odds never replicate
+-- to clients." 05-items.md § Odds are not published in-game (D46).
+-- Same rules as Config.luau: every value cites its doc section / D#.
+
+local ServerConfig = {
+	-- 05-items.md § Roll 1 - GRADE. Order must match Config.Grade.Names.
+	-- Weights must sum to 1 (checked by NodeService's Studio self-test).
+	-- Multiplier = sell value; unused until NPC selling (step 9).
+	Grade = {
+		{ Name = "Standard", Weight = 0.85, Multiplier = 1 }, -- [PH] per doc
+		{ Name = "Dense", Weight = 0.10, Multiplier = 3 }, -- [PH] per doc
+		{ Name = "Volatile", Weight = 0.04, Multiplier = 10 }, -- [PH] per doc
+		{ Name = "Prismatic", Weight = 0.009, Multiplier = 50 }, -- [PH] per doc
+		{ Name = "Vaultborn", Weight = 0.001, Multiplier = 200 }, -- [PH] per doc
+	},
+}
+
+local function deepFreeze(value: any)
+	if type(value) == "table" and not table.isfrozen(value) then
+		table.freeze(value)
+		for _, child in value do
+			deepFreeze(child)
+		end
+	end
+end
+deepFreeze(ServerConfig)
+
+return ServerConfig

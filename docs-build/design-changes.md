@@ -29,3 +29,24 @@ the same changes there before the next copy-in, or it will overwrite them.
    armor tier × 10. Changed: `07-decisions.md` (new D112, D92), `05-items.md`
    (Taxonomy row, new § Armor, § Gear score), `10-roadmap.md` (slice table row,
    v5.7 row), `12-nexus.md` (registry D1–D112, next D113; v1.8 row).
+
+## Step 2 design-gap answers (2026-09-20) — NOT yet in `docs/`
+
+Josh's calls while building nodes + Grade. Bring them to the design project;
+`docs/` is unchanged until he double-confirms an edit.
+
+1. **Grade is rolled per hit**, not per node (`05-items.md § Why Grade
+   carries so much` "every tap is a lottery ticket" vs `§ The Voltstone
+   trickle` "a Volatile-grade Ore node"). Suggest rewording the Voltstone
+   line to "a Volatile-grade Ore hit".
+2. **Grade effects are seen by everyone**, as a short burst at the node
+   (Prismatic rainbow column, Vaultborn beam). The 30 s head start still
+   holds because the holder walks away. (`05-items.md § Roll 1` Visual column.)
+3. **Vaultborn ranks in the middle of the D58 queue**: below raid-owner
+   alerts and Chase pings, above cosmetic flex (`06-economy.md § Broadcast
+   priority queue`).
+4. **Head start interpretation:** the Vaultborn announcement goes out ~30 s
+   [PH] after the strike (`05-items.md § Vaultborn announcement`).
+5. **Node migration interpretation (D38):** a depleted Reaches node returns
+   after a random 45–90 s [PH] at a *different* spawn point; Homestead nodes
+   return at the same spot after a fixed 30 s [PH].

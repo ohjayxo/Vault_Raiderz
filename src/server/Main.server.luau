@@ -18,6 +18,12 @@ local Services = script.Parent.Services
 -- Step 1: data layer first; everything else sits on it.
 require(Services.PlayerDataService).start()
 require(Services.PresenceService).start()
+
+-- Step 2: nodes, Grade rolls, broadcasts. VaultService is minimal until step 3.
+require(Services.VaultService).start()
+require(Services.BroadcastQueue).start()
+require(Services.NodeService).start()
+
 require(Services.DebugService).start() -- ignores commands outside Studio
 
 -- THROWAWAY build step 0B (mobile perf spike). Delete with src/server/PerfSpike.

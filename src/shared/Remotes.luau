@@ -28,6 +28,14 @@ local definitions: { [string]: RemoteKind } = {
 	-- Studio-only debug commands (client sends a command NAME; the server
 	-- ignores it outside Studio). Step 1.
 	DebugCommand = "Event",
+
+	-- Step 2: nodes, resources, broadcasts.
+	MineNode = "Event", -- client -> server: (node: Model) "I want to mine this"
+	MineResult = "Event", -- server -> miner: (resource, grade, amount, hitsLeft)
+	GradeFx = "Event", -- server -> all: (grade, position) play the Grade effect there
+	ResourcesChanged = "Event", -- server -> owner: (snapshot) their own Banked/Exposed
+	GetResources = "Function", -- client -> server: () -> snapshot? (for HUD start-up)
+	Announcement = "Event", -- server -> clients: (kind, text) from BroadcastQueue (D58)
 }
 
 local Remotes = {}

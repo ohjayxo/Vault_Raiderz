@@ -9,6 +9,8 @@
 export type GradeCounts = { [string]: number }
 -- resource name (Config.Resources.Types) -> grade -> count
 export type ResourceStore = { [string]: GradeCounts }
+-- The Resources section as sent to its owner's HUD (ResourcesChanged remote).
+export type ResourceSnapshot = { Banked: ResourceStore, Exposed: ResourceStore }
 
 -- One placed build piece. Real format is decided in step 4.
 export type PlacedPiece = { Kind: string, X: number, Y: number, Z: number, Yaw: number }
@@ -20,7 +22,7 @@ export type ProfileData = {
 	-- Owned by PlayerDataService. Times are Unix seconds from Util/Clock.
 	Meta: { Version: number, FirstLoginAt: number, LastActiveAt: number },
 	-- 02-core-loop.md § Bank vs Exposed. Grade is kept per unit (05-items.md § Roll 1).
-	Resources: { Banked: ResourceStore, Exposed: ResourceStore },
+	Resources: ResourceSnapshot,
 	-- Research Scrap has its own separate small bank cap (§ Special cases).
 	Scrap: { Banked: number, Exposed: number },
 	Credits: number,

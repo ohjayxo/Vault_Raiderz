@@ -1,0 +1,170 @@
+{
+  "className": "Model",
+  "attributes": {
+    "NodeType": "Stone"
+  },
+  "properties": {
+    "Tags": [
+      "ResourceNode"
+    ]
+  },
+  "children": [
+    {
+      "name": "Hitbox",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          5,
+          6,
+          5
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              3.0,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": true,
+        "CanQuery": true,
+        "CanTouch": false,
+        "CastShadow": false
+      }
+    },
+    {
+      "name": "Visual",
+      "className": "Folder",
+      "children": [
+        {
+          "name": "Rock",
+          "className": "Part",
+          "properties": {
+            "Anchored": true,
+            "Size": [
+              4.5,
+              4,
+              4.5
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  0,
+                  2,
+                  0
+                ],
+                "orientation": [
+                  [
+                    0.951057,
+                    0,
+                    0.309017
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    -0.309017,
+                    0,
+                    0.951057
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.549,
+              0.549,
+              0.5333
+            ],
+            "Material": "Slate",
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth",
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "CastShadow": true
+          }
+        },
+        {
+          "name": "Chunk",
+          "className": "Part",
+          "properties": {
+            "Anchored": true,
+            "Size": [
+              2.5,
+              2.5,
+              2.5
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  1.2,
+                  4.5,
+                  -0.6
+                ],
+                "orientation": [
+                  [
+                    0.866025,
+                    0,
+                    -0.5
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0.5,
+                    0,
+                    0.866025
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.4902,
+              0.4902,
+              0.4706
+            ],
+            "Material": "Slate",
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth",
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "CastShadow": true
+          }
+        }
+      ]
+    }
+  ]
+}

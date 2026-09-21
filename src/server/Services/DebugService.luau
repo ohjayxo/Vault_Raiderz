@@ -4,7 +4,10 @@
 -- server ignores these completely (R5).
 --
 -- Keys (src/client/DebugKeys.client.luau): P = print profile,
--- C = +credits, L = print presence, X = +Miner XP (to test the level curve).
+-- C = +credits, L = print presence, X = +Miner XP (to test the level curve),
+-- V = next hit is Vaultborn, B = burst of test broadcasts (D58 drop rule).
+-- (M = mine-remote spam lives entirely on the client: it fires the real
+-- MineNode remote, exactly like an exploit script would.)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -15,6 +18,27 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RateLimiter = require(ServerScriptService.Util.RateLimiter)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 local PresenceService = require(script.Parent.PresenceService)
+local NodeService = require(script.Parent.NodeService)
+local BroadcastQueue = require(script.Parent.BroadcastQueue)
+
+-- Key B: more items than MaxPending (6), mixed priorities, all at once.
+-- Expected with the step 2 Config: flex 1 goes out at once; Vaultborn 2
+-- evicts flex 2; flex 7 is dropped on arrival; both raid alerts are kept
+-- past the cap. Send order: flex 1, raid 1, raid 2, Vaultborn 1, Vaultborn 2,
+-- flex 3, 4, 5, 6.
+local BROADCAST_TEST: { { kind: string, text: string } } = {
+	{ kind = "CosmeticFlex", text = "[TEST] flex 1" },
+	{ kind = "CosmeticFlex", text = "[TEST] flex 2" },
+	{ kind = "CosmeticFlex", text = "[TEST] flex 3" },
+	{ kind = "Vaultborn", text = "[TEST] Vaultborn 1" },
+	{ kind = "CosmeticFlex", text = "[TEST] flex 4" },
+	{ kind = "CosmeticFlex", text = "[TEST] flex 5" },
+	{ kind = "CosmeticFlex", text = "[TEST] flex 6" },
+	{ kind = "Vaultborn", text = "[TEST] Vaultborn 2" },
+	{ kind = "RaidAlert", text = "[TEST] raid alert 1" },
+	{ kind = "CosmeticFlex", text = "[TEST] flex 7" },
+	{ kind = "RaidAlert", text = "[TEST] raid alert 2" },
+}
 
 local DebugService = {}
 
@@ -36,6 +60,16 @@ local commands: { [string]: (Player) -> () } = {
 	PrintPresence = function(player)
 		local presence, jobId = PresenceService.getPresence(player.UserId)
 		print(`[Debug] presence of {player.Name}: {presence}{if jobId then ` (server "{jobId}")` else ""}`)
+	end,
+	ForceVaultborn = function(player)
+		NodeService.debugForceNextGrade(player, "Vaultborn")
+		print(`[Debug] {player.Name}'s next successful hit will be Vaultborn`)
+	end,
+	BroadcastTest = function(player)
+		print(`[Debug] {player.Name} pushed {#BROADCAST_TEST} test broadcasts`)
+		for _, entry in BROADCAST_TEST do
+			BroadcastQueue.push(entry.kind, entry.text)
+		end
 	end,
 }
 

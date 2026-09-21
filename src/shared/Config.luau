@@ -265,23 +265,106 @@ local Config = {
 	Resources = {
 		Types = { "Stone", "Ore", "Riftsalt" },
 	},
-	-- Node mining, respawn, rich-node landmarks. 05-items.md § Node respawn,
-	-- § Rich-node landmarks; D46.
-	Nodes = {},
+	-- Node mining, respawn. 05-items.md § Node respawn (D38). Rich-node
+	-- landmarks (D39) are Voltstone, which is out of the slice: nothing here.
+	Nodes = {
+		Tag = "ResourceNode", -- greybox contract (13-build-guide.md § Part D)
+		LiveFolderName = "Nodes", -- Workspace folder the server spawns live nodes into
+		TemplateFolderName = "NodeTemplates", -- ServerStorage (src/assets/NodeTemplates)
+		SpawnFolderName = "NodeSpawns", -- spawn-point folder inside each island model
+		-- Studs from the character to the nearest point of the node's Hitbox.
+		-- The client also checks this, only to say "walk closer".
+		MineDistance = 12, -- [PH] invented
+		-- Seconds between two hits that count. Step 5's Extraction "mine speed"
+		-- upgrade will shorten it (02-core-loop.md § Pickaxe upgrade tree).
+		-- Taps faster than this are ignored quietly (not an anomaly).
+		MineCooldownSeconds = 0.5, -- [PH] invented
+		-- Anti-spam on the MineNode remote (13-build-guide.md § Part D: "every
+		-- remote has a server-side rate limit"). A burst bucket set above what a
+		-- human can tap; going over it is logged as an anomaly.
+		MineRateLimit = {
+			Burst = 10, -- [PH] invented: requests allowed back-to-back
+			PerSecond = 8, -- [PH] invented: sustained requests per second
+		},
+		-- Per resource: hits before the node is used up, units per hit.
+		-- Grade does NOT change the amount: it's a value multiplier (05 § Roll 1).
+		Types = {
+			Stone = { Hits = 6, YieldPerHit = 3 }, -- [PH] invented ("abundant", 05 § Resources)
+			Ore = { Hits = 5, YieldPerHit = 2 }, -- [PH] invented
+			Riftsalt = { Hits = 4, YieldPerHit = 1 }, -- [PH] invented
+		},
+		-- D38: Homestead nodes keep a fixed respawn (FTUE predictability).
+		FixedRespawnSeconds = 30, -- [PH] invented
+		-- D38: Reaches nodes "deplete and migrate": they come back after a
+		-- random delay at a DIFFERENT spawn point, not on a predictable clock.
+		MigrateDelaySeconds = { Min = 45, Max = 90 }, -- [PH] invented
+		DebugSpamCount = 50, -- Studio-only rate-limit test (key M)
+	},
 	-- Grade rolls + Vaultborn announcement. 05-items.md § Roll 1 - Grade.
-	-- Server-only odds stay out of this file (R5). Names only here.
+	-- Server-only odds stay out of this file (R5, D46): they live in
+	-- src/server/ServerConfig.luau. Names and visuals only here.
+	-- Rolled once PER HIT ("every tap is a lottery ticket"): Josh's call, step 2.
 	Grade = {
 		Names = { "Standard", "Dense", "Volatile", "Prismatic", "Vaultborn" }, -- 05-items.md § Roll 1
+		-- Greybox effects at the node, seen by every player (Josh's call, step 2:
+		-- "Rainbow, visible across the map", "Beam of light", 05 § Roll 1).
+		-- Standard has no effect. All numbers [PH] invented.
+		Fx = {
+			Dense = { Seconds = 1.5, BeamHeight = 0, Color = Color3.fromRGB(230, 240, 255) }, -- faint shimmer
+			Volatile = { Seconds = 2, BeamHeight = 0, Color = Color3.fromRGB(255, 220, 90) }, -- crackling
+			Prismatic = { Seconds = 5, BeamHeight = 250, Color = Color3.fromRGB(255, 255, 255) }, -- rainbow (color cycles)
+			Vaultborn = { Seconds = 8, BeamHeight = 500, Color = Color3.fromRGB(255, 235, 170) }, -- beam of light
+		},
+		RainbowCycleSeconds = 1.5, -- [PH] invented: Prismatic hue loop
 	},
 
 	-- ── World ───────────────────────────────────────────────────────────
 	-- Homestead + small Reaches, server sharding / neighborhoods.
-	-- 02-core-loop.md (world zones), § Server sharding (D56, D79).
-	World = {},
+	-- 02-core-loop.md § World Structure, § Server sharding (D56, D79).
+	-- Greybox layout lives in docs-build/worldgen/gen_world.py (-> src/world).
+	World = {
+		FolderName = "World", -- Workspace folder (Rojo: src/world)
+		-- Keyed by each island model's Zone attribute.
+		--   Respawn "Fixed": every spawn point always has a node (Homestead, D38)
+		--   Respawn "Migrate": only ActiveNodes per type are live; they move (D38)
+		Zones = {
+			Homestead = { DisplayName = "the Homestead Ring", Respawn = "Fixed" },
+			Reaches = {
+				DisplayName = "the Reaches",
+				Respawn = "Migrate",
+				ActiveNodes = { Ore = 3, Riftsalt = 2 }, -- [PH] invented (6 and 5 spawn points)
+			},
+		},
+	},
+
+	-- ── Broadcasts ──────────────────────────────────────────────────────
+	-- One rate-limited, prioritized queue for every server-wide announcement.
+	-- 06-economy.md § Broadcast priority queue (D58).
+	Broadcast = {
+		-- Lower number = more important. D58 fixes the ends: raid-owner alerts
+		-- and Chase pings highest, cosmetic flex lowest (dropped first).
+		-- Vaultborn in the middle: Josh's call, step 2.
+		Priorities = {
+			RaidAlert = 1, -- step 7
+			ChasePing = 1, -- step 7
+			Vaultborn = 2,
+			CosmeticFlex = 3,
+		},
+		NeverDropPriority = 1, -- D58: "never a raid alert"; kept even past MaxPending
+		MinGapSeconds = 4, -- [PH] invented: at most one banner per this many seconds
+		MaxPending = 6, -- [PH] invented: waiting-line length before drops start
+		BannerSeconds = 4, -- [PH] invented: how long the client shows one banner
+		-- 05-items.md § Vaultborn announcement: "Holder gets ~30 seconds [PH]
+		-- of head start" = the announcement goes out this long after the strike.
+		VaultbornHeadStartSeconds = 30,
+	},
 
 	-- ── Step 3 ── Vault Core + Bank/Exposed ────────────────────────────
 	-- Bank capacity, Exposed, separate Scrap cap. 02-core-loop.md § Bank vs Exposed.
-	Bank = {},
+	Bank = {
+		-- Step 2 (early): per-player limit on the GetResources remote.
+		SnapshotCooldownSeconds = 0.5, -- [PH] invented
+	},
 
 	-- ── Step 4 ── Base building + build budget ─────────────────────────
 	-- Walls, gates, Vault Core placement, budget. 02-core-loop.md § Base / Home,

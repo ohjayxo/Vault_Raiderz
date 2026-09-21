@@ -18,6 +18,20 @@
         "$className": "StarterPlayerScripts",
         "$path": "src/client"
       }
+    },
+    "Workspace": {
+      "$className": "Workspace",
+      "World": {
+        "$className": "Folder",
+        "$path": "src/world"
+      }
+    },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "NodeTemplates": {
+        "$className": "Folder",
+        "$path": "src/assets/NodeTemplates"
+      }
     }
   }
 }
