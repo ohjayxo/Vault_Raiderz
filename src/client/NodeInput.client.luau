@@ -74,7 +74,9 @@ local function tryMineAt(screenPosition: Vector2)
 	if not camera then
 		return
 	end
-	local ray = camera:ViewportPointToRay(screenPosition.X, screenPosition.Y)
+	-- Tap/click positions are GUI coordinates (below the top bar), which is
+	-- what ScreenPointToRay expects (backlog L4, fixed in step 5).
+	local ray = camera:ScreenPointToRay(screenPosition.X, screenPosition.Y)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
 	params.FilterDescendantsInstances = nodeHitboxes()

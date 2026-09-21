@@ -92,6 +92,27 @@ Josh's calls while building Bank/Exposed. Applied with double confirmation:
    per-piece `BudgetCost` meant as render weight. Suggest rewording D57 to
    "render-weight budget (triangles + unique materials)".
 
+## Step 5 design-gap answers (2026-09-21) — NOT yet in `docs/`
+
+1. **Death costs time only:** respawn ~5 s [PH] next to your own plot, lose
+   nothing (`02-core-loop.md § Combat` has no death rule).
+2. **Upgrade points come with the pickaxe tier** (Wooden 3, Iron 6 [PH]); each
+   node (one rank of an upgrade, 3 ranks each [PH]) costs 1 point +
+   resources; respec returns all points for a resource fee. Interpretation of
+   § Pickaxe upgrade tree "limited points" and D92 "purchased".
+3. **Iron pickaxe, armor and gadgets are crafted at Workshop I** (step 10);
+   no buy menu. (§ Gadgets "crafted or bought": buying could come with NPC
+   vendors later.)
+4. **Shock Trap is thrown ahead, lands, arms, and stuns the first other
+   player or Scav to touch it** (~1.5 s [PH], lasts 30 s [PH]). § Gadgets
+   "Throwable, brief stun".
+5. Interpretations, not asked: Smoke Bomb = cloud at your feet; nobody can
+   target a player inside it from more than 4 studs [PH]. Walls block hits.
+   PvP-protected players (FTUE rule 3) can neither hit nor be hit by players.
+   Carry speed / Sprint recovery / Silent movement can be bought now; their
+   effects arrive with the Chase and defenses. Note: **there is no sprint in
+   the docs**, so "sprint recovery" has nothing to recover yet.
+
 ## Flagged for redesign (step 2 review, 2026-09-20) — Josh will revisit
 
 Not decided yet. Take these to the design project; the build keeps the

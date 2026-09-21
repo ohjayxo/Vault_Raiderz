@@ -48,6 +48,16 @@ local definitions: { [string]: RemoteKind } = {
 	UpgradeVault = "Function", -- () -> (ok, reason?)
 	GetBaseState = "Function", -- () -> BaseState? (build UI start-up)
 	BaseChanged = "Event", -- server -> owner: (BaseState)
+
+	-- Step 5: combat, pickaxe upgrades, armor, gadgets.
+	Swing = "Event", -- client -> server: () "I swing" (the server picks the target)
+	HitFx = "Event", -- server -> all: (position, comboStep) a hit landed here
+	BuyUpgrade = "Function", -- (upgradeId) -> (ok, reason?)
+	RespecUpgrades = "Function", -- () -> (ok, reason?)
+	EquipArmor = "Function", -- (pieceId or "") -> (ok, reason?)
+	UseGadget = "Function", -- (gadgetId) -> (ok, reason?)
+	GetGearState = "Function", -- () -> GearState? (Gear menu start-up)
+	GearChanged = "Event", -- server -> owner: (GearState)
 }
 
 local Remotes = {}

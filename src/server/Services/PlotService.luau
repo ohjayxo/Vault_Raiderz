@@ -150,6 +150,23 @@ function PlotService.refresh(player: Player)
 	end
 end
 
+-- Where this player respawns: on their plot, at the edge nearest the
+-- Homestead (the bridge end), dropped from a little above so they land on
+-- whatever is built there. nil if they have no plot. (Josh's call, step 5.)
+function PlotService.getSpawnCFrame(player: Player): CFrame?
+	local slot = slotOf[player]
+	if not slot then
+		return nil
+	end
+	local hitbox = slot.hitbox
+	local centre = hitbox.Position
+	local toHome = Vector3.new(-centre.X, 0, -centre.Z)
+	local direction = if toHome.Magnitude > 0 then toHome.Unit else Vector3.xAxis
+	local edge = centre + direction * (math.min(hitbox.Size.X, hitbox.Size.Z) / 2 - plotCfg.GridStuds)
+	local position = edge + Vector3.new(0, hitbox.Size.Y / 2 + 4, 0)
+	return CFrame.lookAt(position, position + direction * -1) -- face into the plot
+end
+
 -- Shows or hides this player's Build button (R4: the FTUE decides, step 14).
 function PlotService.setBuildUiVisible(player: Player, visible: boolean)
 	player:SetAttribute(baseCfg.BuildUi.VisibleAttribute, visible)

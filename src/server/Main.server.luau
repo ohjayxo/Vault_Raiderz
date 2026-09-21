@@ -27,6 +27,13 @@ require(Services.NodeService).start()
 -- Step 4: plots, base building, build budget (sharding is a stub inside).
 require(Services.PlotService).start()
 
+-- Step 5: combat, pickaxe upgrades, armor, gadgets. (MovementService and
+-- InventoryService have nothing to start.)
+require(Services.ArmorService).start()
+require(Services.PickaxeService).start()
+require(Services.GadgetService).start()
+require(Services.CombatService).start()
+
 require(Services.DebugService).start() -- ignores commands outside Studio
 
 -- THROWAWAY build step 0B (mobile perf spike). Delete with src/server/PerfSpike.

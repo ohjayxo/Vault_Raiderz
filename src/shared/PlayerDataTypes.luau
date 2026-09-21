@@ -41,6 +41,19 @@ export type BaseState = {
 -- Tier = index into Config.Combat.PickaxeTiers; Slot = one of Config.Combat.ArmorSlots.
 export type ArmorPiece = { Tier: number, Slot: string }
 
+-- What the owner's Gear menu gets (GearChanged / GetGearState). Gear score is
+-- deliberately NOT here: it's never sent to clients (05-items.md § Gear score).
+-- Ranks: upgrade id -> ranks bought. Armor.Pieces lists every owned piece.
+export type GearState = {
+	PickaxeTier: number,
+	Points: number,
+	PointsUsed: number,
+	Ranks: { [string]: number },
+	ArmorEquipped: string, -- piece id, "" = none
+	ArmorPieces: { { Id: string, Tier: number, Slot: string } },
+	Gadgets: { [string]: number },
+}
+
 export type ProfileData = {
 	-- Owned by PlayerDataService. Times are Unix seconds from Util/Clock.
 	Meta: { Version: number, FirstLoginAt: number, LastActiveAt: number },

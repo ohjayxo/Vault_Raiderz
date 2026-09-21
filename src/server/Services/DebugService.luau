@@ -8,7 +8,9 @@
 -- V = next hit is Vaultborn, B = burst of test broadcasts (D58 drop rule),
 -- T = next Vault Core tier (0-7, wraps), F = +Stone/Ore/Riftsalt into Exposed,
 -- G = +Research Scrap into Exposed, H = show/hide the Banked/Exposed meter,
--- N = print your raid/neighborhood band and gear score (server-only numbers).
+-- N = print your raid/neighborhood band and gear score (server-only numbers),
+-- K = next pickaxe tier (wraps), J = +1 of every gadget, U = +1 armor piece
+-- (alternates Wooden / Iron), Y = toggle PvP protection (FTUE rule 3 hook).
 -- (M = mine-remote spam lives entirely on the client: it fires the real
 -- MineNode remote, exactly like an exploit script would.)
 
@@ -27,6 +29,9 @@ local BroadcastQueue = require(script.Parent.BroadcastQueue)
 local VaultService = require(script.Parent.VaultService)
 local PlotService = require(script.Parent.PlotService)
 local ShardService = require(script.Parent.ShardService)
+local PickaxeService = require(script.Parent.PickaxeService)
+local ArmorService = require(script.Parent.ArmorService)
+local InventoryService = require(script.Parent.InventoryService)
 
 -- Key B: more items than MaxPending (6), mixed priorities, all at once.
 -- Expected with the step 2 Config: flex 1 goes out at once; Vaultborn 2
@@ -108,6 +113,36 @@ local commands: { [string]: (Player) -> () } = {
 		local peak = PlayerDataService.getPacked(player, "LifetimePeakVaultTier")
 		local score = if gear and armor then BandMetric.gearScore(gear, armor) else nil
 		print(`[Debug] {player.Name}: band {ShardService.getBand(player)} = highest of vault tier {base and base.VaultTier}, peak {peak}, gear score {score} / {Config.Sharding.GearScorePerBandTier}`)
+	end,
+	-- Pickaxes, armor and gadgets come from Workshop crafting (step 10).
+	NextPickaxeTier = function(player)
+		local tier = PickaxeService.getTier(player) % #Config.Combat.PickaxeTiers + 1
+		local ok = PickaxeService.setTier(player, tier)
+		print(`[Debug] {player.Name} pickaxe: {if ok then "ok" else "FAILED"}, now {Config.Combat.PickaxeTiers[tier]} ({Config.Combat.PointsByTier[tier]} points)`)
+	end,
+	GrantGadgets = function(player)
+		for _, gadgetId in Config.Gadgets.Order do
+			InventoryService.add(player, gadgetId, 1)
+		end
+		print(`[Debug] +1 of every gadget for {player.Name}`)
+	end,
+	GrantArmor = function(player)
+		local armor = ArmorService.get(player)
+		local owned = 0
+		if armor then
+			for _ in armor.Pieces do
+				owned += 1
+			end
+		end
+		local tier = owned % 2 + 1 -- Wooden, Iron, Wooden, ... (the slice's reachable tiers)
+		local id = ArmorService.grant(player, tier, Config.Combat.ArmorSlots[1])
+		print(`[Debug] +1 {Config.Combat.PickaxeTiers[tier]} armor for {player.Name}: {if id then "ok" else "FAILED"} (equip it in the Gear menu)`)
+	end,
+	TogglePvpProtection = function(player)
+		local attribute = Config.Combat.PvpProtectedAttribute
+		local protected = not player:GetAttribute(attribute)
+		player:SetAttribute(attribute, protected)
+		print(`[Debug] {player.Name} PvP protection {if protected then "ON (can't hit or be hit by players)" else "OFF"}`)
 	end,
 	BroadcastTest = function(player)
 		print(`[Debug] {player.Name} pushed {#BROADCAST_TEST} test broadcasts`)

@@ -551,6 +551,144 @@ local Config = {
 		-- D112: armor pieces use the same tier names as the pickaxe
 		-- (PickaxeTiers). One slot in the slice; add slots here later.
 		ArmorSlots = { "Chest" },
+
+		-- Health and death. Dying costs time only: you respawn next to your own
+		-- plot and lose nothing (Josh's call, step 5).
+		MaxHealth = 100, -- [PH] invented
+		RespawnSeconds = 5, -- [PH] invented
+
+		-- 02 § Combat feel (D108): "3-hit combo, generous hitboxes, light aim
+		-- assist, short knockback"; fights resolve in 5-10 s [PH]. With these
+		-- numbers a Wooden pickaxe kills in 3 combos (~9 swings, ~4.5 s of
+		-- solid hits); with misses and movement that's ~6-8 s.
+		SwingIntervalSeconds = 0.5, -- [PH] invented: fastest swing that counts
+		ComboWindowSeconds = 1.0, -- [PH] invented: swing again within this to continue the combo
+		ComboDamageMultipliers = { 1, 1, 1.6 }, -- [PH] invented: hit 3 is the finisher
+		DamageByTier = { 10, 13, 16, 20 }, -- [PH] invented: index = PickaxeTiers
+		-- Server hit check: target's root within Range studs of yours and within
+		-- AimConeDegrees of where you face (either side). Generous on purpose:
+		-- the client turns you toward the target (aim assist) but the server
+		-- may see that turn a moment late.
+		Range = 8, -- [PH] invented
+		AimConeDegrees = 75, -- [PH] invented
+		-- Client aim assist: on swing, turn to face the nearest target this
+		-- close and within this cone. Look only; the server re-checks.
+		AimAssistRange = 10, -- [PH] invented
+		AimAssistConeDegrees = 100, -- [PH] invented
+		Knockback = { -- [PH] invented: studs/second, applied for Seconds
+			Speed = 25,
+			FinisherSpeed = 55, -- combo hit 3
+			UpSpeed = 12,
+			Seconds = 0.15,
+		},
+		SwingRateLimit = { Burst = 6, PerSecond = 4 }, -- [PH] invented: anti-spam on Swing
+
+		-- 02 § Pickaxe upgrade tree (D108): three branches, limited points.
+		-- Points come with the pickaxe tier; each node (= one rank of an
+		-- upgrade) costs 1 point + resources; respec gives every point back
+		-- for a resource fee (Josh's call, step 5). "Respec costs resources,
+		-- never Robux." All numbers [PH] invented.
+		PointsByTier = { 3, 6, 9, 12 },
+		NodeCostByRank = {
+			{ Stone = 40 },
+			{ Stone = 80, Ore = 20 },
+			{ Stone = 150, Ore = 50 },
+		},
+		RespecCost = { Stone = 100, Ore = 30 },
+		-- Per branch, in menu order. PerRank = the effect of each rank:
+		--   MineSpeed: mine cooldown -10%/rank    GradeOdds: see ServerConfig
+		--   MultiStrike: chance/rank that a hit also mines one nearby node
+		--   SwingSpeed: swing interval -8%/rank   Damage: +2 per rank
+		--   Knockback: +20%/rank
+		--   CarrySpeed / SprintRecovery / SilentMovement: effects arrive with
+		--   the systems they change (Chase step 7, defenses step 6); ranks
+		--   can be bought now and count for gear score.
+		Upgrades = {
+			Extraction = {
+				{ Id = "MineSpeed", Name = "Mine speed", Ranks = 3, PerRank = 0.1 },
+				{ Id = "GradeOdds", Name = "Grade odds", Ranks = 3, PerRank = 0 }, -- value is server-only
+				{ Id = "MultiStrike", Name = "Multi-node strike", Ranks = 3, PerRank = 0.15 },
+			},
+			Combat = {
+				{ Id = "SwingSpeed", Name = "Swing speed", Ranks = 3, PerRank = 0.08 },
+				{ Id = "Damage", Name = "Damage", Ranks = 3, PerRank = 2 },
+				{ Id = "Knockback", Name = "Knockback", Ranks = 3, PerRank = 0.2 },
+			},
+			Mobility = {
+				{ Id = "CarrySpeed", Name = "Carry speed", Ranks = 3, PerRank = 0.1 },
+				{ Id = "SprintRecovery", Name = "Sprint recovery", Ranks = 3, PerRank = 0.1 },
+				{ Id = "SilentMovement", Name = "Silent movement", Ranks = 3, PerRank = 0.2 },
+			},
+		},
+		MultiStrikeRadius = 12, -- [PH] invented: studs from the struck node
+
+		-- D112 armor, per tier (index = PickaxeTiers). Kept small so fights
+		-- still resolve in 5-10 s. [PH] invented.
+		ArmorDamageReduction = { 0.05, 0.1, 0.15, 0.2 },
+		ArmorKnockbackResist = { 0.15, 0.3, 0.45, 0.6 },
+
+		GearRequestCooldownSeconds = 0.3, -- [PH] invented: buy/respec/equip limit
+		CombatTag = "CombatTarget", -- NPCs (Scavs, step 6) that swings can hit
+		-- FTUE hard rule 3 "PvE before PvP": while this Player attribute is true
+		-- the player can't hit or be hit by players. Step 14 sets it.
+		PvpProtectedAttribute = "PvpProtected",
+
+		-- Stick-and-block greybox pickaxe (14 § Prompt 5). Look only.
+		ToolLook = { -- [PH] invented, REVISIT with real art
+			HandleSize = Vector3.new(0.3, 0.3, 3.5),
+			HeadSize = Vector3.new(0.5, 2.4, 0.5), -- across the shaft
+			TierColors = {
+				Color3.fromRGB(150, 110, 70), -- Wooden
+				Color3.fromRGB(170, 170, 180), -- Iron
+				Color3.fromRGB(90, 200, 255), -- Voltsteel
+				Color3.fromRGB(190, 90, 255), -- Riftedge
+			},
+		},
+
+		-- Gear menu + attack button. Hidden until the server shows them (R4:
+		-- the upgrade tree is depth the FTUE hides). Look values [PH], REVISIT.
+		Ui = {
+			GearVisibleAttribute = "HudGearMenu",
+			ShowBeforeFtue = true, -- TEMPORARY until step 14
+			ButtonSize = 72,
+		},
+	},
+
+	-- Walk speed modifiers (gadgets now; Chase loot slow + carry speed in
+	-- step 7). One owner, MovementService, so modifiers never fight.
+	Movement = {
+		BaseWalkSpeed = 16, -- Roblox default
+		BaseJumpPower = 50, -- Roblox default
+	},
+
+	-- 02 § Gadgets (D108): single-use; crafted at Workshop I in step 10
+	-- (Josh's call, step 5). R8: none of them touches damage.
+	Gadgets = {
+		Order = { "SmokeBomb", "SprintSerum", "ShockTrap", "Disruptor" },
+		Names = { SmokeBomb = "Smoke Bomb", SprintSerum = "Sprint Serum", ShockTrap = "Shock Trap", Disruptor = "Disruptor" },
+		UseCooldownSeconds = 1, -- [PH] invented: per player, any gadget
+		-- Smoke Bomb: "breaks line of sight, escape tool". A cloud at your
+		-- feet; nobody can target a player inside it from further than
+		-- SeeThroughStuds (swings or aim assist).
+		Smoke = { Radius = 12, Seconds = 8, SeeThroughStuds = 4 }, -- [PH] invented
+		-- Sprint Serum: "8s [PH] speed boost".
+		SprintSerum = { Seconds = 8, SpeedMultiplier = 1.5 }, -- multiplier [PH] invented
+		-- Shock Trap: "Throwable, brief stun". Thrown ahead, lands, arms; the
+		-- first other player or Scav to touch it is stunned (Josh's call, step 5).
+		ShockTrap = {
+			ThrowDistance = 14, -- [PH] invented
+			ArmSeconds = 0.5, -- [PH] invented
+			StunSeconds = 1.5, -- [PH] invented
+			LifetimeSeconds = 30, -- [PH] invented
+			MaxActivePerPlayer = 3, -- [PH] invented
+			Size = Vector3.new(3, 0.4, 3),
+		},
+		-- Disruptor: "Disables one base defense for 15s [PH]". Defenses are
+		-- step 6; until then it can't be used (and isn't consumed).
+		Disruptor = { Seconds = 15 },
+		-- While carrying raid loot, gadgets are disabled (02 § The Chase, 2).
+		-- Step 7 sets this Player attribute.
+		CarryingLootAttribute = "CarryingLoot",
 	},
 
 	-- ── Step 6 ── Defenses + Scav Waves + Scav Captain ─────────────────

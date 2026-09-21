@@ -44,8 +44,26 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
 - **FTUE (step 14):** `Config.Base.BuildUi.ShowBeforeFtue = false`, show the
   Build button via `PlotService.setBuildUiVisible` at 0:45 ("BUILD VAULT").
   Build-mode messages are text; check against FTUE hard rule 1.
-- **L4: NodeInput tap coordinates.** `NodeInput.client.luau` passes tap/click
-  positions (GUI coordinates, below the top bar) to `ViewportPointToRay`,
-  which expects coordinates that include the top bar, so a tap aims ~36-58 px
-  too high. Nodes are big enough that it worked in testing. Fix: use
-  `ScreenPointToRay` (as BuildMode does). Tiny change; do it with step 5.
+
+## From step 5 (2026-09-21)
+
+- **L4 (NodeInput tap ray) is fixed** in step 5.
+- **Step 6 hooks:** Scavs must be Models tagged `Config.Combat.CombatTag`
+  with a Humanoid + HumanoidRootPart, so swings, aim assist and Shock Traps
+  hit them. The Disruptor is refused ("NoDefense", not consumed) until
+  defenses exist: wire it in GadgetService. Silent movement (Mobility) should
+  lower Tripwire detection.
+- **Step 7 hooks:** set the Player attribute `Config.Gadgets.CarryingLootAttribute`
+  while carrying loot (gadgets already refuse). Loot slow and Carry speed go
+  through `MovementService.setMultiplier`. "Any player who lands a hit knocks
+  the loot loose" = listen to `CombatService.Hit`. M1 movement check lives in
+  MovementService. Sprint recovery needs a sprint to exist (not in the docs
+  yet: design question when step 7 arrives).
+- **Step 10:** Workshop I crafts the Iron pickaxe (`PickaxeService.setTier`),
+  armor (`ArmorService.grant`) and gadgets (`InventoryService.add`). Until then
+  only Studio keys K / U / J give them.
+- **Step 14:** `Config.Combat.Ui.ShowBeforeFtue = false` (Gear button); set the
+  `PvpProtected` attribute until the player's first Scav kill (FTUE rule 3).
+- **L5: pickaxe grip.** The greybox Tool uses the classic-sword grip
+  (`CombatService.buildTool`). If the pickaxe looks sideways in the hand,
+  adjust GripForward/Right/Up there. Look only.

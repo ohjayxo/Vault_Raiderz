@@ -30,6 +30,8 @@ local ServerConfig = require(ServerScriptService.ServerConfig)
 local RateLimiter = require(ServerScriptService.Util.RateLimiter)
 local AnomalyLog = require(ServerScriptService.Util.AnomalyLog)
 local VaultService = require(script.Parent.VaultService)
+local PickaxeService = require(script.Parent.PickaxeService)
+local CombatService = require(script.Parent.CombatService)
 local BroadcastQueue = require(script.Parent.BroadcastQueue)
 
 local nodeCfg = Config.Nodes
@@ -54,11 +56,19 @@ local NodeService = {}
 
 -- ── Grade roll (05-items.md § Roll 1; odds only in ServerConfig) ─────────
 
-local function rollGrade(): string
-	local roll = rng:NextNumber()
+-- `bonusRanks` = the miner's Extraction "Grade odds" ranks: every
+-- non-Standard weight is multiplied by (1 + bonus x ranks), then the table
+-- is renormalised (ServerConfig.GradeOddsBonusPerRank, server-only).
+local function rollGrade(bonusRanks: number): string
+	local boost = 1 + ServerConfig.GradeOddsBonusPerRank * bonusRanks
+	local total = 0
+	for i, entry in ServerConfig.Grade do
+		total += if i == 1 then entry.Weight else entry.Weight * boost
+	end
+	local roll = rng:NextNumber() * total
 	local cumulative = 0
-	for _, entry in ServerConfig.Grade do
-		cumulative += entry.Weight
+	for i, entry in ServerConfig.Grade do
+		cumulative += if i == 1 then entry.Weight else entry.Weight * boost
 		if roll < cumulative then
 			return entry.Name
 		end
@@ -146,6 +156,10 @@ end
 
 local logAnomaly = AnomalyLog.new("MineNode")
 
+-- Defined below onMineRequest, which uses them.
+local strike: (player: Player, node: Node) -> boolean
+local nearestOtherNode: (node: Node, radius: number) -> Node?
+
 local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nodeArg: unknown)
 	-- 1. Rate limit first, so spam costs the server almost nothing.
 	if not allowRate(player) then
@@ -193,20 +207,38 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 	-- 5. Mining cooldown: faster taps are normal, just ignored.
 	local now = os.clock()
 	local last = lastMineAt[player]
-	if last and now - last < nodeCfg.MineCooldownSeconds then
+	if last and now - last < PickaxeService.mineCooldown(player) then
 		return
 	end
 
-	-- All checks passed: roll and pay. Nothing below yields, so two players
-	-- hitting the same node can't both take its last hit.
-	local nodeType = node.spawn.nodeType
-	local grade = forcedGrade[player] or rollGrade()
-	local amount = typeConfigs[nodeType].YieldPerHit
-	if not VaultService.deposit(player, nodeType, grade, amount) then
+	-- All checks passed. Nothing below yields, so two players hitting the
+	-- same node can't both take its last hit.
+	if not strike(player, node) then
 		return -- profile not loaded: don't consume the hit
 	end
-	forcedGrade[player] = nil
 	lastMineAt[player] = now
+	CombatService.playSwing(player)
+
+	-- Extraction "multi-node strike": sometimes one other node nearby is
+	-- struck too (its own Grade roll). Picked by the server, never the client.
+	if rng:NextNumber() < PickaxeService.multiStrikeChance(player) then
+		local extra = nearestOtherNode(node, Config.Combat.MultiStrikeRadius)
+		if extra then
+			strike(player, extra)
+		end
+	end
+end
+
+-- Rolls a Grade and pays out one hit on `node`. Returns false (and changes
+-- nothing) if the player's profile isn't loaded.
+strike = function(player: Player, node: Node): boolean
+	local nodeType = node.spawn.nodeType
+	local grade = forcedGrade[player] or rollGrade(PickaxeService.gradeOddsRanks(player))
+	local amount = typeConfigs[nodeType].YieldPerHit
+	if not VaultService.deposit(player, nodeType, grade, amount) then
+		return false
+	end
+	forcedGrade[player] = nil
 
 	node.hitsLeft -= 1
 	node.model:SetAttribute("HitsLeft", node.hitsLeft)
@@ -231,6 +263,22 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 	if node.hitsLeft <= 0 then
 		deplete(node)
 	end
+	return true
+end
+
+-- The closest other live node within `radius` studs of `node`.
+nearestOtherNode = function(node: Node, radius: number): Node?
+	local best: Node? = nil
+	local bestDistance = radius
+	for _, other in liveNodes do
+		if other ~= node then
+			local distance = (other.hitbox.Position - node.hitbox.Position).Magnitude
+			if distance <= bestDistance then
+				best, bestDistance = other, distance
+			end
+		end
+	end
+	return best
 end
 
 -- ── Studio debug ─────────────────────────────────────────────────────────

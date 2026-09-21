@@ -16,6 +16,12 @@ local ServerConfig = {
 		{ Name = "Prismatic", Weight = 0.009, Multiplier = 50 }, -- [PH] per doc
 		{ Name = "Vaultborn", Weight = 0.001, Multiplier = 200 }, -- [PH] per doc
 	},
+
+	-- 02 § Pickaxe upgrade tree, Extraction "Grade-odds bonus". Each rank
+	-- multiplies every non-Standard weight by (1 + this), then the table is
+	-- renormalised. Server-only because it's part of the odds (D46). [PH]
+	-- invented: 3 ranks turn 15% non-Standard into ~19%.
+	GradeOddsBonusPerRank = 0.1,
 }
 
 local function deepFreeze(value: any)
