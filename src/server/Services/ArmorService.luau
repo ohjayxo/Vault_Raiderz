@@ -15,6 +15,7 @@ local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -65,8 +66,9 @@ function ArmorService.knockbackResist(player: Player): number
 	return tierValue(combatCfg.ArmorKnockbackResist, wornTier(player, combatCfg.ArmorSlots[1]))
 end
 
--- Greybox look: a plate on the chest, coloured by tier (same colours as
--- the pickaxe). Nothing reads it; it's a visual only.
+-- The worn piece's look: ServerStorage.ArmorTemplates."<Tier><Slot>"
+-- (Attach part = where the torso centre goes, Visual = the art), else a
+-- greybox plate coloured by tier. Nothing reads it; it's a visual only.
 local function updateVisual(player: Player)
 	local character = player.Character
 	local torso = character and (character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")) :: BasePart?
@@ -81,6 +83,33 @@ local function updateVisual(player: Player)
 	if tier < 1 then
 		return
 	end
+	local slot = combatCfg.ArmorSlots[1]
+	local folder = ServerStorage:FindFirstChild(combatCfg.ArmorFolderName)
+	local template = folder and folder:FindFirstChild(`{combatCfg.PickaxeTiers[math.min(tier, #combatCfg.PickaxeTiers)]}{slot}`)
+	local attach = template and template:FindFirstChild("Attach")
+	if template and template:IsA("Model") and attach and attach:IsA("BasePart") then
+		local look = template:Clone()
+		local lookAttach = look:FindFirstChild("Attach") :: BasePart
+		-- Line the Attach part up with the torso, then weld everything to it.
+		look:PivotTo(torso.CFrame * lookAttach.CFrame:ToObjectSpace(look:GetPivot()))
+		for _, descendant in look:GetDescendants() do
+			if descendant:IsA("BasePart") then
+				descendant.Anchored = false
+				descendant.Massless = true
+				descendant.CanCollide = false
+				descendant.CanQuery = false
+				descendant.CanTouch = false
+				local weld = Instance.new("WeldConstraint")
+				weld.Part0 = torso
+				weld.Part1 = descendant
+				weld.Parent = descendant
+			end
+		end
+		look.Name = VISUAL_NAME
+		look.Parent = character
+		return
+	end
+
 	local plate = Instance.new("Part")
 	plate.Name = VISUAL_NAME
 	plate.Size = Vector3.new(torso.Size.X + 0.3, torso.Size.Y * 0.8, torso.Size.Z + 0.3)

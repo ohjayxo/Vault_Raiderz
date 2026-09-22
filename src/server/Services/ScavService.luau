@@ -26,6 +26,7 @@ local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -72,8 +73,31 @@ local ScavService = {}
 
 -- ── Spawning ─────────────────────────────────────────────────────────────
 
+-- The artist's rig (ServerStorage.NpcTemplates.Scav / .Captain: any R15
+-- rig with a Humanoid and HumanoidRootPart) if there is one, else a greybox
+-- rig built from a HumanoidDescription. Stats always come from Config.
+local function artistRig(kind: Kind): Model?
+	local folder = ServerStorage:FindFirstChild(scavCfg.TemplateFolderName)
+	local template = folder and folder:FindFirstChild(kind)
+	if template and template:IsA("Model") and template:FindFirstChildOfClass("Humanoid") and template:FindFirstChild("HumanoidRootPart") then
+		return template:Clone()
+	end
+	return nil
+end
+
 local function buildRig(kind: Kind): Model
 	local stats = if kind == "Captain" then scavCfg.Captain else scavCfg.Scav
+	local art = artistRig(kind)
+	if art then
+		art.Name = if kind == "Captain" then "Scav Captain" else "Scav"
+		local humanoid = art:FindFirstChildOfClass("Humanoid") :: Humanoid
+		humanoid.MaxHealth = stats.Health
+		humanoid.Health = stats.Health
+		humanoid.WalkSpeed = stats.WalkSpeed
+		humanoid.DisplayName = art.Name
+		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOn
+		return art
+	end
 	local color = if kind == "Captain" then scavCfg.Colors.Captain else scavCfg.Colors.Scav
 	local description = Instance.new("HumanoidDescription")
 	description.HeadColor = color

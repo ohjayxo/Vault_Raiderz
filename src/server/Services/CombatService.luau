@@ -26,6 +26,7 @@ local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -69,10 +70,16 @@ local function buildTool(player: Player): Tool
 	tool.GripRight = Vector3.new(0, 1, 0)
 	tool.GripUp = Vector3.new(0, 0, 1)
 
-	-- An equipped skin replaces the whole look (Josh's call, 2026-09-22).
-	-- Skin template contract: Handle = the grip, Visual = the art. Welding
-	-- the art to the Handle is the only thing code does with a Visual.
-	local skin = CosmeticService.equippedTemplate(player)
+	-- An equipped skin replaces the whole look (Josh's call, 2026-09-22);
+	-- otherwise the tier's template (ServerStorage.PickaxeTiers.<Tier>).
+	-- Template contract: Handle = the grip, Visual = the art. Welding the art
+	-- to the Handle is the only thing code does with a Visual. No template
+	-- at all = the code greybox below.
+	local tierFolder = ServerStorage:FindFirstChild(combatCfg.TierFolderName)
+	local tierName = combatCfg.PickaxeTiers[math.clamp(tier, 1, #combatCfg.PickaxeTiers)]
+	local tierTemplate = tierFolder and tierFolder:FindFirstChild(tierName)
+	local skin: Instance? = CosmeticService.equippedTemplate(player)
+		or (if tierTemplate and tierTemplate:FindFirstChild("Handle") then tierTemplate else nil)
 	if skin then
 		local clone = skin:Clone()
 		local skinHandle = clone:FindFirstChild("Handle") :: BasePart

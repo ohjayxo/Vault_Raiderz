@@ -1,0 +1,588 @@
+{
+  "className": "Folder",
+  "children": [
+    {
+      "name": "Ore1",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              55.0,
+              50,
+              -430.0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    },
+    {
+      "name": "Ore2",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              27.5,
+              50,
+              -382.37
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    },
+    {
+      "name": "Ore3",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -27.5,
+              50,
+              -382.37
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    },
+    {
+      "name": "Ore4",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -55.0,
+              50,
+              -430.0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    },
+    {
+      "name": "Ore5",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -27.5,
+              50,
+              -477.63
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    },
+    {
+      "name": "Ore6",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              27.5,
+              50,
+              -477.63
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    },
+    {
+      "name": "Riftsalt1",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              22.65,
+              50,
+              -413.54
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Riftsalt"
+      }
+    },
+    {
+      "name": "Riftsalt2",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -8.65,
+              50,
+              -403.37
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Riftsalt"
+      }
+    },
+    {
+      "name": "Riftsalt3",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -28.0,
+              50,
+              -430.0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Riftsalt"
+      }
+    },
+    {
+      "name": "Riftsalt4",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -8.65,
+              50,
+              -456.63
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Riftsalt"
+      }
+    },
+    {
+      "name": "Riftsalt5",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              22.65,
+              50,
+              -446.46
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Riftsalt"
+      }
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "className": "Folder",
+  "children": [
+    {
+      "name": "Ground",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          48,
+          2,
+          48
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -199.44,
+              48.98,
+              14.95
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4706,
+          0.549,
+          0.3137
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    },
+    {
+      "name": "Underside",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          38,
+          16,
+          38
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -199.44,
+              40,
+              14.95
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3882,
+          0.3725,
+          0.3843
+        ],
+        "Material": "Slate",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    },
+    {
+      "name": "Marker",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4,
+          0.2,
+          4
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -199.44,
+              50.1,
+              14.95
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.7843,
+          0.7843,
+          0.3529
+        ],
+        "Material": "Neon",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    }
+  ]
+}

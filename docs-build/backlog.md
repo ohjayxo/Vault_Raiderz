@@ -96,9 +96,11 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
 
 ## Pickaxe skins (2026-09-22)
 
-- **Art-ready pass is next** (Josh's call): art out of `gen_world.py`,
-  code-built looks (Scavs, default pickaxe, armor plate, effects) into
-  templates, islands split into Hitbox + Visual, and an artist guide.
+- **Art-ready pass done (2026-09-22):** see `docs-build/art-guide.md`.
+  Still to do, as their own passes: **effects** (Grade bursts/beams, hit
+  flash, zaps, smoke) and **UI** templates before step 14; Scav animations.
+- **Rule for new gameplay objects from now on:** add them to `gen_world.py`
+  with `template(...)` (Hitbox + Visual) and to the art guide's table.
 - **Step 9:** direct trading must move skin counts (`Cosmetics.PickaxeSkins`)
   between players; never let a raid touch them (R1).
 - **Step 14:** the FTUE's free cosmetic can be a skin via

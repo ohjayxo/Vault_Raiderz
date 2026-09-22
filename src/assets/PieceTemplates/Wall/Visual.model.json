@@ -1,0 +1,55 @@
+{
+  "className": "Folder",
+  "children": [
+    {
+      "name": "Panel",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4,
+          6,
+          1
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              3,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.6275,
+          0.6275,
+          0.6078
+        ],
+        "Material": "Concrete",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    }
+  ]
+}

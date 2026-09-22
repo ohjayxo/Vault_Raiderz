@@ -1,0 +1,107 @@
+{
+  "className": "Folder",
+  "children": [
+    {
+      "name": "Shaft",
+      "className": "Part",
+      "properties": {
+        "Anchored": false,
+        "Size": [
+          0.3,
+          0.3,
+          3.5
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.5882,
+          0.4314,
+          0.2745
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Massless": true,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "Transparency": 0
+      }
+    },
+    {
+      "name": "Head",
+      "className": "Part",
+      "properties": {
+        "Anchored": false,
+        "Size": [
+          0.5,
+          2.4,
+          0.5
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              0,
+              1.75
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.7451,
+          0.3529,
+          1.0
+        ],
+        "Material": "Metal",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Massless": true,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "Transparency": 0
+      }
+    }
+  ]
+}

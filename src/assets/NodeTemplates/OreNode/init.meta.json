@@ -1,0 +1,11 @@
+{
+  "className": "Model",
+  "properties": {
+    "Tags": [
+      "ResourceNode"
+    ]
+  },
+  "attributes": {
+    "NodeType": "Ore"
+  }
+}

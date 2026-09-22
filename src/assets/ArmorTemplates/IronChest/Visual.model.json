@@ -1,0 +1,56 @@
+{
+  "className": "Folder",
+  "children": [
+    {
+      "name": "Plate",
+      "className": "Part",
+      "properties": {
+        "Anchored": false,
+        "Size": [
+          2.3,
+          1.3,
+          1.3
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              0.1,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.6667,
+          0.6667,
+          0.7059
+        ],
+        "Material": "Metal",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Massless": true,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "Transparency": 0
+      }
+    }
+  ]
+}

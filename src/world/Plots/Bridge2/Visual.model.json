@@ -1,0 +1,55 @@
+{
+  "className": "Folder",
+  "children": [
+    {
+      "name": "Deck",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          8,
+          1,
+          69.62
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              142.72,
+              49.48,
+              10.7
+            ],
+            "orientation": [
+              [
+                0.07473,
+                0,
+                0.997204
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.997204,
+                0,
+                0.07473
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4863,
+          0.3608,
+          0.2745
+        ],
+        "Material": "WoodPlanks",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    }
+  ]
+}

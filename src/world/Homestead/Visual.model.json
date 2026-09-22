@@ -1,0 +1,289 @@
+{
+  "className": "Folder",
+  "children": [
+    {
+      "name": "Ground",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          220,
+          10,
+          220
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              44.980000000000004,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4157,
+          0.498,
+          0.2471
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    },
+    {
+      "name": "Underside",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          180,
+          30,
+          180
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              25,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3882,
+          0.3725,
+          0.3843
+        ],
+        "Material": "Slate",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    },
+    {
+      "name": "Rock1",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          10,
+          7,
+          9
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -30,
+              53.5,
+              25
+            ],
+            "orientation": [
+              [
+                0.939693,
+                0,
+                0.34202
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.34202,
+                0,
+                0.939693
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4706,
+          0.4627,
+          0.451
+        ],
+        "Material": "Slate",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Rock2",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          7,
+          5,
+          8
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              35,
+              52.5,
+              -15
+            ],
+            "orientation": [
+              [
+                0.819152,
+                0,
+                -0.573576
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                0.573576,
+                0,
+                0.819152
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4706,
+          0.4627,
+          0.451
+        ],
+        "Material": "Slate",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree1Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          12,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -80,
+              56,
+              70
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree1Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          10,
+          8,
+          10
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -80,
+              65,
+              70
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2941,
+          0.5922,
+          0.2941
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    }
+  ]
+}

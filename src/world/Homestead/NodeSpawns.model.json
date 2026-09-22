@@ -1,0 +1,641 @@
+{
+  "className": "Folder",
+  "children": [
+    {
+      "name": "Stone1",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -22.96,
+              50,
+              55.43
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Stone"
+      }
+    },
+    {
+      "name": "Stone2",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -55.43,
+              50,
+              22.96
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Stone"
+      }
+    },
+    {
+      "name": "Stone3",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -55.43,
+              50,
+              -22.96
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Stone"
+      }
+    },
+    {
+      "name": "Stone4",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -22.96,
+              50,
+              -55.43
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Stone"
+      }
+    },
+    {
+      "name": "Stone5",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              22.96,
+              50,
+              -55.43
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Stone"
+      }
+    },
+    {
+      "name": "Stone6",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              55.43,
+              50,
+              -22.96
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Stone"
+      }
+    },
+    {
+      "name": "Stone7",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              55.43,
+              50,
+              22.96
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Stone"
+      }
+    },
+    {
+      "name": "Stone8",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              22.96,
+              50,
+              55.43
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Stone"
+      }
+    },
+    {
+      "name": "Ore1",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -62.23,
+              50,
+              -62.23
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    },
+    {
+      "name": "Ore2",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              62.23,
+              50,
+              -62.23
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    },
+    {
+      "name": "Ore3",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              62.23,
+              50,
+              62.23
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    },
+    {
+      "name": "Ore4",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          1,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -62.23,
+              50,
+              62.23
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "Material": "SmoothPlastic",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "Transparency": 1,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      },
+      "attributes": {
+        "NodeType": "Ore"
+      }
+    }
+  ]
+}

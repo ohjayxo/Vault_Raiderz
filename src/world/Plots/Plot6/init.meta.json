@@ -1,0 +1,11 @@
+{
+  "className": "Model",
+  "properties": {
+    "Tags": [
+      "Plot"
+    ]
+  },
+  "attributes": {
+    "PlotIndex": 6
+  }
+}

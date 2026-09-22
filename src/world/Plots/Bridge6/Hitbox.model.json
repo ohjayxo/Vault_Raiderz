@@ -1,0 +1,50 @@
+{
+  "className": "Part",
+  "properties": {
+    "Anchored": true,
+    "Size": [
+      8,
+      1,
+      32.61
+    ],
+    "CFrame": {
+      "CFrame": {
+        "position": [
+          -121.18,
+          49.5,
+          96.64
+        ],
+        "orientation": [
+          [
+            0.62349,
+            0,
+            -0.781831
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0.781831,
+            0,
+            0.62349
+          ]
+        ]
+      }
+    },
+    "Color": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "Material": "SmoothPlastic",
+    "TopSurface": "Smooth",
+    "BottomSurface": "Smooth",
+    "Transparency": 1,
+    "CanCollide": true,
+    "CanQuery": true,
+    "CanTouch": false,
+    "CastShadow": false
+  }
+}

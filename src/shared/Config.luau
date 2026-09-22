@@ -672,6 +672,11 @@ local Config = {
 		PvpProtectedAttribute = "PvpProtected",
 
 		-- Stick-and-block greybox pickaxe (14 § Prompt 5). Look only.
+		-- Art templates (art-ready pass; docs-build/art-guide.md). Each look
+		-- loads its template if present, else falls back to the code greybox.
+		TierFolderName = "PickaxeTiers", -- ServerStorage: one Handle+Visual per tier name
+		ArmorFolderName = "ArmorTemplates", -- ServerStorage: "<Tier>Chest" = Attach+Visual
+		-- Fallback greybox only (used when a PickaxeTiers template is missing).
 		ToolLook = { -- [PH] invented, REVISIT with real art
 			HandleSize = Vector3.new(0.3, 0.3, 3.5),
 			HeadSize = Vector3.new(0.5, 2.4, 0.5), -- across the shaft
@@ -719,6 +724,7 @@ local Config = {
 	-- 02 § Gadgets (D108): single-use; crafted at Workshop I in step 10
 	-- (Josh's call, step 5). R8: none of them touches damage.
 	Gadgets = {
+		TemplateFolderName = "GadgetTemplates", -- ServerStorage (art-ready pass)
 		Order = { "SmokeBomb", "SprintSerum", "ShockTrap", "Disruptor" },
 		Names = { SmokeBomb = "Smoke Bomb", SprintSerum = "Sprint Serum", ShockTrap = "Shock Trap", Disruptor = "Disruptor" },
 		UseCooldownSeconds = 1, -- [PH] invented: per player, any gadget
@@ -791,6 +797,9 @@ local Config = {
 	-- Captain loot odds are server-only (ServerConfig.CaptainLoot).
 	Scavs = {
 		Tag = "Scav", -- plus Config.Combat.CombatTag so swings hit them
+		-- Artist rigs: ServerStorage.NpcTemplates.Scav / .Captain (any R15 rig
+		-- with a Humanoid + HumanoidRootPart). Missing = the greybox rig below.
+		TemplateFolderName = "NpcTemplates",
 		FolderName = "Scavs", -- Workspace folder
 		-- 02 § FTUE spec: a Scav "dies in 2-3 hits" (Wooden: 10, 10, 16).
 		Scav = { Health = 30, WalkSpeed = 12, Damage = 5, AttackSeconds = 1.5, Scale = 1 }, -- [PH] invented

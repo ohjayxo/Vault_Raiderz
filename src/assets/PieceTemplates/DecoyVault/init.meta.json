@@ -1,0 +1,12 @@
+{
+  "className": "Model",
+  "properties": {
+    "Tags": [
+      "BasePiece",
+      "Defense"
+    ]
+  },
+  "attributes": {
+    "Kind": "DecoyVault"
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "className": "Folder",
+  "children": [
+    {
+      "name": "Plinth",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          7,
+          1.2,
+          7
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              0.6,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3529,
+          0.3529,
+          0.3922
+        ],
+        "Material": "DiamondPlate",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    },
+    {
+      "name": "Safe",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          5.5,
+          5.5,
+          5.5
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              3.95,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.549,
+          0.549,
+          0.5882
+        ],
+        "Material": "Metal",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    },
+    {
+      "name": "Door",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.5,
+          3.5,
+          0.4
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              3.95,
+              2.85
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.902,
+          0.6275,
+          0.2353
+        ],
+        "Material": "Neon",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    }
+  ]
+}

@@ -39,6 +39,22 @@
       "PickaxeSkins": {
         "$className": "Folder",
         "$path": "src/assets/PickaxeSkins"
+      },
+      "PickaxeTiers": {
+        "$className": "Folder",
+        "$path": "src/assets/PickaxeTiers"
+      },
+      "ArmorTemplates": {
+        "$className": "Folder",
+        "$path": "src/assets/ArmorTemplates"
+      },
+      "GadgetTemplates": {
+        "$className": "Folder",
+        "$path": "src/assets/GadgetTemplates"
+      },
+      "NpcTemplates": {
+        "$className": "Folder",
+        "$path": "src/assets/NpcTemplates"
       }
     }
   }
