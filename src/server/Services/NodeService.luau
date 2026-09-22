@@ -36,7 +36,7 @@ local BroadcastQueue = require(script.Parent.BroadcastQueue)
 
 local nodeCfg = Config.Nodes
 type TypeConfig = { Hits: number, YieldPerHit: number }
-type ZoneConfig = { DisplayName: string, Respawn: string, ActiveNodes: { [string]: number }? }
+type ZoneConfig = { DisplayName: string, Respawn: string, Contested: boolean, ActiveNodes: { [string]: number }? }
 local typeConfigs: { [string]: TypeConfig } = nodeCfg.Types :: any
 local zoneConfigs: { [string]: ZoneConfig } = Config.World.Zones :: any
 
@@ -317,6 +317,12 @@ local function loadSpawnPoints(world: Instance)
 		for _, part in spawnFolder:GetChildren() do
 			local nodeType = part:GetAttribute("NodeType")
 			assert(part:IsA("BasePart") and type(nodeType) == "string" and typeConfigs[nodeType], `bad node spawn point {part:GetFullName()}`)
+			-- 05-items.md § The Riftsalt rule, enforced here, not just by the map.
+			local contestedOnly: { [string]: boolean } = Config.Resources.ContestedOnly :: any
+			assert(
+				not contestedOnly[nodeType] or zoneConfigs[zone].Contested,
+				`{part:GetFullName()} is a {nodeType} spawn in {zone}, which isn't a Contested zone (05-items.md § The Riftsalt rule)`
+			)
 			local key = poolKey(zone, nodeType)
 			pools[key] = pools[key] or {}
 			table.insert(pools[key], { part = part, zone = zone, nodeType = nodeType, occupied = false })

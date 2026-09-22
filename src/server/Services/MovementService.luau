@@ -16,6 +16,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local PickaxeService = require(script.Parent.PickaxeService)
 
 type State = {
 	baseSpeed: number,
@@ -74,6 +75,23 @@ function MovementService.setMultiplier(humanoid: Humanoid, key: string, multipli
 	apply(humanoid)
 end
 
+-- How much of a stun/slow to cut for this humanoid: a player's Mobility
+-- "Stun recovery" ranks (Josh's call, 2026-09-21). NPCs get none.
+local function recoveryOf(humanoid: Humanoid): number
+	local player = Players:GetPlayerFromCharacter(humanoid.Parent)
+	return if player then PickaxeService.stunRecovery(player) else 0
+end
+
+-- A slowing multiplier (below 1), softened by Stun recovery. nil clears it.
+function MovementService.setSlow(humanoid: Humanoid, key: string, multiplier: number?)
+	if multiplier == nil then
+		MovementService.setMultiplier(humanoid, key, nil)
+		return
+	end
+	local recovery = recoveryOf(humanoid)
+	MovementService.setMultiplier(humanoid, key, 1 - (1 - multiplier) * (1 - recovery))
+end
+
 -- A multiplier that ends by itself. Using it again refreshes the duration.
 function MovementService.setMultiplierFor(humanoid: Humanoid, key: string, multiplier: number, seconds: number)
 	MovementService.setMultiplier(humanoid, key, multiplier)
@@ -86,8 +104,10 @@ function MovementService.setMultiplierFor(humanoid: Humanoid, key: string, multi
 	end)
 end
 
--- No walking or jumping for `seconds`. A longer stun already running wins.
+-- No walking or jumping for `seconds` (shortened by Stun recovery). A
+-- longer stun already running wins.
 function MovementService.stun(humanoid: Humanoid, seconds: number)
+	seconds *= 1 - recoveryOf(humanoid)
 	local state = stateOf(humanoid)
 	state.stunUntil = math.max(state.stunUntil, os.clock() + seconds)
 	state.stunToken += 1

@@ -28,7 +28,7 @@ local Config = {
 		KeyPrefix = "Player_", -- profile key = KeyPrefix .. UserId (also the presence key)
 		-- Bump when a migration is added in PlayerDataService/Migrations.luau.
 		-- Adding a NEW field doesn't need a bump: Reconcile() fills it in.
-		SchemaVersion = 1,
+		SchemaVersion = 2, -- 2: SprintRecovery upgrade nodes renamed StunRecovery
 
 		-- Which service may write each profile section. CLAUDE.md: "Only a
 		-- system's own service mutates its data." Services that don't exist
@@ -265,6 +265,9 @@ local Config = {
 	-- out of the slice, 10-roadmap.md § Vertical Slice).
 	Resources = {
 		Types = { "Stone", "Ore", "Riftsalt" },
+		-- 05-items.md § The Riftsalt rule: may only spawn in Contested zones
+		-- (Config.World.Zones). NodeService refuses to start otherwise.
+		ContestedOnly = { Riftsalt = true },
 	},
 	-- Node mining, respawn. 05-items.md § Node respawn (D38). Rich-node
 	-- landmarks (D39) are Voltstone, which is out of the slice: nothing here.
@@ -321,6 +324,15 @@ local Config = {
 			Vaultborn = { Seconds = 8, BeamHeight = 500, Color = Color3.fromRGB(255, 235, 170) }, -- beam of light
 		},
 		RainbowCycleSeconds = 1.5, -- [PH] invented: Prismatic hue loop
+		-- Vaultborn beam (Josh's call, 2026-09-21, review M2): faint, blinking
+		-- and fading, so you can miss it if you're scanning quickly but a
+		-- hypervigilant player can spot where the strike was. Tune by eye.
+		VaultbornBeam = { -- [PH] invented
+			Transparency = 0.8, -- when "on", at the start (1 = invisible)
+			BlinkSeconds = 0.8, -- one on/off cycle
+			OnFraction = 0.3, -- share of each cycle it's visible
+			Width = 1.5, -- studs (other beams use FxLook.BeamWidth)
+		},
 		-- Client-side look of every Grade burst. Visual only, never gameplay.
 		-- [PH] invented, REVISIT with real art (step 2 review L2).
 		FxLook = {
@@ -346,11 +358,15 @@ local Config = {
 		-- Keyed by each island model's Zone attribute.
 		--   Respawn "Fixed": every spawn point always has a node (Homestead, D38)
 		--   Respawn "Migrate": only ActiveNodes per type are live; they move (D38)
+		--   Contested: 05-items.md § The Riftsalt rule ("contested zones only").
+		--   Josh's call, 2026-09-21: a zone flag. The Homestead is never
+		--   contested, even though PvP is on there.
 		Zones = {
-			Homestead = { DisplayName = "the Homestead Ring", Respawn = "Fixed" },
+			Homestead = { DisplayName = "the Homestead Ring", Respawn = "Fixed", Contested = false },
 			Reaches = {
 				DisplayName = "the Reaches",
 				Respawn = "Migrate",
+				Contested = true,
 				ActiveNodes = { Ore = 3, Riftsalt = 2 }, -- [PH] invented (6 and 5 spawn points)
 			},
 		},
@@ -477,12 +493,14 @@ local Config = {
 		-- results.md). All [PH] invented until a cheap-phone test.
 		Pieces = {
 			VaultCore = { Cells = { 2, 2 }, Height = 8, Cost = { Stone = 50 }, BudgetCost = 5 },
-			Wall = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 20 }, BudgetCost = 2 },
-			Gate = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 30, Ore = 10 }, BudgetCost = 3 },
+			-- Edge = true: sits on the line between cells, so walls meet at
+			-- corners (PlotGrid). Cells is unused for edge pieces.
+			Wall = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 20 }, BudgetCost = 2, Edge = true },
+			Gate = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 30, Ore = 10 }, BudgetCost = 3, Edge = true },
 			-- Step 6 defenses (02 § Defenses). Behaviour in Config.Defenses.
 			TripwireAlarm = { Cells = { 1, 1 }, Height = 2, Cost = { Stone = 30, Ore = 10 }, BudgetCost = 2 },
 			SpikeFloor = { Cells = { 2, 2 }, Height = 1, Cost = { Stone = 60, Ore = 20 }, BudgetCost = 3 },
-			ShockFence = { Cells = { 1, 1 }, Height = 5, Cost = { Stone = 40, Ore = 30 }, BudgetCost = 3 },
+			ShockFence = { Cells = { 1, 1 }, Height = 5, Cost = { Stone = 40, Ore = 30 }, BudgetCost = 3, Edge = true },
 			DecoyVault = { Cells = { 2, 2 }, Height = 7, Cost = { Stone = 80, Ore = 20 }, BudgetCost = 4 },
 			GuardDrone = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 60, Ore = 40 }, BudgetCost = 4 },
 			LockUpgrade = { Cells = { 1, 1 }, Height = 2, Cost = { Stone = 50, Ore = 50 }, BudgetCost = 2 },
@@ -531,6 +549,7 @@ local Config = {
 			-- Look only. [PH] invented, REVISIT with real UI (step 2 review L2).
 			ButtonSize = 72, -- px: big enough for thumbs
 			GhostTransparency = 0.5,
+			EdgeGhostThickness = 1, -- studs: walls/gates/fences are 1 thick
 			GhostColor = Color3.fromRGB(80, 220, 120),
 			SelectColor = Color3.fromRGB(255, 210, 60),
 			MessageSeconds = 2,
@@ -616,9 +635,10 @@ local Config = {
 		--   MultiStrike: chance/rank that a hit also mines one nearby node
 		--   SwingSpeed: swing interval -8%/rank   Damage: +2 per rank
 		--   Knockback: +20%/rank
-		--   CarrySpeed / SprintRecovery / SilentMovement: effects arrive with
-		--   the systems they change (Chase step 7, defenses step 6); ranks
-		--   can be bought now and count for gear score.
+		--   StunRecovery: stuns and slows on you are 15% shorter/weaker per
+		--   rank (was "Sprint recovery"; the docs have no sprint - Josh's call).
+		--   CarrySpeed / SilentMovement: Silent movement shrinks tripwire range
+		--   (step 6); Carry speed arrives with the Chase (step 7).
 		Upgrades = {
 			Extraction = {
 				{ Id = "MineSpeed", Name = "Mine speed", Ranks = 3, PerRank = 0.1 },
@@ -632,7 +652,7 @@ local Config = {
 			},
 			Mobility = {
 				{ Id = "CarrySpeed", Name = "Carry speed", Ranks = 3, PerRank = 0.1 },
-				{ Id = "SprintRecovery", Name = "Sprint recovery", Ranks = 3, PerRank = 0.1 },
+				{ Id = "StunRecovery", Name = "Stun recovery", Ranks = 3, PerRank = 0.15 }, -- [PH] invented
 				{ Id = "SilentMovement", Name = "Silent movement", Ranks = 3, PerRank = 0.2 },
 			},
 		},

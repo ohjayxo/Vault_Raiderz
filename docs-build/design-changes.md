@@ -136,7 +136,32 @@ Josh's calls while building Bank/Exposed. Applied with double confirmation:
    ("never hard-block"); plain Scav kills drop a little Stone/Ore/Scrap to the
    killer.
 
-## Flagged for redesign (step 2 review, 2026-09-20) — Josh will revisit
+## v5.8 (2026-09-21) — applied to `docs/` with Josh's double confirmation; built
+
+Changed: `02-core-loop.md § Pickaxe upgrade tree` (Mobility row),
+`04-world-content.md § The PvE ladder` (Homestead row), `05-items.md § Roll 1`
+(Vaultborn row), `§ Vaultborn announcement`, `§ The Riftsalt rule`,
+`10-roadmap.md` (v5.8 row), `00-README.md` (v5.8). **The design project still
+needs the same edits.**
+
+1. **"Sprint recovery" becomes "Stun recovery"** (Mobility branch,
+   `02-core-loop.md § Pickaxe upgrade tree`): each rank shortens stuns and
+   slows (Shock Fence, Shock Trap, Spike Floor). The docs have no sprint.
+2. **Scav Captain Signature drop = a Captain pickaxe skin** (name [PH], e.g.
+   "Captain's Cleaver"; `04-world-content.md § Loot table structure`). Pure
+   cosmetic (R1/R3), tradeable like other earned skins (D111). Needs a minimal
+   skin system; Iron armor stays the stand-in until then.
+3. **Vaultborn beam = a faint, fading, blinking beam** (Josh's own answer to
+   review M2): easy to miss if you're scanning quickly, but a hypervigilant
+   player can spot it. Replaces the steady instant beam (`05-items.md § Roll 1`
+   Visual column, `§ Vaultborn announcement`). Blink rate, faintness and fade
+   time are [PH] for the build.
+4. **Zones carry a Contested flag** (`05-items.md § The Riftsalt rule`): the
+   Reaches (and later the Rift) are Contested; the Homestead never is, even
+   though PvP is on there. The server refuses a Riftsalt spawn point outside a
+   Contested zone at start-up.
+
+## Flagged for redesign (step 2 review, 2026-09-20) — ANSWERED 2026-09-21 (see above)
 
 Not decided yet. Take these to the design project; the build keeps the
 current behavior until then.

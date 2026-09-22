@@ -287,11 +287,12 @@ local function updateGhost()
 		return
 	end
 	local cfg = PlotGrid.pieceConfig(kind) :: any
-	local w, d = PlotGrid.footprint(kind, rot)
-	local x, z = PlotGrid.anchorNear(plotHitbox, result.Position, w, d)
+	local x, z = PlotGrid.anchorNear(plotHitbox, result.Position, kind, rot)
 	targetX, targetZ = x, z
 	-- Unrotated size; pieceCFrame applies the rotation.
-	ghost.Size = Vector3.new(cfg.Cells[1] * GRID, cfg.Height, cfg.Cells[2] * GRID)
+	ghost.Size = if PlotGrid.isEdge(kind)
+		then Vector3.new(GRID, cfg.Height, uiCfg.EdgeGhostThickness)
+		else Vector3.new(cfg.Cells[1] * GRID, cfg.Height, cfg.Cells[2] * GRID)
 	ghost.CFrame = PlotGrid.pieceCFrame(plotHitbox, kind, x, z, rot, cfg.Height)
 	ghost.Parent = camera
 end

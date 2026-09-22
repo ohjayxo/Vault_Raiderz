@@ -175,7 +175,24 @@ local function playGradeFx(grade: string, position: Vector3)
 			look.BeamTransparency
 		)
 		Debris:AddItem(beam, fx.Seconds)
-		if grade == "Prismatic" then
+		if grade == "Vaultborn" then
+			-- Faint, blinking, fading: missable at a glance, findable if you
+			-- watch closely (Config.Grade.VaultbornBeam).
+			local look2 = Config.Grade.VaultbornBeam
+			beam.Size = Vector3.new(look2.Width, fx.BeamHeight, look2.Width)
+			local started = os.clock()
+			local connection: RBXScriptConnection
+			connection = RunService.RenderStepped:Connect(function()
+				if not beam.Parent then
+					connection:Disconnect()
+					return
+				end
+				local age = os.clock() - started
+				local on = (age % look2.BlinkSeconds) < look2.BlinkSeconds * look2.OnFraction
+				local fade = math.clamp(age / fx.Seconds, 0, 1)
+				beam.Transparency = if on then look2.Transparency + (1 - look2.Transparency) * fade else 1
+			end)
+		elseif grade == "Prismatic" then
 			-- Rainbow: cycle the hue until the beam is removed.
 			local connection: RBXScriptConnection
 			connection = RunService.RenderStepped:Connect(function()

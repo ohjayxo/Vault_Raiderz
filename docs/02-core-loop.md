@@ -125,7 +125,7 @@ Each tier has 3 branches with limited points, so builds diverge:
 |---|---|
 | **Extraction** | Mine speed · Grade-odds bonus · multi-node strike |
 | **Combat** | Swing speed · damage · knockback |
-| **Mobility** | Carry speed (counters the loot slow) · sprint recovery · silent movement |
+| **Mobility** | Carry speed (counters the loot slow) · stun recovery (shorter stuns and slows) · silent movement |
 
 Same tool, three identities — and **readable**, because other players can
 infer a build from how someone moves. Respec costs resources, never Robux.

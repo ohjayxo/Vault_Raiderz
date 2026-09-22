@@ -134,6 +134,11 @@ function PickaxeService.knockbackMultiplier(player: Player): number
 	return 1 + perRank("Knockback") * PickaxeService.rank(player, "Knockback")
 end
 
+-- 0..1 share cut from stuns and slows on this player (Mobility: Stun recovery).
+function PickaxeService.stunRecovery(player: Player): number
+	return math.clamp(perRank("StunRecovery") * PickaxeService.rank(player, "StunRecovery"), 0, 1)
+end
+
 -- ── Gear menu state (never includes gear score) ──────────────────────────
 
 function PickaxeService.getState(player: Player): Types.GearState?

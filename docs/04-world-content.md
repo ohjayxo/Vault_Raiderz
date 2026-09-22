@@ -12,7 +12,7 @@ One creature family per zone, scaling with the world's risk gradient.
 
 | Zone | Mob | Boss | Group | Signature drop |
 |---|---|---|---|---|
-| **Homestead** | Scavs | **Scav Captain** (wave leader) | Solo | Common blueprints, gadgets, Standard Cases |
+| **Homestead** | Scavs | **Scav Captain** (wave leader) | Solo | Common blueprints, gadgets, Standard Cases; **Captain pickaxe skin** (the Captain's Signature drop, name [PH]) |
 | **Reaches** | Prowlers | **Reach Warden** (roams) | Solo/duo | Advanced blueprints, Grade-boosted rares, Rift Cases |
 | **Deep Reaches** | Husks | **Glutton** (fixed lair) | Duo/trio | Advanced blueprints, first Unstable Finish chance |
 | **The Rift** | Riftspawn | **Rift Bosses** (3 rotating) | Crew (3–4), **solo path exists** | **Prototype blueprints**, Rift Cores, elite Cases |

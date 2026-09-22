@@ -48,6 +48,8 @@ Modeled directly on Rust's stone/metal/HQM/sulfur structure.
 
 ## The Riftsalt rule `[LOCKED, with D20 amendment]`
 
+**"Contested" is a zone property:** the Reaches (and later the Rift) are contested; the Homestead never is, even though PvP is on there. The server refuses a Riftsalt spawn anywhere else.
+
 **Raid material spawns only in contested zones**, but **Riftsalt is
 tradeable** (`07-decisions.md § D20`). Therefore:
 
@@ -136,7 +138,7 @@ multipliers — a Rainbow is a 0.1% chance for 50× value.
 | Dense | 10% | 3× | Faint shimmer |
 | Volatile | 4% | 10× | Crackling |
 | **Prismatic** | 0.9% | 50× | Rainbow, visible across the map |
-| **Vaultborn** | 0.1% | 200× | Beam of light, **server-wide announcement** |
+| **Vaultborn** | 0.1% | 200× | Faint, blinking, fading beam (easy to miss at a glance, spottable by a watchful player), **server-wide announcement** |
 
 ### Odds are not published in-game `[LOCKED — D46 (Q15)]`
 The table above stays internal. Hiding exact odds creates community wiki
@@ -156,6 +158,8 @@ Robux.
 ### Vaultborn announcement `[LOCKED]`
 **Zone-level, not coordinates.** *"A Vaultborn strike was detected in the
 Eastern Reaches."* Holder gets ~30 seconds [PH] of head start.
+
+The beam at the strike is deliberately faint and blinking, so it doesn't give away the spot the announcement hides, unless someone is watching closely.
 
 **Signal decay `[PROPOSED]`:** narrows zone → sub-region → approximate
 position over 2 minutes [PH] if the holder stays in the open. Bank it

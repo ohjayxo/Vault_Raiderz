@@ -57,8 +57,7 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
   while carrying loot (gadgets already refuse). Loot slow and Carry speed go
   through `MovementService.setMultiplier`. "Any player who lands a hit knocks
   the loot loose" = listen to `CombatService.Hit`. M1 movement check lives in
-  MovementService. Sprint recovery needs a sprint to exist (not in the docs
-  yet: design question when step 7 arrives).
+  MovementService. (Sprint recovery became Stun recovery, 2026-09-21: built.)
 - **Step 10:** Workshop I crafts the Iron pickaxe (`PickaxeService.setTier`),
   armor (`ArmorService.grant`) and gadgets (`InventoryService.add`). Until then
   only Studio keys K / U / J give them.

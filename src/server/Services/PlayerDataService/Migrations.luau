@@ -9,8 +9,22 @@
 local Migrations = {}
 
 local steps: { [number]: (data: any) -> () } = {
-	-- [1] = function(data) -- 1 -> 2
-	-- end,
+	-- 1 -> 2: the Mobility upgrade "Sprint recovery" became "Stun recovery"
+	-- (Josh's call, 2026-09-21: the docs have no sprint). Bought ranks keep
+	-- their place under the new name.
+	[1] = function(data)
+		local gear = data.Gear
+		local mobility = type(gear) == "table" and type(gear.Upgrades) == "table" and gear.Upgrades.Mobility
+		if type(mobility) ~= "table" then
+			return
+		end
+		for rank = 1, 3 do
+			if mobility[`SprintRecovery{rank}`] then
+				mobility[`SprintRecovery{rank}`] = nil
+				mobility[`StunRecovery{rank}`] = true
+			end
+		end
+	end,
 }
 
 -- Upgrades `data` in place to `target`. Returns (ok, reason). Callers pass a

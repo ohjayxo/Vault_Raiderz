@@ -111,17 +111,19 @@ local function findPiece(pieces: { Types.PlacedPiece }, id: string): (Types.Plac
 	return nil, nil
 end
 
--- True if the footprint is free, ignoring the piece with id `ignoreId`.
+-- True if nothing is in the way, ignoring the piece with id `ignoreId`.
+-- Cells and cell-edges are separate "keys" (PlotGrid), so walls on edges
+-- and floors in cells don't collide unless they physically would.
 local function isFree(pieces: { Types.PlacedPiece }, kind: string, x: number, z: number, rot: number, ignoreId: string?): boolean
 	local taken: { [string]: boolean } = {}
 	for _, piece in pieces do
 		if piece.Id ~= ignoreId and PlotGrid.pieceConfig(piece.Kind) then
-			for _, key in PlotGrid.cellsOf(piece.Kind, piece.X, piece.Z, piece.Rot) do
+			for _, key in PlotGrid.keysOf(piece.Kind, piece.X, piece.Z, piece.Rot) do
 				taken[key] = true
 			end
 		end
 	end
-	for _, key in PlotGrid.cellsOf(kind, x, z, rot) do
+	for _, key in PlotGrid.blockersOf(kind, x, z, rot) do
 		if taken[key] then
 			return false
 		end
@@ -234,8 +236,7 @@ local function isBuildable(slot: Slot, piece: any): boolean
 	if not isWholeNumber(piece.X) or not isWholeNumber(piece.Z) or not isWholeNumber(piece.Rot) then
 		return false
 	end
-	local w, d = PlotGrid.footprint(piece.Kind, piece.Rot)
-	return PlotGrid.inBounds(slot.hitbox, piece.X, piece.Z, w, d)
+	return PlotGrid.inBounds(slot.hitbox, piece.Kind, piece.X, piece.Z, piece.Rot)
 end
 
 -- ── Plot assignment ──────────────────────────────────────────────────────
@@ -350,8 +351,7 @@ local function place(player: Player, kindArg: unknown, xArg: unknown, zArg: unkn
 		return false, "Failed"
 	end
 	local cfg = PlotGrid.pieceConfig(kind) :: any
-	local w, d = PlotGrid.footprint(kind, rot)
-	if not PlotGrid.inBounds(slot.hitbox, x, z, w, d) then
+	if not PlotGrid.inBounds(slot.hitbox, kind, x, z, rot) then
 		return false, "OutOfBounds"
 	end
 	if kind == VAULT_CORE and countKind(base.Pieces, VAULT_CORE) >= baseCfg.MaxVaultCores then
@@ -416,8 +416,7 @@ local function move(player: Player, idArg: unknown, xArg: unknown, zArg: unknown
 	if not piece or not templates[piece.Kind] then
 		return false, "NotFound" -- also: someone else's piece id
 	end
-	local w, d = PlotGrid.footprint(piece.Kind, rot)
-	if not PlotGrid.inBounds(slot.hitbox, x, z, w, d) then
+	if not PlotGrid.inBounds(slot.hitbox, piece.Kind, x, z, rot) then
 		return false, "OutOfBounds"
 	end
 	if not isFree(base.Pieces, piece.Kind, x, z, rot, piece.Id) then

@@ -207,7 +207,7 @@ local function spikeFloor(defense: Defense, intruders: { Intruder })
 			if defense.slowed[intruder.humanoid] or spendCharge(defense) then
 				still[intruder.humanoid] = true
 				if not defense.slowed[intruder.humanoid] then
-					MovementService.setMultiplier(intruder.humanoid, key, cfg.SlowMultiplier)
+					MovementService.setSlow(intruder.humanoid, key, cfg.SlowMultiplier)
 				end
 			end
 		end
