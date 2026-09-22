@@ -262,7 +262,59 @@ PIECES = {
         ],
     },
 }
+# Step 6 defenses (02-core-loop.md § Defenses). Hitboxes sit inside the
+# footprint in Config.Base.Pieces; trigger ranges are Config.Defenses.
+PIECES.update({
+    "TripwireAlarm": {
+        "hitbox": (1, 2, 1),
+        "visuals": [
+            visual_part("Post", (0.6, 2, 0.6), (0, 1, 0), rgb(91, 93, 105), "Metal"),
+            visual_part("Lamp", (0.8, 0.5, 0.8), (0, 2.1, 0), rgb(255, 60, 60), "Neon"),
+        ],
+    },
+    "SpikeFloor": {
+        "hitbox": (7.6, 0.6, 7.6),
+        "visuals": [visual_part("Plate", (7.6, 0.3, 7.6), (0, 0.15, 0), rgb(70, 70, 75), "DiamondPlate")]
+        + [visual_part(f"Spike{i}", (0.4, 0.8, 0.4), (-2.7 + (i % 4) * 1.8, 0.55, -2.7 + (i // 4) * 1.8),
+                       rgb(180, 180, 185), "Metal") for i in range(16)],
+    },
+    "ShockFence": {
+        "hitbox": (4, 5, 0.6),
+        "visuals": [
+            visual_part("PostL", (0.5, 5, 0.5), (-1.75, 2.5, 0), rgb(91, 93, 105), "Metal"),
+            visual_part("PostR", (0.5, 5, 0.5), (1.75, 2.5, 0), rgb(91, 93, 105), "Metal"),
+            visual_part("Wire1", (3.2, 0.15, 0.15), (0, 1.5, 0), rgb(120, 200, 255), "Neon"),
+            visual_part("Wire2", (3.2, 0.15, 0.15), (0, 3, 0), rgb(120, 200, 255), "Neon"),
+            visual_part("Wire3", (3.2, 0.15, 0.15), (0, 4.5, 0), rgb(120, 200, 255), "Neon"),
+        ],
+    },
+    "DecoyVault": {
+        "hitbox": (7, 7, 7),
+        "visuals": [
+            visual_part("Plinth", (7, 1.2, 7), (0, 0.6, 0), rgb(90, 90, 100), "DiamondPlate"),
+            visual_part("Safe", (5.5, 5.5, 5.5), (0, 3.95, 0), rgb(140, 140, 150), "Metal"),
+            visual_part("Door", (3.5, 3.5, 0.4), (0, 3.95, 2.85), rgb(230, 160, 60), "Neon"),
+        ],
+    },
+    "GuardDrone": {
+        "hitbox": (2, 6, 2),
+        "visuals": [
+            visual_part("Pad", (2, 0.4, 2), (0, 0.2, 0), rgb(91, 93, 105), "Metal"),
+            visual_part("Drone", (1.6, 0.8, 1.6), (0, 5, 0), rgb(60, 60, 70), "Metal"),
+            visual_part("Eye", (0.6, 0.6, 0.6), (0, 4.5, 0), rgb(255, 80, 80), "Neon"),
+        ],
+    },
+    "LockUpgrade": {
+        "hitbox": (2, 2, 2),
+        "visuals": [
+            visual_part("Box", (1.8, 1.8, 1.8), (0, 0.9, 0), rgb(60, 70, 90), "Metal"),
+            visual_part("Dial", (1, 1, 0.2), (0, 1.1, 0.95), rgb(220, 200, 80), "Neon"),
+        ],
+    },
+})
 PIECE_TAGS = {"Wall": ["BasePiece"], "Gate": ["BasePiece", "BaseGate"], "VaultCore": ["BasePiece", "VaultCore"]}
+for defense in ("TripwireAlarm", "SpikeFloor", "ShockFence", "DecoyVault", "GuardDrone", "LockUpgrade"):
+    PIECE_TAGS[defense] = ["BasePiece", "Defense"]
 
 for kind, spec in PIECES.items():
     hb = spec["hitbox"]

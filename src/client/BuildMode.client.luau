@@ -34,6 +34,7 @@ local placeRemote = Remotes.getFunction("PlacePiece")
 local moveRemote = Remotes.getFunction("MovePiece")
 local removeRemote = Remotes.getFunction("RemovePiece")
 local upgradeRemote = Remotes.getFunction("UpgradeVault")
+local refillRemote = Remotes.getFunction("RefillDefense")
 
 -- Server reason codes -> short text. Build mode is after the FTUE's 2:30
 -- no-text window except "BUILD VAULT" (step 14 decides what shows then).
@@ -51,6 +52,8 @@ local REASON_TEXT: { [string]: string } = {
 	CantRemoveCore = "The Vault Core can be moved, not removed",
 	NoVaultCore = "Build a Vault Core first",
 	MaxTier = "Your Vault is at max tier",
+	NoDefenseSlot = "No free defense slot: upgrade your Vault",
+	Full = "Already fully charged",
 	Failed = "Something went wrong, try again",
 }
 
@@ -146,8 +149,19 @@ infoLabel.Font = Enum.Font.GothamBold
 infoLabel.TextSize = 15
 infoLabel.Parent = panel
 
-local pieceRow = makeRow(panel, 2)
-local actionRow = makeRow(panel, 3)
+local tabRow = makeRow(panel, 2)
+local pieceRow = makeRow(panel, 3)
+local actionRow = makeRow(panel, 4)
+
+-- "TripwireAlarm" -> "Tripwire Alarm"
+local function displayName(pieceKind: string): string
+	return (pieceKind:gsub("(%l)(%u)", "%1 %2"))
+end
+
+-- Build menu tabs (Config.Base.PieceGroups) so the row fits a phone.
+local groupOf: { [string]: number } = {}
+local currentGroup = 1
+local tabButtons: { TextButton } = {}
 
 local function costText(cost: { [string]: number }): string
 	local parts = {}
@@ -163,8 +177,14 @@ end
 local pieceButtons: { [string]: TextButton } = {}
 for order, pieceKind in Config.Base.PieceOrder do
 	local cfg = PlotGrid.pieceConfig(pieceKind) :: any
-	local label = if pieceKind == "VaultCore" then "Vault Core" else pieceKind
-	pieceButtons[pieceKind] = makeButton(pieceRow, `{label}\n{costText(cfg.Cost)}`, order, SIZE * 1.4)
+	pieceButtons[pieceKind] = makeButton(pieceRow, `{displayName(pieceKind)}\n{costText(cfg.Cost)}`, order, SIZE * 1.4)
+end
+for index, group in Config.Base.PieceGroups do
+	for _, pieceKind in group.Kinds do
+		groupOf[pieceKind] = index
+	end
+	tabButtons[index] = makeButton(tabRow, group.Name, index, SIZE * 1.8)
+	tabButtons[index].Size = UDim2.fromOffset(SIZE * 1.8, 30)
 end
 
 local rotateButton = makeButton(actionRow, "Rotate", 1)
@@ -173,6 +193,7 @@ local editButton = makeButton(actionRow, "Edit", 3)
 local moveButton = makeButton(actionRow, "Move", 4)
 local removeButton = makeButton(actionRow, "Remove", 5)
 local upgradeButton = makeButton(actionRow, "Upgrade", 6, SIZE * 1.8)
+local refillButton = makeButton(actionRow, "Refill", 7, SIZE * 1.6)
 
 local message = Instance.new("TextLabel")
 message.AnchorPoint = Vector2.new(0.5, 1)
@@ -296,6 +317,20 @@ local function refreshPanel()
 	for pieceKind, button in pieceButtons do
 		local chosen = mode == "place" and movingId == nil and pieceKind == kind
 		button.BackgroundColor3 = if chosen then Color3.fromRGB(40, 120, 70) else Color3.fromRGB(45, 45, 60)
+		button.Visible = groupOf[pieceKind] == currentGroup
+	end
+	for index, button in tabButtons do
+		button.BackgroundColor3 = if index == currentGroup then Color3.fromRGB(70, 70, 100) else Color3.fromRGB(45, 45, 60)
+	end
+	-- Defenses show their charges (public: 02 § Defenses "a loadout puzzle
+	-- raiders can read") and can be refilled in Edit mode.
+	local charges = selected and selected:GetAttribute("Charges")
+	local maxCharges = selected and selected:GetAttribute("MaxCharges")
+	local selectedKind = selected and selected:GetAttribute("Kind")
+	local defenseCfg = if typeof(selectedKind) == "string" then (Config.Defenses.Kinds :: any)[selectedKind] else nil
+	refillButton.Visible = mode == "select" and defenseCfg ~= nil and typeof(charges) == "number"
+	if refillButton.Visible and defenseCfg then
+		refillButton.Text = `Refill {charges}/{maxCharges}\n{costText(defenseCfg.RefillCost)}`
 	end
 	editButton.BackgroundColor3 = if mode == "select" then Color3.fromRGB(40, 120, 70) else Color3.fromRGB(45, 45, 60)
 	placeButton.Text = if movingId then "Put here" else "Place"
@@ -306,7 +341,7 @@ local function refreshPanel()
 
 	local state = baseState
 	if state then
-		infoLabel.Text = `Vault tier {state.Tier}/{state.MaxTier}   ·   Budget {state.BudgetUsed}/{state.Budget}`
+		infoLabel.Text = `Vault tier {state.Tier}/{state.MaxTier}   ·   Budget {state.BudgetUsed}/{state.Budget}   ·   Defenses {state.DefenseSlotsUsed}/{state.DefenseSlots}`
 		upgradeButton.Visible = state.UpgradeCost ~= nil
 		if state.UpgradeCost then
 			upgradeButton.Text = `Upgrade Vault\n{costText(state.UpgradeCost)}`
@@ -317,10 +352,18 @@ local function refreshPanel()
 	end
 end
 
+local chargesConnection: RBXScriptConnection? = nil
 local function select(model: Model?)
 	selected = model
 	highlight.Adornee = model
 	highlight.Parent = if model then model else nil
+	if chargesConnection then
+		chargesConnection:Disconnect()
+		chargesConnection = nil
+	end
+	if model then
+		chargesConnection = model:GetAttributeChangedSignal("Charges"):Connect(refreshPanel)
+	end
 	refreshPanel()
 end
 
@@ -428,6 +471,21 @@ moveButton.Activated:Connect(function()
 	kind = pieceKind
 	mode = "place"
 	refreshPanel()
+end)
+
+for index, button in tabButtons do
+	button.Activated:Connect(function()
+		currentGroup = index
+		refreshPanel()
+	end)
+end
+
+refillButton.Activated:Connect(function()
+	local model = selected
+	local id = model and model:GetAttribute("PieceId")
+	if typeof(id) == "string" and ask(refillRemote, id) then
+		showMessage("Refilled")
+	end
 end)
 
 removeButton.Activated:Connect(function()

@@ -19,7 +19,8 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local debugEvent = Remotes.getEvent("DebugCommand")
 local mineEvent = Remotes.getEvent("MineNode")
 
--- Avoids I/O (camera zoom) and WASD/Space.
+-- Avoids I/O (camera zoom: Roblox marks them as handled, so they never
+-- reach this script), WASD/Space, E (prompts), R (build rotate), 1-4 (gadgets).
 local KEYS: { [Enum.KeyCode]: string } = {
 	[Enum.KeyCode.P] = "PrintProfile",
 	[Enum.KeyCode.C] = "GrantCredits",
@@ -36,6 +37,9 @@ local KEYS: { [Enum.KeyCode]: string } = {
 	[Enum.KeyCode.J] = "GrantGadgets",
 	[Enum.KeyCode.U] = "GrantArmor",
 	[Enum.KeyCode.Y] = "TogglePvpProtection",
+	[Enum.KeyCode.Q] = "StartWave",
+	[Enum.KeyCode.Six] = "StartCaptainWave",
+	[Enum.KeyCode.Z] = "FloodWaves",
 }
 
 -- Key M: the rate-limit test. Fires the REAL MineNode remote many times in
@@ -82,4 +86,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
-print("[Debug] Studio keys: P = print profile, C = +Credits, L = presence, X = +Miner XP, M = spam mine remote, V = next hit Vaultborn, B = test broadcasts, T = next Vault tier, F = +Stone/Ore/Riftsalt (Exposed), G = +Scrap, H = toggle meter, N = print band, K = next pickaxe tier, J = +gadgets, U = +armor, Y = toggle PvP protection")
+print("[Debug] Studio keys: P = print profile, C = +Credits, L = presence, X = +Miner XP, M = spam mine remote, V = next hit Vaultborn, B = test broadcasts, T = next Vault tier, F = +Stone/Ore/Riftsalt (Exposed), G = +Scrap, H = toggle meter, N = print band, K = next pickaxe tier, J = +gadgets, U = +armor, Y = toggle PvP protection, Q = Scav Wave, 6 = Captain wave, Z = flood waves")

@@ -225,6 +225,38 @@ function VaultService.grant(player: Player, amounts: { [string]: number }): bool
 	return ok
 end
 
+-- Removes `share` (0..1) of every Exposed pile, resources and Scrap, rounded
+-- down per pile. Banked is never touched (02 § Bank vs Exposed). Used when a
+-- Scav gets away (04 § Scav Waves: "failing one costs Exposed resources");
+-- what it takes is gone (a sink). Returns units taken (resources, scrap).
+function VaultService.takeExposedShare(player: Player, share: number): (number, number)
+	assert(share > 0 and share <= 1, `VaultService.takeExposedShare: bad share {share}`)
+	local takenResources, takenScrap = 0, 0
+	local ok = PlayerDataService.update(player, "Resources", OWNER, function(resources: Types.ResourceSnapshot)
+		for _, grades in resources.Exposed do
+			for grade, count in grades do
+				local take = math.floor(count * share)
+				grades[grade] = count - take
+				takenResources += take
+			end
+		end
+		return resources
+	end)
+	if not ok then
+		takenResources = 0
+	end
+	ok = PlayerDataService.update(player, "Scrap", OWNER, function(scrap)
+		takenScrap = math.floor(scrap.Exposed * share)
+		scrap.Exposed -= takenScrap
+		return scrap
+	end)
+	if not ok then
+		takenScrap = 0
+	end
+	VaultService.refresh(player)
+	return takenResources, takenScrap
+end
+
 -- Moves Exposed into the bank, best first, until full. Resources and Scrap
 -- fill their own separate caps. Returns units moved (resources, scrap).
 local function bankAll(player: Player): (number, number)

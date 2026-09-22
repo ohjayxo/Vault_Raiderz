@@ -58,6 +58,10 @@ local definitions: { [string]: RemoteKind } = {
 	UseGadget = "Function", -- (gadgetId) -> (ok, reason?)
 	GetGearState = "Function", -- () -> GearState? (Gear menu start-up)
 	GearChanged = "Event", -- server -> owner: (GearState)
+
+	-- Step 6: defenses + Scav Waves.
+	RefillDefense = "Function", -- (pieceId) -> (ok, reason?)
+	BaseAlert = "Event", -- server -> owner: (kind, text) about their own base
 }
 
 local Remotes = {}

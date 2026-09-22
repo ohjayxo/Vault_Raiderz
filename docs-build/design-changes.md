@@ -113,6 +113,29 @@ Josh's calls while building Bank/Exposed. Applied with double confirmation:
    effects arrive with the Chase and defenses. Note: **there is no sprint in
    the docs**, so "sprint recovery" has nothing to recover yet.
 
+## Step 6 design-gap answers (2026-09-21) — NOT yet in `docs/`
+
+1. **A Scav Wave fails when a Scav survives ~10 s [PH] at the Vault Core**
+   (raised from 5 s in testing; Scavs now arrive along the plot's bridge,
+   and can't loot through a wall; walled-in cores get climbed onto):
+   it takes 2% [PH] of Exposed (resources + Scrap) and leaves. Kill every
+   Scav = success. (04 § Scav Waves only says "failing costs Exposed".)
+2. **Defenses fire only at Scavs and (step 7) raiders of that base**, never
+   at visitors.
+3. **Waves every 8–12 min [PH] while online, once you have a Vault Core;**
+   the Captain leads ~1 in 4 [PH].
+4. **Captain Rare and Signature buckets use stand-ins** until blueprints
+   exist and a signature item is named: Rare = 40 Research Scrap, Signature =
+   Iron chest armor. **Design question:** what is the Scav Captain's
+   signature item? (04 § PvE ladder lists "Common blueprints, gadgets,
+   Standard Cases" for the Homestead, and Cases are out of the slice.)
+5. Interpretations, not asked: defenses are base pieces counting against
+   the build budget plus a defense-slot cap per tier (2–5 [PH]); charges are
+   public on the piece; Scavs go to a charged Decoy Vault first; Guard Drone
+   zaps for small damage; a Scav blocked by walls hops over after 3 s [PH]
+   ("never hard-block"); plain Scav kills drop a little Stone/Ore/Scrap to the
+   killer.
+
 ## Flagged for redesign (step 2 review, 2026-09-20) — Josh will revisit
 
 Not decided yet. Take these to the design project; the build keeps the

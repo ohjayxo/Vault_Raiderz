@@ -74,6 +74,24 @@ local function budgetUsed(pieces: { Types.PlacedPiece }): number
 	return used
 end
 
+local defenseKinds: { [string]: any } = Config.Defenses.Kinds :: any
+
+-- D57 "Defense slots": a cap per vault tier on top of the budget.
+local function defenseSlotsFor(tier: number): number
+	local slots = Config.Defenses.SlotsByTier
+	return slots[math.clamp(tier, 1, #slots)]
+end
+
+local function countDefenses(pieces: { Types.PlacedPiece }): number
+	local count = 0
+	for _, piece in pieces do
+		if defenseKinds[piece.Kind] then
+			count += 1
+		end
+	end
+	return count
+end
+
 local function countKind(pieces: { Types.PlacedPiece }, kind: string): number
 	local count = 0
 	for _, piece in pieces do
@@ -138,6 +156,8 @@ function PlotService.getState(player: Player): Types.BaseState?
 		BudgetUsed = budgetUsed(base.Pieces),
 		Budget = budgetFor(base.VaultTier),
 		UpgradeCost = if canUpgrade then baseCfg.UpgradeCostByTier[base.VaultTier + 1] else nil,
+		DefenseSlotsUsed = countDefenses(base.Pieces),
+		DefenseSlots = defenseSlotsFor(base.VaultTier),
 	}
 end
 
@@ -165,6 +185,12 @@ function PlotService.getSpawnCFrame(player: Player): CFrame?
 	local edge = centre + direction * (math.min(hitbox.Size.X, hitbox.Size.Z) / 2 - plotCfg.GridStuds)
 	local position = edge + Vector3.new(0, hitbox.Size.Y / 2 + 4, 0)
 	return CFrame.lookAt(position, position + direction * -1) -- face into the plot
+end
+
+-- The build surface of this player's plot, or nil (Scav Waves use it).
+function PlotService.getPlotHitbox(player: Player): BasePart?
+	local slot = slotOf[player]
+	return if slot then slot.hitbox else nil
 end
 
 -- Shows or hides this player's Build button (R4: the FTUE decides, step 14).
@@ -330,6 +356,9 @@ local function place(player: Player, kindArg: unknown, xArg: unknown, zArg: unkn
 	end
 	if kind == VAULT_CORE and countKind(base.Pieces, VAULT_CORE) >= baseCfg.MaxVaultCores then
 		return false, "OneVaultCore"
+	end
+	if defenseKinds[kind] and countDefenses(base.Pieces) >= defenseSlotsFor(base.VaultTier) then
+		return false, "NoDefenseSlot"
 	end
 	if not isFree(base.Pieces, kind, x, z, rot, nil) then
 		return false, "Overlap"
@@ -536,6 +565,7 @@ end
 function PlotService.start()
 	assert(#baseCfg.BudgetByTier == MAX_TIER, "Config.Base.BudgetByTier must match Config.Bank.CapacityByTier's length")
 	assert(#baseCfg.UpgradeCostByTier == MAX_TIER, "Config.Base.UpgradeCostByTier must match Config.Bank.CapacityByTier's length")
+	assert(#Config.Defenses.SlotsByTier == MAX_TIER, "Config.Defenses.SlotsByTier must match Config.Bank.CapacityByTier's length")
 	loadTemplates()
 	loadSlots()
 

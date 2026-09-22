@@ -13,8 +13,8 @@
 --   Sprint Serum speed boost via MovementService.
 --   Shock Trap   thrown ahead, lands, arms; the first other player or NPC
 --                to touch it is stunned (Josh's call, step 5).
---   Disruptor    needs base defenses (step 6): can't be used yet, and so
---                is never consumed.
+--   Disruptor    switches off the nearest defense on someone else's base
+--                (DefenseService). Not consumed if there's none in range.
 
 local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
@@ -28,6 +28,7 @@ local RateLimiter = require(ServerScriptService.Util.RateLimiter)
 local AnomalyLog = require(ServerScriptService.Util.AnomalyLog)
 local InventoryService = require(script.Parent.InventoryService)
 local MovementService = require(script.Parent.MovementService)
+local DefenseService = require(script.Parent.DefenseService)
 
 local gadgetCfg = Config.Gadgets
 local combatCfg = Config.Combat
@@ -194,8 +195,12 @@ local function use(player: Player, gadgetArg: unknown): (boolean, string?)
 	if player:GetAttribute(gadgetCfg.CarryingLootAttribute) then
 		return false, "Carrying" -- 02 § The Chase point 2
 	end
+	local disruptTarget: Model? = nil
 	if gadgetId == "Disruptor" then
-		return false, "NoDefense" -- step 6
+		disruptTarget = DefenseService.findDisruptTarget(player, root.Position)
+		if not disruptTarget then
+			return false, "NoDefense"
+		end
 	end
 	if gadgetId == "ShockTrap" and (activeTraps[player] or 0) >= gadgetCfg.ShockTrap.MaxActivePerPlayer then
 		return false, "TooManyTraps"
@@ -211,6 +216,8 @@ local function use(player: Player, gadgetArg: unknown): (boolean, string?)
 		MovementService.setMultiplierFor(humanoid, "SprintSerum", serum.SpeedMultiplier, serum.Seconds)
 	elseif gadgetId == "ShockTrap" then
 		shockTrap(player, root)
+	elseif gadgetId == "Disruptor" and disruptTarget then
+		DefenseService.disable(disruptTarget, gadgetCfg.Disruptor.Seconds)
 	end
 	print(`[Gadget] {player.Name} used a {gadgetCfg.Names[gadgetId]}`)
 	return true, nil

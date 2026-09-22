@@ -36,6 +36,8 @@ export type BaseState = {
 	BudgetUsed: number,
 	Budget: number,
 	UpgradeCost: { [string]: number }?,
+	DefenseSlotsUsed: number,
+	DefenseSlots: number,
 }
 
 -- Tier = index into Config.Combat.PickaxeTiers; Slot = one of Config.Combat.ArmorSlots.
@@ -81,6 +83,9 @@ export type ProfileData = {
 	Crew: { Id: string, JoinedAt: number },
 	-- The 48-hour new-account shield is derived from Meta.FirstLoginAt.
 	Shields: { PostRaidUntil: number },
+	-- Step 6: charges USED per defense piece id (missing = full). Stored as
+	-- "used" so a new defense needs no setup and a refill just deletes the key.
+	DefenseUse: { [string]: number },
 	-- D80 bitpacked words (layouts in Config.Data.Packed). Use get/setPacked.
 	Packed: { [string]: number },
 }
@@ -98,6 +103,7 @@ export type SectionName =
 	| "Blueprints"
 	| "Crew"
 	| "Shields"
+	| "DefenseUse"
 	| "Packed"
 
 return {}

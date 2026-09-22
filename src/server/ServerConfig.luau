@@ -22,6 +22,14 @@ local ServerConfig = {
 	-- renormalised. Server-only because it's part of the odds (D46). [PH]
 	-- invented: 3 ranks turn 15% non-Standard into ~19%.
 	GradeOddsBonusPerRank = 0.1,
+
+	-- 04-world-content.md § Loot table structure (D108; odds PH): the Scav
+	-- Captain rolls every bucket separately. Guaranteed = 100%. Server-only.
+	CaptainLoot = {
+		Common = 0.6, -- "~60%": a gadget (Cases are out of the slice)
+		Rare = 0.25, -- "~25%": blueprints (TEMPORARY stand-in, Config.ScavWaves)
+		Signature = 0.06, -- "~5-8%": the tier's identity item (TEMPORARY stand-in)
+	},
 }
 
 local function deepFreeze(value: any)

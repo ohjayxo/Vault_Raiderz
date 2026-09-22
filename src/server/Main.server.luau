@@ -34,6 +34,11 @@ require(Services.PickaxeService).start()
 require(Services.GadgetService).start()
 require(Services.CombatService).start()
 
+-- Step 6: defenses, Scavs, Scav Waves (+ Captain).
+require(Services.DefenseService).start()
+require(Services.ScavService).start()
+require(Services.ScavWaveService).start()
+
 require(Services.DebugService).start() -- ignores commands outside Studio
 
 -- THROWAWAY build step 0B (mobile perf spike). Delete with src/server/PerfSpike.

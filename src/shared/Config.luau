@@ -47,6 +47,7 @@ local Config = {
 			Blueprints = "ResearchService", -- step 10 (Common only)
 			Crew = "CrewService", -- step 11
 			Shields = "RaidProtectionService", -- step 8 (R6, D67, D75)
+			DefenseUse = "DefenseService", -- step 6: charges used per defense piece
 		},
 
 		-- D80: small per-player fields bitpacked from the start. Each word is one
@@ -478,8 +479,23 @@ local Config = {
 			VaultCore = { Cells = { 2, 2 }, Height = 8, Cost = { Stone = 50 }, BudgetCost = 5 },
 			Wall = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 20 }, BudgetCost = 2 },
 			Gate = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 30, Ore = 10 }, BudgetCost = 3 },
+			-- Step 6 defenses (02 § Defenses). Behaviour in Config.Defenses.
+			TripwireAlarm = { Cells = { 1, 1 }, Height = 2, Cost = { Stone = 30, Ore = 10 }, BudgetCost = 2 },
+			SpikeFloor = { Cells = { 2, 2 }, Height = 1, Cost = { Stone = 60, Ore = 20 }, BudgetCost = 3 },
+			ShockFence = { Cells = { 1, 1 }, Height = 5, Cost = { Stone = 40, Ore = 30 }, BudgetCost = 3 },
+			DecoyVault = { Cells = { 2, 2 }, Height = 7, Cost = { Stone = 80, Ore = 20 }, BudgetCost = 4 },
+			GuardDrone = { Cells = { 1, 1 }, Height = 6, Cost = { Stone = 60, Ore = 40 }, BudgetCost = 4 },
+			LockUpgrade = { Cells = { 1, 1 }, Height = 2, Cost = { Stone = 50, Ore = 50 }, BudgetCost = 2 },
 		},
-		PieceOrder = { "VaultCore", "Wall", "Gate" }, -- build menu order
+		PieceOrder = { -- build menu order
+			"VaultCore", "Wall", "Gate",
+			"TripwireAlarm", "SpikeFloor", "ShockFence", "DecoyVault", "GuardDrone", "LockUpgrade",
+		},
+		-- Build menu tabs, so the row fits a phone screen.
+		PieceGroups = {
+			{ Name = "Structures", Kinds = { "VaultCore", "Wall", "Gate" } },
+			{ Name = "Defenses", Kinds = { "TripwireAlarm", "SpikeFloor", "ShockFence", "DecoyVault", "GuardDrone", "LockUpgrade" } },
+		},
 		MaxVaultCores = 1, -- one Vault Core per plot
 		-- D57: budget per Vault Core tier (index = tier; tier 0 uses tier 1's).
 		-- Same length as Config.Bank.CapacityByTier (tiers 1-7 in the slice).
@@ -692,11 +708,105 @@ local Config = {
 	},
 
 	-- ── Step 6 ── Defenses + Scav Waves + Scav Captain ─────────────────
-	-- 02-core-loop.md § Defenses.
-	Defenses = {},
-	-- 04-world-content.md § Scav Waves (D59, D87), § Loot table structure;
-	-- Scav Captain (D107).
-	Scavs = {},
+	-- 02-core-loop.md § Defenses (D108): "defenses delay and detect. They
+	-- never hard-block." Limited slots; charges deplete when triggered and
+	-- cost resources to refill. Placed as base pieces (Config.Base.Pieces).
+	-- Triggered only by Scavs and, from step 7, raiders of THIS base (Josh's
+	-- call, step 6): visitors never burn charges.
+	Defenses = {
+		Tag = "Defense", -- on every defense piece (plus BasePiece)
+		-- D57 lists "Defense slots" among buildables: a cap per vault tier on
+		-- top of the build budget (index = tier; tier 0 uses tier 1's).
+		SlotsByTier = { 2, 2, 3, 3, 4, 4, 5 }, -- [PH] invented
+		TickSeconds = 0.2, -- [PH] invented: how often trigger zones are checked
+		-- Per defense. Charges: how many triggers a full refill gives.
+		-- RefillCost: price of topping it back up to full. All [PH] invented.
+		Kinds = {
+			-- "Alerts owner + marks intruder". Radius shrinks with the
+			-- intruder's Mobility "Silent movement" ranks (step 5).
+			TripwireAlarm = { Charges = 5, RefillCost = { Stone = 20 }, Radius = 10, MarkSeconds = 8, RetriggerSeconds = 10 },
+			-- "Slows movement in a zone": the piece's footprint, 1 charge per entry.
+			SpikeFloor = { Charges = 8, RefillCost = { Stone = 30 }, SlowMultiplier = 0.45 },
+			-- "Brief stun on contact".
+			ShockFence = { Charges = 6, RefillCost = { Stone = 20, Ore = 10 }, StunSeconds = 1, Radius = 3.5, RetriggerSeconds = 3 },
+			-- "Wastes ~20s [PH] of the 90s window" (raids, step 7). Scavs go
+			-- to a charged decoy first and waste this long there.
+			DecoyVault = { Charges = 3, RefillCost = { Stone = 40 }, WasteSeconds = 20 },
+			-- "NPC harasser": a hovering drone that zaps the nearest intruder.
+			GuardDrone = { Charges = 20, RefillCost = { Stone = 30, Ore = 20 }, Radius = 16, ZapSeconds = 1.5, ZapDamage = 4 },
+			-- "Increases lockpick difficulty": used by lockpicking in step 7.
+			LockUpgrade = { Charges = 3, RefillCost = { Ore = 30 }, ExtraDifficulty = 1 },
+		},
+		RefillCooldownSeconds = 0.5, -- [PH] invented
+		-- Disruptor gadget (02 § Gadgets): switches off the nearest defense on
+		-- someone else's base within this range.
+		DisruptorRange = 20, -- [PH] invented
+		-- Player attribute step 7 sets on a raider: the UserId of the base
+		-- they're raiding. Only then do that base's defenses fire at them.
+		RaidingAttribute = "RaidingUserId",
+	},
+
+	-- 04-world-content.md § Scav Waves (D108), § Concurrent wave ceiling
+	-- (D59), § The PvE ladder (Homestead: Scavs + Scav Captain), § Loot
+	-- table structure; D107 (Captain loot goes to the defending owner).
+	-- Captain loot odds are server-only (ServerConfig.CaptainLoot).
+	Scavs = {
+		Tag = "Scav", -- plus Config.Combat.CombatTag so swings hit them
+		FolderName = "Scavs", -- Workspace folder
+		-- 02 § FTUE spec: a Scav "dies in 2-3 hits" (Wooden: 10, 10, 16).
+		Scav = { Health = 30, WalkSpeed = 12, Damage = 5, AttackSeconds = 1.5, Scale = 1 }, -- [PH] invented
+		Captain = { Health = 150, WalkSpeed = 11, Damage = 10, AttackSeconds = 1.5, Scale = 1.35 }, -- [PH] invented
+		AggroRange = 12, -- [PH] invented: a Scav turns on a player this close
+		AttackRange = 5, -- [PH] invented
+		ThinkSeconds = 0.25, -- [PH] invented: AI update rate
+		-- "Never hard-block": a Scav that makes no progress this long hops
+		-- over whatever is in its way.
+		StuckSeconds = 3, -- [PH] invented
+		-- Scavs arrive along your plot's bridge, this far from the plot centre
+		-- (on the bridge or the Homestead edge for every plot in gen_world.py),
+		-- so a wave gives ~5-8 s of warning before reaching the core. If there's
+		-- no ground there (layout changed), they start at the plot edge instead.
+		SpawnDistance = 60, -- [PH] invented
+		HopStuds = 7, -- [PH] invented
+		-- Failing costs Exposed only (04 § Scav Waves). Josh's call, step 6:
+		-- each Scav that survives this long at your Vault Core takes this
+		-- share of your Exposed resources and Scrap, then leaves.
+		LootRange = 7, -- [PH] invented: studs from the Vault Core Hitbox
+		LootSeconds = 10, -- [PH] invented (was 5: whole waves were lost in ~7 s)
+		LootShare = 0.02, -- [PH] invented: 2% (an offline raid takes 8%, D3)
+		-- Mobs: "PvP-free income floor", and Research Scrap comes from mob
+		-- drops (06 § Currencies). Goes to whoever landed the killing blow.
+		KillDrop = { Stone = 5, Ore = 2 }, -- [PH] invented
+		KillScrap = 2, -- [PH] invented
+		Colors = { -- look only
+			Scav = Color3.fromRGB(150, 95, 60),
+			Captain = Color3.fromRGB(120, 40, 40),
+		},
+	},
+	ScavWaves = {
+		-- Josh's call, step 6: every 8-12 min [PH] while you're online, once
+		-- you have a Vault Core. Captain leads about 1 in 4 waves [PH].
+		IntervalSeconds = { Min = 480, Max = 720 },
+		CaptainChance = 0.25,
+		-- "Scale waves to base tier": Scavs = Base + PerTier x (tier - 1).
+		ScavsBase = 2, -- [PH] invented
+		ScavsPerTier = 1, -- [PH] invented
+		SpawnGapSeconds = 0.6, -- [PH] invented: between Scavs of one wave
+		MaxWaveSeconds = 180, -- [PH] invented: leftover Scavs wander off after this
+		-- D59: server-wide cap on waves running at once; the rest queue.
+		MaxConcurrent = 3, -- [PH] invented
+		QueueCheckSeconds = 1,
+		-- "Successful defense yields resources + Reputation": resources x tier.
+		-- Reputation arrives with ReputationService (step 9): logged for now.
+		SuccessRewardPerTier = { Stone = 30, Ore = 10 }, -- [PH] invented
+		-- Captain Guaranteed bucket: "materials scaled to tier" (x tier).
+		CaptainMaterialsPerTier = { Stone = 60, Ore = 25, Riftsalt = 3 }, -- [PH] invented
+		-- TEMPORARY stand-ins (Josh's call, step 6) until step 10 adds Common
+		-- blueprints and the design names a signature item:
+		CaptainRareScrap = 40, -- Rare bucket: Research Scrap instead of a blueprint
+		CaptainSignatureArmorTier = 2, -- Signature bucket: an Iron armor piece
+		FloodCount = 6, -- Studio key: waves queued at once to test the cap
+	},
 
 	-- ── Step 7 ── Raiding + lockpick + Chase + escort ──────────────────
 	-- 02-core-loop.md § Raiding, § Lockpick skill model, § Theft math,

@@ -67,3 +67,30 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
 - **L5: pickaxe grip.** The greybox Tool uses the classic-sword grip
   (`CombatService.buildTool`). If the pickaxe looks sideways in the hand,
   adjust GripForward/Right/Up there. Look only.
+
+## From step 6 (2026-09-21)
+
+- **Wall corners don't join (found while testing step 4).** Walls sit in the
+  middle of their grid cell, so two rotated walls leave a ~1.5-stud gap at a
+  corner that a player could squeeze through (walls are meant to funnel
+  raiders). Suggested fix: snap walls/gates to cell edges in `PlotGrid`.
+  Waiting for Josh's go-ahead; must be settled before step 7 raiding.
+- **Scavs don't animate** (greybox): server NPCs made with
+  `CreateHumanoidModelFromDescription` glide without walk/swing animations.
+  Add a server-side animation script with real art.
+- **Scav pathing is straight-line + hop.** A Scav walks straight at its goal
+  and hops over whatever stops it for `Config.Scavs.StuckSeconds`. Fine for
+  greybox; PathfindingService would look smarter (still must never block).
+- **Step 7 hooks:** set the Player attribute `Config.Defenses.RaidingAttribute`
+  (= victim's UserId) on a raider so that base's defenses fire at them; call
+  `DefenseService.lockBonus(ownerId)` at lockpick start and spend a Lock
+  Upgrade charge; Decoy Vault wasting raid time is still to wire.
+- **Step 9:** Scav Wave success should grant Reputation (logged for now).
+- **Step 10:** Captain Rare = Research Scrap and Signature = Iron armor are
+  TEMPORARY stand-ins (`Config.ScavWaves.CaptainRareScrap`,
+  `.CaptainSignatureArmorTier`); swap Rare for Common blueprints.
+- **Step 14:** waves start once a Vault Core exists; the FTUE's scripted
+  1:00 Scav (02 § FTUE spec) is separate and should not trigger the timer
+  early.
+- **D64 threat strip:** base alerts use a simple banner (`BaseAlerts.client`);
+  the priority strip is due when raids add more alerts (step 7).

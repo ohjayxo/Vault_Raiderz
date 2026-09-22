@@ -58,6 +58,7 @@ local Template: Types.ProfileData = {
 	Blueprints = { Common = {} },
 	Crew = { Id = "", JoinedAt = 0 },
 	Shields = { PostRaidUntil = 0 },
+	DefenseUse = {},
 	Packed = emptyPackedWords(),
 }
 

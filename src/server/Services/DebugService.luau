@@ -10,7 +10,9 @@
 -- G = +Research Scrap into Exposed, H = show/hide the Banked/Exposed meter,
 -- N = print your raid/neighborhood band and gear score (server-only numbers),
 -- K = next pickaxe tier (wraps), J = +1 of every gadget, U = +1 armor piece
--- (alternates Wooden / Iron), Y = toggle PvP protection (FTUE rule 3 hook).
+-- (alternates Wooden / Iron), Y = toggle PvP protection (FTUE rule 3 hook),
+-- Q = Scav Wave on your base now, 6 = wave led by a Scav Captain,
+-- Z = queue many waves at once (D59 cap test).
 -- (M = mine-remote spam lives entirely on the client: it fires the real
 -- MineNode remote, exactly like an exploit script would.)
 
@@ -32,6 +34,7 @@ local ShardService = require(script.Parent.ShardService)
 local PickaxeService = require(script.Parent.PickaxeService)
 local ArmorService = require(script.Parent.ArmorService)
 local InventoryService = require(script.Parent.InventoryService)
+local ScavWaveService = require(script.Parent.ScavWaveService)
 
 -- Key B: more items than MaxPending (6), mixed priorities, all at once.
 -- Expected with the step 2 Config: flex 1 goes out at once; Vaultborn 2
@@ -143,6 +146,18 @@ local commands: { [string]: (Player) -> () } = {
 		local protected = not player:GetAttribute(attribute)
 		player:SetAttribute(attribute, protected)
 		print(`[Debug] {player.Name} PvP protection {if protected then "ON (can't hit or be hit by players)" else "OFF"}`)
+	end,
+	StartWave = function(player)
+		ScavWaveService.debugStartWave(player, false)
+		print(`[Debug] Scav Wave queued on {player.Name}'s base: {ScavWaveService.debugStatus()}`)
+	end,
+	StartCaptainWave = function(player)
+		ScavWaveService.debugStartWave(player, true)
+		print(`[Debug] Captain wave queued on {player.Name}'s base: {ScavWaveService.debugStatus()}`)
+	end,
+	FloodWaves = function(player)
+		ScavWaveService.debugFlood(player)
+		print(`[Debug] flooded waves on {player.Name}: {ScavWaveService.debugStatus()}`)
 	end,
 	BroadcastTest = function(player)
 		print(`[Debug] {player.Name} pushed {#BROADCAST_TEST} test broadcasts`)
