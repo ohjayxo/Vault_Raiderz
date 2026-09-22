@@ -80,10 +80,10 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
 - **Scav pathing is straight-line + hop.** A Scav walks straight at its goal
   and hops over whatever stops it for `Config.Scavs.StuckSeconds`. Fine for
   greybox; PathfindingService would look smarter (still must never block).
-- **Step 7 hooks:** set the Player attribute `Config.Defenses.RaidingAttribute`
-  (= victim's UserId) on a raider so that base's defenses fire at them; call
-  `DefenseService.lockBonus(ownerId)` at lockpick start and spend a Lock
-  Upgrade charge; Decoy Vault wasting raid time is still to wire.
+- **Step 7 hooks: done** (RaidingAttribute, useLockUpgrades). The Decoy
+  Vault only distracts Scavs; it doesn't waste a raider's time yet (it's a
+  physical decoy: a raider can simply ignore it). Design question if it
+  should do more.
 - **Step 9:** Scav Wave success should grant Reputation (logged for now).
 - **Step 10:** Captain Rare = Research Scrap is a TEMPORARY stand-in
   (`Config.ScavWaves.CaptainRareScrap`); swap it for Common blueprints.
@@ -105,3 +105,23 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
   between players; never let a raid touch them (R1).
 - **Step 14:** the FTUE's free cosmetic can be a skin via
   `CosmeticService.grantSkin`.
+
+## From step 7 (2026-09-22)
+
+- **M1 movement check: done** (MovementService). Logs impossible moves for
+  everyone; snaps back raid participants only. Numbers in
+  `Config.Raiding.Movement` are [PH]; watch the logs for false positives.
+- **Can't be tested in Studio, test on a live private server** (two devices
+  or a friend): victim rejoins mid-raid; two raiders on different servers
+  hit the same offline base; MemoryStore/DataStore failure paths.
+- **Residual risk (low):** if MemoryStore fails to mark a finished offline
+  raid "pending" after the theft message was sent, the raid lock expires in
+  150 s and a second offline raid could read the old save. Needs a
+  MemoryStore write failure right after a DataStore success.
+- **Step 8:** fill `RaidService.checkBreach` / `consumeBreach` (Breach
+  Charges, raid band, 48-h and post-raid shields). D75's 30-min post-raid
+  shield belongs there (the raid lock's "pending" state is only the
+  no-double-theft guard).
+- **Offline bases** are any recent leaver for now; step 8 adds band
+  matching to `OfflineBaseService.refill`.
+- The raid log map shows path dots + defense trigger markers; greybox.

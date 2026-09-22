@@ -8,7 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
-print("Vaultbreakers server up")
+print("Vault Raiderz server up")
 
 -- Remotes must exist before any client asks for them (clients WaitForChild).
 Remotes.init()
@@ -18,6 +18,10 @@ local Services = script.Parent.Services
 -- Step 1: data layer first; everything else sits on it.
 require(Services.PlayerDataService).start()
 require(Services.PresenceService).start()
+-- Step 7: raiding. Started right after the data layer: it installs the
+-- login gate + message handlers every profile load must go through.
+require(Services.RaidService).start()
+require(Services.MovementService).start()
 
 -- Step 2: nodes, Grade rolls, broadcasts. Step 3: VaultService (Bank/Exposed).
 require(Services.VaultService).start()
@@ -39,6 +43,7 @@ require(Services.CombatService).start()
 require(Services.DefenseService).start()
 require(Services.ScavService).start()
 require(Services.ScavWaveService).start()
+require(Services.OfflineBaseService).start()
 
 require(Services.DebugService).start() -- ignores commands outside Studio
 

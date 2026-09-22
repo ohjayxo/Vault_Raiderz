@@ -120,6 +120,78 @@ function MovementService.stun(humanoid: Humanoid, seconds: number)
 	end)
 end
 
+-- ── Movement check (backlog M1; 13-build-guide.md § Anti-exploit baseline)
+-- Each client moves its own character, so an exploiter can teleport. The
+-- server samples every player's position; a horizontal jump bigger than
+-- their WalkSpeed allows (plus a burst for knockback/lag) is logged.
+-- Players in a raid (`enforce`) are also snapped back to their last good
+-- spot: that's where a teleport would steal. Everyone else is only logged,
+-- so a lag spike never punishes normal play.
+
+local AnomalyLog = require(game:GetService("ServerScriptService").Util.AnomalyLog)
+local logMovement = AnomalyLog.new("Movement")
+local moveCfg = Config.Raiding.Movement
+
+type Track = { root: BasePart, lastGood: CFrame, lastPosition: Vector3 }
+local tracks: { [Player]: Track } = {}
+local enforced: { [Player]: boolean? } = {}
+
+-- Snap this player back on impossible moves while true (raid participants).
+function MovementService.setEnforced(player: Player, on: boolean)
+	enforced[player] = if on then true else nil
+end
+
+-- Call after moving a player on purpose (respawn, script teleport).
+function MovementService.expectTeleport(player: Player)
+	tracks[player] = nil
+end
+
+local function checkMovement(dt: number)
+	for _, player in Players:GetPlayers() do
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if not root or not humanoid or humanoid.Health <= 0 then
+			tracks[player] = nil
+			continue
+		end
+		local track = tracks[player]
+		if not track or track.root ~= root then
+			tracks[player] = { root = root, lastGood = root.CFrame, lastPosition = root.Position }
+			continue
+		end
+		local delta = root.Position - track.lastPosition
+		local moved = Vector3.new(delta.X, 0, delta.Z).Magnitude
+		local allowed = math.max(humanoid.WalkSpeed, Config.Movement.BaseWalkSpeed) * moveCfg.SpeedTolerance * dt
+			+ moveCfg.BurstStuds
+		if moved > allowed then
+			logMovement(player, "moved faster than possible", `{math.floor(moved)} studs in {math.floor(dt * 100) / 100} s`)
+			if enforced[player] then
+				character:PivotTo(track.lastGood)
+				track.lastPosition = track.lastGood.Position
+				continue
+			end
+		end
+		track.lastGood = root.CFrame
+		track.lastPosition = root.Position
+	end
+end
+
+function MovementService.start()
+	local elapsed = 0
+	game:GetService("RunService").Heartbeat:Connect(function(dt)
+		elapsed += dt
+		if elapsed >= moveCfg.CheckSeconds then
+			checkMovement(elapsed)
+			elapsed = 0
+		end
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		tracks[player] = nil
+		enforced[player] = nil
+	end)
+end
+
 function MovementService.isStunned(humanoid: Humanoid): boolean
 	local state = states[humanoid]
 	return state ~= nil and os.clock() < state.stunUntil

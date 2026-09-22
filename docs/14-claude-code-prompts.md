@@ -75,7 +75,7 @@ Set up the project:
    RemoteEvent/RemoteFunction by name, created by the server.
 6. Download ProfileStore (single ModuleScript, MadStudioRoblox/ProfileStore
    on GitHub) into src/server/Packages.
-7. A server script that prints "Vaultbreakers server up" and a client
+7. A server script that prints "Vault Raiderz server up" and a client
    script that prints "client up".
 8. .gitignore suitable for a Rojo project (ignore *.rbxl, *.rbxlx,
    sourcemap outputs, OS junk).
@@ -274,7 +274,7 @@ then build. Give me a Studio-only way to fast-forward shield timers.
 Read docs/06-economy.md § Currencies, § Two tiers of selling, § NPC price
 decay (D94), § Access gating (D82), § Zero-chat trade (D61), § Trade
 Safety; docs/03-progression.md § Reputation tracks (D81),
-§ Vaultbreaker Level (D82); docs/05-items.md § Taxonomy (what's
+§ Level (D82); docs/05-items.md § Taxonomy (what's
 tradeable).
 
 Build:

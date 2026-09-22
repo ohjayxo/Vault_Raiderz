@@ -1,4 +1,4 @@
-# Vaultbreakers Slice — Engineering Estimate (Build Step 0A)
+# Vault Raiderz Slice — Engineering Estimate (Build Step 0A)
 
 Written 2026-09-19. Owner: Claude Code, for Josh. Not a design file; nothing
 in `docs/` was changed.

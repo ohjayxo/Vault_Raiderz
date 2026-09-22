@@ -4,7 +4,7 @@
 
 # ⚠ SCOPE WARNING — READ FIRST
 
-**Vaultbreakers as fully designed is a large game.** Three rarity
+**Vault Raiderz as fully designed is a large game.** Three rarity
 systems, a global market, persistent plots, seasons, a ranked ladder, a
 tech tree, upgrade trees, world events, crews, a PvE boss ladder,
 farming, cases, blueprints, and raiding.
@@ -52,7 +52,7 @@ D53`.
 | **Crews (2–4)** — shared Crew Vault, crew-shared Tier 1 Tech Path nodes with the join/leave tenure lockout | Validates two of the design's biggest open bets (crew formation, shared progression) as early as possible |
 | **One craftable Harvester Drone** (D110) — no Robux version | Offline production is mandatory (`02-core-loop.md § Automation`) and is the D1 pull-back hook the slice exists to measure |
 | **Raid escort** (D101) | Gives friends a shared activity before crew raids unlock (D4) |
-| **Minimal Vaultbreaker Level + Reputation** (D81, D82) | Required: D82 gates direct trading at Level 10, and direct trading is in the slice |
+| **Minimal Level + Reputation** (D81, D82) | Required: D82 gates direct trading at Level 10, and direct trading is in the slice |
 | **Armor** (D112) — craftable pieces, one chest slot | Added by the owner in the build phase: a defense gear goal, and a loss stake (spare pieces stealable) the pickaxe doesn't have |
 | **Server-authoritative architecture (R5)** | Cannot be retrofitted |
 | **New player protections (R6)** — tier bands with gear score (D66, D92), shields incl. Blackout exemptions (D67, D75) | Cannot be retrofitted |
@@ -299,6 +299,7 @@ viable for base/architectural geometry).
 | v5.6 | 2026-09-19 | D110: the slice ships one craftable Harvester Drone for offline production (no Robux gamepass), resolving the build-order vs. out-of-scope contradiction; build step 12 unblocked. |
 | v5.7 | 2026-09-20 | Build-phase decisions: D111 — pickaxes are not tradeable, pickaxe skins are (supersedes D21; 05/06/07 updated). D92 wording fixed — gear score counts pickaxe upgrade nodes, not Tech Path nodes. Placeholder XP→level curve added to `03-progression.md § Vaultbreaker Level`; Level is derived from XP (D80 note). D112 — armor added to the slice: craftable pieces, one chest slot, pickaxe tier names, knockback resistance + small damage reduction, spares stealable / worn never (R1), not tradeable (skins are); gear score adds highest owned armor tier. |
 | v5.8 | 2026-09-21 | Build-phase answers: Mobility "sprint recovery" → "stun recovery" (the docs had no sprint); Scav Captain Signature drop = a Captain pickaxe skin; Vaultborn beam made faint/blinking/fading so it doesn't give away the strike spot; "contested" is a zone flag (Reaches, later the Rift; never the Homestead). |
+| v5.9 | 2026-09-22 | Game renamed Vaultbreakers → Vault Raiderz; "Vaultbreaker Level" is now just "Level" (no title). |
 
 ## Next actions
 

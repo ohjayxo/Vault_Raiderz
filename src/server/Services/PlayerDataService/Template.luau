@@ -60,6 +60,7 @@ local Template: Types.ProfileData = {
 	Shields = { PostRaidUntil = 0 },
 	DefenseUse = {},
 	Cosmetics = { PickaxeSkins = {}, EquippedPickaxeSkin = "" },
+	RaidLog = { Entries = {}, Applied = {} },
 	Packed = emptyPackedWords(),
 }
 

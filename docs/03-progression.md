@@ -39,7 +39,7 @@ still has to go loot the Fragment first — it just doesn't have to be you.
 In Rust, workbenches have low HP (500/750) and any raider reaching the
 workbench room destroys them in seconds — a prime raid target.
 
-Vaultbreakers softens this per R2 for most tiers, with the elite-tier
+Vault Raiderz softens this per R2 for most tiers, with the elite-tier
 exception now locked in:
 
 | Vault Tier | Raider effect on Workshop |
@@ -483,7 +483,7 @@ from "Mastery" to end the collision with Blueprint Mastery.
 A pure-track player can reach Vaultborn. A hybrid gets there faster
 (D8 unchanged).
 
-## Vaultbreaker Level `[LOCKED — D82]`
+## Level `[LOCKED — D82]`
 One visible, **permanent** number — the sum of the three Reputation
 tracks. **Never resets** (not at season, not at rebirth). Jobs:
 
@@ -495,7 +495,7 @@ tracks. **Never resets** (not at season, not at rebirth). Jobs:
 **Level curve `[PH — placeholder, D111 round]`:** each Reputation track turns
 XP into a track level, where the XP to **reach** track level *n* is
 `floor(100 × n^1.5)` (levels 1 / 2 / 3 / 5 / 10 / 20 need 100 / 282 / 519 /
-1,118 / 3,162 / 8,944 XP). **Vaultbreaker Level = the sum of the three track
+1,118 / 3,162 / 8,944 XP). **Level = the sum of the three track
 levels**; everyone starts at Level 0. Because each level costs more than the
 last, spreading XP across tracks is faster — Level 10 from one track takes
 3,162 XP, split 4/3/3 takes 1,838 — which is the "hybrid gets there faster"
@@ -522,7 +522,7 @@ purely a faster/richer cosmetic path, never a different reward category.
 | — | Cosmetics | |
 | — | Season badges | |
 | — | Rank history | |
-| — | Vaultbreaker Level (D82) | |
+| — | Level (D82) | |
 
 Tier 3 also resets at mid-season (week 3 [PH]) with **no** Scrap
 conversion — see `§ Staggered tier reset` for the Rift Fragment re-buy

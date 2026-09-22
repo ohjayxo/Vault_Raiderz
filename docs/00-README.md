@@ -1,7 +1,7 @@
-# Vaultbreakers — Design Document Set
+# Vault Raiderz — Design Document Set
 
-**Current version:** v5.8
-**Last updated:** 2026-09-21
+**Current version:** v5.9
+**Last updated:** 2026-09-22
 **Platform:** Roblox (Luau, Roblox Studio)
 **Status:** Pre-production. Nothing built yet. Vertical slice design locked (v5.5); ready to begin the build (`13-build-guide.md`).
 
@@ -140,7 +140,7 @@ update it after. Q-numbers are never reused.
 | **Marks** | Working name (proposed) for the cosmetic-only currency Scrap converts into each season. |
 | **Rarity tier** | Cosmetic tier, Common → Mythic. Separate from Grade (resources) and Condition/Pattern. |
 | **Robux pool** | Robux-bought cosmetics; swap-only for same-tier Robux cosmetics, never for Credits. |
-| **Vaultbreaker Level** | Proposed permanent account level; gates system reveals (e.g. trading). |
+| **Level** | Proposed permanent account level; gates system reveals (e.g. trading). |
 | **Workshop** | Physical tiered structure in a player's base. Gates research and crafting. |
 | **Tech Path** | The scrap-purchased branching unlock tree. Replaces a class system. |
 | **Research Bench** | Consumes a looted item + scrap to permanently learn its blueprint. |
@@ -150,7 +150,7 @@ update it after. Q-numbers are never reused.
 | **Seed pack** | Crop-seed item, foraged from wild plants or found in caches. |
 | **Pattern** | Formerly "Seed" — the 1–1000 collector roll on gear/cosmetics (D93). |
 | **Reputation tracks** | Miner/Trader/Raider XP tracks; cosmetic-and-title rewards only (D81). |
-| **Vaultbreaker Level** | Permanent account level fed by Reputation; gates trading at Level 10 (D82). |
+| **Level** | Permanent account level fed by Reputation; gates trading at Level 10 (D82). |
 | **Marks** | Cosmetic-only currency Research Scrap converts to at season end (D68, D84). Account-bound. |
 | **Gear score** | Pickaxe tier + upgrade-node count; used only for raid matchmaking band (D66, D92). |
 | **Breach Charge** | Consumable required to raid. Crafted from Riftsalt. |

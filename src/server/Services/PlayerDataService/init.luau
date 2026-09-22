@@ -10,6 +10,11 @@
 --   (Config.Data.SectionOwners) and validates the result before saving it.
 -- * Small fields are bitpacked (D80): use getPacked / setPacked.
 -- * Plot archiving (D55) is a stub: see PlotArchive.luau.
+-- * Offline raids (13-build-guide.md § Part D, step 7): other servers can
+--   read a READ-ONLY view of an offline profile (viewAsync) and send it a
+--   message (messageAsync). On login, a load gate waits out any raid in
+--   progress and messages are applied BEFORE the profile counts as loaded,
+--   so nothing can act on resources a raid already took.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,6 +27,7 @@ local LevelCurve = require(ReplicatedStorage.Shared.LevelCurve)
 local ProfileStore = require(ServerScriptService.Packages.ProfileStore)
 local BitPack = require(ServerScriptService.Util.BitPack)
 local Clock = require(ServerScriptService.Util.Clock)
+local Backoff = require(ServerScriptService.Util.Backoff)
 local Migrations = require(script.Migrations)
 local PlotArchive = require(script.PlotArchive)
 local Template = require(script.Template)
@@ -125,12 +131,7 @@ end
 
 -- Copy the section, let `mutate` change the copy, validate, then swap it in.
 -- Either the whole change lands or none of it does.
-local function applyUpdate(player: Player, section: Types.SectionName, mutate: (any) -> any, who: string): boolean
-	local profile = activeProfile(player)
-	if not profile then
-		warn(`[PlayerData] {who} tried to update {section} for {player.Name}, but no profile is loaded`)
-		return false
-	end
+local function applyUpdateTo(profile: any, player: Player, section: Types.SectionName, mutate: (any) -> any, who: string): boolean
 
 	local ok, result = pcall(mutate, deepCopy(profile.Data[section]))
 	if not ok then
@@ -143,12 +144,102 @@ local function applyUpdate(player: Player, section: Types.SectionName, mutate: (
 		return false
 	end
 	-- `mutate` could have yielded; make sure it's still the same live session.
-	if profiles[player] ~= profile or not profile:IsActive() then
+	if not profile:IsActive() then
 		warn(`[PlayerData] {who} update of {section} for {player.Name} dropped: session ended mid-update`)
 		return false
 	end
 	profile.Data[section] = result
 	return true
+end
+
+local function applyUpdate(player: Player, section: Types.SectionName, mutate: (any) -> any, who: string): boolean
+	local profile = activeProfile(player)
+	if not profile then
+		warn(`[PlayerData] {who} tried to update {section} for {player.Name}, but no profile is loaded`)
+		return false
+	end
+	local ok = applyUpdateTo(profile, player, section, mutate, who)
+	if ok and profiles[player] ~= profile then
+		return false -- the session changed under us (shouldn't happen: mutate can't yield usefully)
+	end
+	return ok
+end
+
+-- ── Offline access + messages (step 7) ───────────────────────────────────
+
+export type Update = (section: Types.SectionName, owner: string, mutate: (any) -> any) -> boolean
+export type MessageHandler = (player: Player, message: { [string]: any }, update: Update) -> boolean
+
+local messageHandlers: { [string]: MessageHandler } = {}
+local beforeRelease: ((player: Player) -> ())? = nil
+
+-- Called when a player leaves, while their profile is STILL live (before
+-- the session ends). Must not yield. RaidService settles a Chase on a
+-- leaving victim here (review H1).
+function PlayerDataService.setBeforeRelease(fn: (player: Player) -> ())
+	beforeRelease = fn
+end
+local loadGate: ((userId: number) -> ())? = nil
+
+-- Called on every login before the profile counts as loaded; may yield.
+-- RaidService uses it to wait out a raid in progress.
+function PlayerDataService.setLoadGate(fn: (userId: number) -> ())
+	loadGate = fn
+end
+
+-- Handles profile messages whose Kind is `kind`. The handler gets an
+-- `update` that works before the profile is loaded (same owner rules as
+-- update()). Return true once the message is applied or safely ignored;
+-- false leaves it to be retried on the next login.
+function PlayerDataService.onMessage(kind: string, handler: MessageHandler)
+	messageHandlers[kind] = handler
+end
+
+local function dispatchMessage(player: Player, profile: any, message: any, processed: () -> ())
+	local kind = type(message) == "table" and message.Kind
+	local handler = kind and messageHandlers[kind]
+	if not handler then
+		warn(`[PlayerData] {player.Name} has a message nobody handles ({tostring(kind)}); left for later`)
+		return
+	end
+	local update: Update = function(section, owner, mutate)
+		local expected = dataCfg.SectionOwners[section]
+		assert(owner == expected, `{owner} tried to write "{section}", which only {expected} may change`)
+		return applyUpdateTo(profile, player, section, mutate, owner)
+	end
+	local ok, done = pcall(handler, player, message, update)
+	if not ok then
+		warn(`[PlayerData] message {kind} for {player.Name} failed: {done}`)
+	elseif done then
+		processed()
+	end
+end
+
+-- A read-only copy of an OFFLINE player's last saved data, plus whether some
+-- server still holds their session (then the save may be stale). Yields.
+-- Returns nil if it couldn't be read.
+function PlayerDataService.viewAsync(userId: number): (Types.ProfileData?, boolean)
+	local ok, profile = Backoff.retry(`profile view {userId}`, function()
+		return store:GetAsync(dataCfg.KeyPrefix .. userId)
+	end)
+	if not ok or profile == nil then
+		return nil, false
+	end
+	local view: any = profile
+	local data = deepCopy(view.Data)
+	if not Migrations.run(data, dataCfg.SchemaVersion) then
+		return nil, false
+	end
+	return data, view.Session ~= nil
+end
+
+-- Sends a message to a player's profile (applied on their next login, or
+-- soon if online elsewhere). Yields. True only if it was stored.
+function PlayerDataService.messageAsync(userId: number, message: { [string]: any }): boolean
+	local ok, sent = Backoff.retry(`profile message {userId}`, function()
+		return store:MessageAsync(dataCfg.KeyPrefix .. userId, message)
+	end)
+	return ok and sent == true
 end
 
 -- ── Public API ────────────────────────────────────────────────────────────
@@ -284,7 +375,7 @@ function PlayerDataService.debugDescribe(player: Player): string
 	local miner, trader, raider = decoded.MinerXP or 0, decoded.TraderXP or 0, decoded.RaiderXP or 0
 	table.insert(
 		lines,
-		`  Levels (derived, D82): Miner {LevelCurve.trackLevel(miner)}, Trader {LevelCurve.trackLevel(trader)}, Raider {LevelCurve.trackLevel(raider)} -> Vaultbreaker Level {LevelCurve.vaultbreakerLevel(miner, trader, raider)}`
+		`  Levels (derived, D82): Miner {LevelCurve.trackLevel(miner)}, Trader {LevelCurve.trackLevel(trader)}, Raider {LevelCurve.trackLevel(raider)} -> Level {LevelCurve.playerLevel(miner, trader, raider)}`
 	)
 	return table.concat(lines, "\n")
 end
@@ -355,6 +446,21 @@ local function onPlayerAdded(player: Player)
 		end
 	end)
 
+	-- Offline raids (13 § Part D, step 4): wait out a raid in progress, then
+	-- apply pending messages (thefts) BEFORE anything can act on this profile.
+	if loadGate then
+		loadGate(player.UserId)
+	end
+	if player.Parent ~= Players or not profile:IsActive() then
+		if profile:IsActive() then
+			profile:EndSession()
+		end
+		return
+	end
+	profile:MessageHandler(function(message, processed)
+		dispatchMessage(player, profile, message, processed)
+	end)
+
 	profiles[player] = profile
 	print(`[PlayerData] loaded {player.Name} ({if isNew then "new player" else "returning"}, session #{profile.SessionLoadCount})`)
 	loadedEvent:Fire(player)
@@ -362,6 +468,20 @@ end
 
 local function onPlayerRemoving(player: Player)
 	local profile = profiles[player]
+	local hook = beforeRelease
+	if profile and hook and profile:IsActive() then
+		local ok, err = pcall(function(): any
+			hook(player)
+			return nil
+		end)
+		if not ok then
+			warn(`[PlayerData] before-release hook failed for {player.Name}: {err}`)
+		end
+	elseif RunService:IsStudio() then
+		-- Studio: say which part was missing (a raid settling on a leaving
+		-- victim depends on this running).
+		print(`[PlayerData] no before-release for {player.Name}: profile {if profile then "loaded" else "MISSING"}, hook {if hook then "set" else "MISSING"}, session {if profile and profile:IsActive() then "active" else "ENDED"}`)
+	end
 	if profile then
 		if profile:IsActive() then
 			profile.Data.Meta.LastActiveAt = Clock.now()

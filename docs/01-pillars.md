@@ -4,7 +4,7 @@
 
 ## The pitch `[LOCKED]`
 
-**Vaultbreakers**
+**Vault Raiderz**
 > "Mine it. Bank it. Or lose it."
 
 Three words carrying the entire tension: production, protection, loss.

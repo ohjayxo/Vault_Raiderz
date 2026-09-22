@@ -40,7 +40,7 @@ with Credits and recycle them into Tech Path progress.
 | Tier | When | Mechanism |
 |---|---|---|
 | **NPC buyer** | Immediately, from minute one | Zero friction, always available; price **diminishes per item sold that day, resets daily** (D94) |
-| **The Exchange** | Unlocks at Vaultbreaker Level 10 (D82) | List at your own price, server-wide, **with price history graph** |
+| **The Exchange** | Unlocks at Level 10 (D82) | List at your own price, server-wide, **with price history graph** |
 
 ## NPC price decay `[LOCKED — D94]`
 The formerly flat NPC buy price was an **unlimited Credits faucet** —
@@ -94,8 +94,8 @@ system rather than an arbitrary clock. Serves as the primary
 scam/bot/alt-account defense.
 
 **Gate `[LOCKED — D82]`:** direct trading and the Exchange both unlock
-at **Vaultbreaker Level 10** [PH] (~2–3 sessions of active play —
-`03-progression.md § Vaultbreaker Level`). Level only comes from
+at **Level 10** [PH] (~2–3 sessions of active play —
+`03-progression.md § Level`). Level only comes from
 server-validated actions, so bots and alts must put in real play first.
 The first Robux prompt fires at this same moment (locked).
 
@@ -320,7 +320,7 @@ policy was updated in May 2026 to comply with South Korean game law and
 rolled out globally; developers on the forums expect enforcement to hit
 simulator games hard.
 
-**Vaultbreakers sidesteps the category entirely** by keeping Credits
+**Vault Raiderz sidesteps the category entirely** by keeping Credits
 non-purchasable **and** by keeping Robux-bought cosmetics in a separate
 swap-only pool, so no Robux-bought good can ever be converted into
 Credits, Keys, or Cases (D65). Verify current policy before any change

@@ -18,6 +18,10 @@
 --   hide resources from raiders. The Vault Core can only be moved.
 -- * Greybox contract: pieces are clones of ServerStorage.PieceTemplates;
 --   code uses Hitbox, never Visual.
+-- * Offline bases (step 7, Josh's call): a free plot can host a READ-ONLY
+--   copy of an offline player's base (hostOffline), so raiders scout it
+--   visually. It never saves anything; a real player joining takes the plot
+--   back (an offline base mid-raid is never evicted).
 
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
@@ -44,11 +48,20 @@ local MAX_TIER = #Config.Bank.CapacityByTier
 local VAULT_CORE = "VaultCore"
 
 type BaseData = { VaultTier: number, Archived: boolean, Pieces: { Types.PlacedPiece } }
-type Slot = { index: number, model: Model, hitbox: BasePart, owner: Player? }
+type Slot = {
+	index: number,
+	model: Model,
+	hitbox: BasePart,
+	bridge: BasePart?, -- the plot's bridge Hitbox (World.Plots.Bridge<index>)
+	owner: Player?,
+	offlineOwner: number?, -- UserId of the offline base shown here
+}
+type OfflineBase = { slot: Slot, name: string, tier: number, models: { [string]: Model } }
 
 local slots: { Slot } = {}
 local slotOf: { [Player]: Slot } = {}
 local modelsOf: { [Player]: { [string]: Model } } = {} -- piece id -> model
+local offlineBases: { [number]: OfflineBase } = {} -- UserId -> base shown here
 local templates: { [string]: Model } = {}
 local liveFolder: Folder
 
@@ -202,7 +215,7 @@ end
 
 -- ── Piece models ─────────────────────────────────────────────────────────
 
-local function spawnPiece(player: Player, slot: Slot, piece: Types.PlacedPiece)
+local function spawnPiece(ownerId: number, slot: Slot, piece: Types.PlacedPiece, models: { [string]: Model }, usedCharges: number?)
 	local model = templates[piece.Kind]:Clone()
 	local hitbox = model:FindFirstChild("Hitbox") :: BasePart
 	local target = PlotGrid.pieceCFrame(slot.hitbox, piece.Kind, piece.X, piece.Z, piece.Rot, hitbox.Size.Y)
@@ -211,10 +224,15 @@ local function spawnPiece(player: Player, slot: Slot, piece: Types.PlacedPiece)
 	-- Set before parenting: VaultService sets up a Vault Core as soon as it
 	-- appears and checks OwnerUserId.
 	model:SetAttribute("PieceId", piece.Id)
-	model:SetAttribute("OwnerUserId", player.UserId)
+	model:SetAttribute("OwnerUserId", ownerId)
 	model:SetAttribute("BudgetCost", (PlotGrid.pieceConfig(piece.Kind) :: any).BudgetCost)
+	if slot.offlineOwner then
+		-- Read-only copy: DefenseService counts its charges in memory only.
+		model:SetAttribute("Offline", true)
+		model:SetAttribute("UsedCharges", usedCharges or 0)
+	end
 	model.Parent = liveFolder
-	modelsOf[player][piece.Id] = model
+	models[piece.Id] = model
 end
 
 local function movePieceModel(player: Player, slot: Slot, piece: Types.PlacedPiece)
@@ -241,13 +259,163 @@ end
 
 -- ── Plot assignment ──────────────────────────────────────────────────────
 
+-- ── Offline bases (step 7) ───────────────────────────────────────────────
+
+local function clearOffline(userId: number)
+	local offline = offlineBases[userId]
+	if not offline then
+		return
+	end
+	for _, model in offline.models do
+		model:Destroy()
+	end
+	offline.slot.offlineOwner = nil
+	offline.slot.model:SetAttribute("OwnerUserId", nil)
+	offline.slot.model:SetAttribute("OwnerName", nil)
+	offline.slot.model:SetAttribute("Offline", nil)
+	offlineBases[userId] = nil
+end
+
+local function freeSlots(): { Slot }
+	local free = {}
+	for _, slot in slots do
+		if slot.owner == nil and slot.offlineOwner == nil then
+			table.insert(free, slot)
+		end
+	end
+	return free
+end
+
+-- Shows an offline player's base on a free plot, from their saved data.
+-- Keeps Config.Raiding.Offline.KeepFreePlots free for joiners. True if shown.
+function PlotService.hostOffline(userId: number, name: string, data: Types.ProfileData): boolean
+	if offlineBases[userId] or Players:GetPlayerByUserId(userId) then
+		return false
+	end
+	local free = freeSlots()
+	if #free <= Config.Raiding.Offline.KeepFreePlots then
+		return false
+	end
+	local slot = free[#free]
+	slot.offlineOwner = userId
+	slot.model:SetAttribute("OwnerUserId", userId)
+	slot.model:SetAttribute("OwnerName", name)
+	slot.model:SetAttribute("Offline", true)
+	local offline: OfflineBase = { slot = slot, name = name, tier = data.Base.VaultTier, models = {} }
+	offlineBases[userId] = offline
+	for _, piece in data.Base.Pieces do
+		if isBuildable(slot, piece) then
+			spawnPiece(userId, slot, piece, offline.models, data.DefenseUse[piece.Id])
+		end
+	end
+	print(`[Plots] showing {name}'s offline base on Plot{slot.index} (tier {offline.tier})`)
+	return true
+end
+
+-- Removes an offline base (unless a raid is running on it).
+function PlotService.releaseOffline(userId: number): boolean
+	local offline = offlineBases[userId]
+	if not offline or offline.slot.model:GetAttribute("RaidId") then
+		return false
+	end
+	clearOffline(userId)
+	return true
+end
+
+-- UserIds of offline bases shown here.
+function PlotService.offlineIds(): { number }
+	local ids = {}
+	for userId in offlineBases do
+		table.insert(ids, userId)
+	end
+	return ids
+end
+
+-- ── Queries for raids ────────────────────────────────────────────────────
+
+export type BaseInfo = { ownerId: number, ownerName: string, tier: number, offline: boolean, hitbox: BasePart, plot: Model }
+
+local function infoOf(slot: Slot): BaseInfo?
+	if slot.owner then
+		local base = PlayerDataService.get(slot.owner, "Base")
+		return {
+			ownerId = slot.owner.UserId,
+			ownerName = slot.owner.Name,
+			tier = if base then base.VaultTier else 0,
+			offline = false,
+			hitbox = slot.hitbox,
+			plot = slot.model,
+		}
+	elseif slot.offlineOwner then
+		local offline = offlineBases[slot.offlineOwner]
+		return {
+			ownerId = slot.offlineOwner,
+			ownerName = offline.name,
+			tier = offline.tier,
+			offline = true,
+			hitbox = slot.hitbox,
+			plot = slot.model,
+		}
+	end
+	return nil
+end
+
+-- The base (online or offline) whose plot is within `range` studs of
+-- `position`, nearest first. nil if none.
+function PlotService.baseNear(position: Vector3, range: number): BaseInfo?
+	local best: Slot? = nil
+	local bestDistance = range
+	for _, slot in slots do
+		if slot.owner or slot.offlineOwner then
+			local distance = NodeMath.distanceToHitbox(slot.hitbox, position)
+			if distance <= bestDistance then
+				best, bestDistance = slot, distance
+			end
+		end
+	end
+	return if best then infoOf(best) else nil
+end
+
+function PlotService.baseOf(ownerId: number): BaseInfo?
+	for _, slot in slots do
+		if (slot.owner and slot.owner.UserId == ownerId) or slot.offlineOwner == ownerId then
+			return infoOf(slot)
+		end
+	end
+	return nil
+end
+
+local function insideFlat(box: BasePart, position: Vector3, margin: number): boolean
+	local localPoint = box.CFrame:PointToObjectSpace(position)
+	return math.abs(localPoint.X) <= box.Size.X / 2 + margin and math.abs(localPoint.Z) <= box.Size.Z / 2 + margin
+end
+
+-- True while `position` is on this owner's plot or its bridge (a carrier
+-- escapes by getting off both: Josh's call, step 7).
+function PlotService.isOnBase(ownerId: number, position: Vector3, margin: number): boolean
+	for _, slot in slots do
+		if (slot.owner and slot.owner.UserId == ownerId) or slot.offlineOwner == ownerId then
+			return insideFlat(slot.hitbox, position, margin) or (slot.bridge ~= nil and insideFlat(slot.bridge, position, margin))
+		end
+	end
+	return false
+end
+
+-- ── Plot assignment ──────────────────────────────────────────────────────
+
 local function assignPlot(player: Player)
 	ShardService.getNeighborhood(player) -- stub: logs the band, one neighborhood
-	local slot: Slot? = nil
-	for _, candidate in slots do
-		if candidate.owner == nil then
-			slot = candidate
-			break
+	-- Their own offline copy may be showing here: they're back, remove it.
+	clearOffline(player.UserId)
+	local slot: Slot? = freeSlots()[1]
+	if not slot then
+		-- Real players come first: take back a plot from an offline base
+		-- that isn't being raided.
+		for userId in offlineBases do
+			if PlotService.releaseOffline(userId) then
+				slot = freeSlots()[1]
+				break
+			end
 		end
 	end
 	if not slot then
@@ -256,7 +424,8 @@ local function assignPlot(player: Player)
 	end
 	slot.owner = player
 	slotOf[player] = slot
-	modelsOf[player] = {}
+	local models: { [string]: Model } = {}
+	modelsOf[player] = models
 	slot.model:SetAttribute("OwnerUserId", player.UserId)
 	player:SetAttribute("PlotIndex", slot.index)
 
@@ -264,7 +433,7 @@ local function assignPlot(player: Player)
 	local skipped = 0
 	for _, piece in base.Pieces do
 		if isBuildable(slot, piece) then
-			spawnPiece(player, slot, piece)
+			spawnPiece(player.UserId, slot, piece, models)
 		else
 			skipped += 1
 		end
@@ -386,7 +555,7 @@ local function place(player: Player, kindArg: unknown, xArg: unknown, zArg: unkn
 		VaultService.grant(player, cfg.Cost) -- give the price back
 		return false, "Failed"
 	end
-	spawnPiece(player, slot, piece)
+	spawnPiece(player.UserId, slot, piece, modelsOf[player])
 	if newTier ~= tierBefore then
 		raisePeak(player, newTier)
 		VaultService.refresh(player) -- capacity changed
@@ -540,7 +709,17 @@ local function loadSlots()
 			local index = instance:GetAttribute("PlotIndex")
 			assert(hitbox and hitbox:IsA("BasePart"), `{instance:GetFullName()} has no Hitbox part`)
 			assert(typeof(index) == "number", `{instance:GetFullName()} has no PlotIndex attribute`)
-			table.insert(slots, { index = index, model = instance, hitbox = hitbox, owner = nil })
+			-- Its bridge: World.Plots.Bridge<index> (gen_world.py).
+			local bridgeModel = instance.Parent and instance.Parent:FindFirstChild(`Bridge{index}`)
+			local bridgeHitbox = bridgeModel and bridgeModel:FindFirstChild("Hitbox")
+			table.insert(slots, {
+				index = index,
+				model = instance,
+				hitbox = hitbox,
+				bridge = if bridgeHitbox and bridgeHitbox:IsA("BasePart") then bridgeHitbox else nil,
+				owner = nil,
+				offlineOwner = nil,
+			})
 		end
 	end
 	table.sort(slots, function(a, b)

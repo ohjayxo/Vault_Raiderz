@@ -65,6 +65,16 @@ local definitions: { [string]: RemoteKind } = {
 
 	-- Pickaxe skins.
 	EquipSkin = "Function", -- (skinId or "") -> (ok, reason?)
+
+	-- Step 7: raiding. All intents; the server picks the target base itself.
+	Breach = "Function", -- () -> (ok, reason?) raid the base you're standing at
+	LockpickTurn = "Function", -- (angle 0..1) -> (ok, "turning"|"stuck"|reason) while holding Turn
+	Grab = "Function", -- () -> (ok, reason?)
+	Sabotage = "Function", -- (defense: Model) -> (ok, reason?) tiers 5-7
+	JoinEscort = "Function", -- (raidId) -> (ok, reason?)
+	RaidState = "Event", -- server -> raider/escort/victim: (RaidView?) nil = raid over
+	EscortOffer = "Event", -- server -> a raider's friend: (raidId, raiderName, seconds)
+	GetRaidLog = "Function", -- () -> { RaidLogEntry }
 }
 
 local Remotes = {}

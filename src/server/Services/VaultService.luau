@@ -257,6 +257,100 @@ function VaultService.takeExposedShare(player: Player, share: number): (number, 
 	return takenResources, takenScrap
 end
 
+-- ── Raids (step 7) ───────────────────────────────────────────────────────
+-- Loot = what a raid moves: Exposed resources by Grade, plus Exposed Scrap.
+-- Banked is never touched (02 § Bank vs Exposed).
+export type Loot = { Resources: Types.ResourceStore, Scrap: number }
+
+-- Removes up to `loot` from Exposed, clamped per pile so nothing goes
+-- negative. Returns what was actually taken (a victim may have banked or
+-- spent some since the grab: they only lose what they still have).
+local function takeLootWith(update: (section: any, mutate: (any) -> any) -> boolean, loot: Loot): Loot
+	local taken: Loot = { Resources = {}, Scrap = 0 }
+	update("Resources", function(resources: Types.ResourceSnapshot)
+		for resource, grades in loot.Resources do
+			local have = resources.Exposed[resource]
+			if have then
+				for grade, amount in grades do
+					local take = math.clamp(math.floor(amount), 0, have[grade] or 0)
+					if take > 0 then
+						have[grade] -= take
+						taken.Resources[resource] = taken.Resources[resource] or {}
+						taken.Resources[resource][grade] = take
+					end
+				end
+			end
+		end
+		return resources
+	end)
+	update("Scrap", function(scrap)
+		taken.Scrap = math.clamp(math.floor(loot.Scrap), 0, scrap.Exposed)
+		scrap.Exposed -= taken.Scrap
+		return scrap
+	end)
+	return taken
+end
+
+-- Take loot from an online, loaded player.
+function VaultService.takeLoot(player: Player, loot: Loot): Loot
+	local taken = takeLootWith(function(section, mutate)
+		return PlayerDataService.update(player, section, OWNER, mutate)
+	end, loot)
+	VaultService.refresh(player)
+	return taken
+end
+
+-- Take loot inside a profile message handler (before the profile counts as
+-- loaded): `update` is PlayerDataService's message-time updater.
+function VaultService.takeLootVia(update: (section: any, owner: string, mutate: (any) -> any) -> boolean, loot: Loot): Loot
+	return takeLootWith(function(section, mutate)
+		return update(section, OWNER, mutate)
+	end, loot)
+end
+
+-- Adds loot back inside a profile message handler (a raid's loot returning
+-- to a victim who had left).
+function VaultService.depositLootVia(update: (section: any, owner: string, mutate: (any) -> any) -> boolean, loot: Loot)
+	update("Resources", OWNER, function(resources: Types.ResourceSnapshot)
+		for resource, grades in loot.Resources do
+			if isResource[resource] then
+				for grade, amount in grades do
+					if isGrade[grade] then
+						resources.Exposed[resource][grade] = (resources.Exposed[resource][grade] or 0) + math.max(0, math.floor(amount))
+					end
+				end
+			end
+		end
+		return resources
+	end)
+	update("Scrap", OWNER, function(scrap)
+		scrap.Exposed += math.max(0, math.floor(loot.Scrap))
+		return scrap
+	end)
+end
+
+-- Adds loot to a player's Exposed, Grades kept (a raider's escape).
+function VaultService.depositLoot(player: Player, loot: Loot): boolean
+	local ok = PlayerDataService.update(player, "Resources", OWNER, function(resources: Types.ResourceSnapshot)
+		for resource, grades in loot.Resources do
+			assert(isResource[resource], `VaultService.depositLoot: unknown resource "{resource}"`)
+			for grade, amount in grades do
+				assert(isGrade[grade], `VaultService.depositLoot: unknown grade "{grade}"`)
+				resources.Exposed[resource][grade] = (resources.Exposed[resource][grade] or 0) + math.max(0, math.floor(amount))
+			end
+		end
+		return resources
+	end)
+	if ok and loot.Scrap > 0 then
+		ok = PlayerDataService.update(player, "Scrap", OWNER, function(scrap)
+			scrap.Exposed += math.floor(loot.Scrap)
+			return scrap
+		end)
+	end
+	VaultService.refresh(player)
+	return ok
+end
+
 -- Moves Exposed into the bank, best first, until full. Resources and Scrap
 -- fill their own separate caps. Returns units moved (resources, scrap).
 local function bankAll(player: Player): (number, number)

@@ -5,7 +5,7 @@
 to reach for, and not burning Opus-level usage on a task Haiku could
 handle. Ordered by where the project actually is (now → later).
 
-This is a **prediction**, not a rulebook. Vaultbreakers is pre-production
+This is a **prediction**, not a rulebook. Vault Raiderz is pre-production
 (v5.5) — the vertical slice is locked (D107) and the build phase is
 documented in `13-build-guide.md`, but nothing is built yet. Everything past "Phase 0" below is my best guess at what work
 is coming, based on `10-roadmap.md`'s build order and scope. Revise this

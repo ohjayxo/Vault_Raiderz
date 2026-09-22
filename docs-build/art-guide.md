@@ -1,4 +1,4 @@
-# Vaultbreakers: art guide
+# Vault Raiderz: art guide
 
 For whoever makes the game look good. You can replace the look of almost
 everything without touching code, and nothing will overwrite your work.

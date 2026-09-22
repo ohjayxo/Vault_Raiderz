@@ -12,7 +12,8 @@
 -- K = next pickaxe tier (wraps), J = +1 of every gadget, U = +1 armor piece
 -- (alternates Wooden / Iron), Y = toggle PvP protection (FTUE rule 3 hook),
 -- Q = Scav Wave on your base now, 6 = wave led by a Scav Captain,
--- Z = queue many waves at once (D59 cap test), 7 = +1 Captain's Cleaver skin.
+-- Z = queue many waves at once (D59 cap test), 7 = +1 Captain's Cleaver skin,
+-- 8 = fill free plots with offline bases now (instead of waiting 30 s).
 -- (M = mine-remote spam lives entirely on the client: it fires the real
 -- MineNode remote, exactly like an exploit script would.)
 
@@ -36,6 +37,7 @@ local ArmorService = require(script.Parent.ArmorService)
 local InventoryService = require(script.Parent.InventoryService)
 local ScavWaveService = require(script.Parent.ScavWaveService)
 local CosmeticService = require(script.Parent.CosmeticService)
+local OfflineBaseService = require(script.Parent.OfflineBaseService)
 
 -- Key B: more items than MaxPending (6), mixed priorities, all at once.
 -- Expected with the step 2 Config: flex 1 goes out at once; Vaultborn 2
@@ -152,6 +154,10 @@ local commands: { [string]: (Player) -> () } = {
 		local skinId = Config.Cosmetics.DebugSkin
 		local ok = CosmeticService.grantSkin(player, skinId)
 		print(`[Debug] +1 {skinId} skin for {player.Name}: {if ok then "ok" else "FAILED"} (equip it in the Gear menu)`)
+	end,
+	FillOfflineBases = function(player)
+		print(`[Debug] {player.Name}: filling free plots with offline bases...`)
+		task.spawn(OfflineBaseService.refill)
 	end,
 	StartWave = function(player)
 		ScavWaveService.debugStartWave(player, false)

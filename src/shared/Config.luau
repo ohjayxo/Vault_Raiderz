@@ -49,13 +49,14 @@ local Config = {
 			Shields = "RaidProtectionService", -- step 8 (R6, D67, D75)
 			DefenseUse = "DefenseService", -- step 6: charges used per defense piece
 			Cosmetics = "CosmeticService", -- pickaxe skins (05 § Cosmetics; R1: never lootable)
+			RaidLog = "RaidService", -- step 7: raid log + applied raid ids (D105)
 		},
 
 		-- D80: small per-player fields bitpacked from the start. Each word is one
 		-- saved number (max 53 bits). Bit widths are [PH] invented; a value past
 		-- its maximum is clamped and logged, and widening one needs a migration.
 		Packed = {
-			-- 03-progression.md § Reputation tracks (D81). Vaultbreaker Level is
+			-- 03-progression.md § Reputation tracks (D81). Level is
 			-- the sum of these tracks (D82), so it is derived, not stored.
 			Reputation = {
 				{ Name = "MinerXP", Bits = 17, Owner = "ReputationService" }, -- [PH] invented: max 131,071
@@ -861,9 +862,104 @@ local Config = {
 	-- ── Step 7 ── Raiding + lockpick + Chase + escort ──────────────────
 	-- 02-core-loop.md § Raiding, § Lockpick skill model, § Theft math,
 	-- § The Chase, § Raid log path map (D105); tiers 1-7 only in the slice.
-	Raiding = {},
+	Raiding = {
+		-- 02 § The raid sequence: breach -> lockpick -> grab (Exposed only) ->
+		-- escape. The window covers the whole raid, from breach (02 §
+		-- Defenses: the Decoy "wastes ~20s of the 90s window").
+		WindowSeconds = 90, -- [PH] per doc
+		-- 02 § Theft math (D108; values PH). One grab takes the whole share
+		-- (Josh's call, step 7), capped per victim vault tier [PH] invented.
+		OnlineShare = 0.25,
+		OfflineShare = 0.08,
+		DestroyedInTransit = 0.2, -- ~20%: the raider gets the other 80%
+		CapByTier = { 250, 500, 900, 1_400, 2_000, 2_800, 3_800 }, -- [PH] invented
+		BreachRange = 10, -- [PH] invented: studs from the victim's plot edge
+		CoreRange = 10, -- [PH] invented: studs from the Vault Core Hitbox (pick / grab)
+		-- 02 § Lockpick skill model: speed, never fail-locked. Skyrim-style
+		-- (Josh's call, 2026-09-22): turn the pick to an angle and hold Turn.
+		-- Each pin has a secret sweet angle: dead on, it sets in
+		-- SecondsPerPin; near the edge of Tolerance it crawls; outside, the
+		-- lock doesn't budge. Nothing ever breaks or fails. Harder with vault
+		-- tier (and Lock Upgrades). All [PH] invented.
+		Lockpick = {
+			PinsBase = 3,
+			PinsPerTier = 1,
+			-- Angles are 0..1 across the dial (a half turn).
+			Tolerance = 0.18, -- how far off the sweet angle still turns the lock
+			TolerancePerTier = -0.015,
+			MinTolerance = 0.07,
+			-- Dead on the sweet angle a pin takes this long: also the floor a
+			-- bot can't beat.
+			SecondsPerPin = 0.5,
+			-- At the very edge of Tolerance progress is this share of full speed.
+			EdgeRate = 0.35,
+			-- Longest gap between turn updates that still counts (lag guard).
+			MaxTurnStepSeconds = 0.2,
+			LockUpgradeExtraPins = 1, -- per working Lock Upgrade (Config.Defenses)
+			-- You stand still while working the lock (Josh's call): both hands
+			-- are busy. Movement returns this long after you stop turning.
+			HoldStillSeconds = 0.6, -- [PH] invented
+		},
+		-- The Chase (02 § The Chase).
+		CarrySpeedMultiplier = 0.6, -- [PH] invented: "movement speed drops sharply"
+		-- 02 § Tiered raid interaction (D23), tiers 5-7: knock one defense
+		-- offline for 15 min [PH]; it comes back by itself, free.
+		SabotageMinTier = 5,
+		SabotageSeconds = 900,
+		SabotageRange = 10, -- [PH] invented
+		-- 02 § Raid log path map (D105).
+		PathSampleSeconds = 0.5, -- [PH] invented
+		MaxPathPoints = 180, -- [PH] invented (= the 90 s window)
+		LogEntries = 10, -- [PH] invented: raid log keeps the newest N
+		AppliedRaidMemory = 30, -- raid ids remembered so a message never applies twice
+		-- 13-build-guide.md § Part D: the raid lock (MemoryStore, short TTL).
+		-- Must outlast a raid; a login waits for it (up to its TTL).
+		Lock = {
+			MapName = "RaidLocks",
+			StudioMapName = "RaidLocks_Studio",
+			TtlSeconds = 150, -- [PH] invented: > WindowSeconds + margin
+			-- After an offline raid the victim is "theft pending" until their
+			-- next login applies it: no second offline raid can read their old
+			-- save and take the same loot twice (review H2). Cleared on login.
+			-- (D75's 30-min post-raid shield is step 8's RaidProtectionService.)
+			PendingSeconds = 7 * 24 * 3600, -- = Offline.TtlSeconds: bases aren't shown longer
+			-- Carrier counts as off the victim's plot/bridge once this far out.
+			EscapeMarginStuds = 2, -- [PH] invented
+			LoginPollSeconds = 2,
+			-- While a theft is being saved, the lock is renewed this often so
+			-- a slow DataStore can't let it expire mid-save (review M1).
+			KeepAliveSeconds = 30, -- [PH] invented, < TtlSeconds
+			-- A login waits at most this many lock lifetimes (review M2).
+			LoginWaitLifetimes = 3,
+		},
+		-- Offline bases shown on free plots (Josh's call, step 7).
+		Offline = {
+			MapName = "RecentlyOffline",
+			StudioMapName = "RecentlyOffline_Studio",
+			TtlSeconds = 7 * 24 * 3600, -- [PH] invented: offline this long -> no longer shown
+			FillSeconds = 30, -- [PH] invented: how often free plots are refilled
+			Candidates = 20, -- [PH] invented: newest leavers looked at per fill
+			KeepFreePlots = 1, -- [PH] invented: always leave a plot for a joiner
+		},
+		RequestCooldownSeconds = 0.25, -- [PH] invented: per player, raid remotes
+		-- 13-build-guide.md § Anti-exploit baseline / backlog M1: raid
+		-- participants who move impossibly fast are logged and snapped back.
+		Movement = {
+			CheckSeconds = 0.25,
+			SpeedTolerance = 1.6, -- x current WalkSpeed
+			BurstStuds = 8, -- knockback, jumps, lag spikes
+		},
+		Ui = {
+			RaidLogVisibleAttribute = "HudRaidLog",
+			ShowBeforeFtue = true, -- TEMPORARY until step 14
+		},
+	},
 	-- 02-core-loop.md § Raid escort (D101).
-	RaidEscort = {},
+	-- 02 § Raid escort (D101): one Roblox friend who opts in (Josh's call).
+	RaidEscort = {
+		Max = 1,
+		OfferSeconds = 15, -- [PH] invented: how long friends can accept
+	},
 
 	-- ── Step 8 ── Breach Charges, Riftsalt, bands, shields ─────────────
 	-- 05-items.md § The Riftsalt rule; 02-core-loop.md § Preconditions.
@@ -876,9 +972,9 @@ local Config = {
 	NpcSelling = {},
 	-- 06-economy.md § Zero-chat trade (D61), § Trade Safety, § Access gating (D82).
 	Trade = {},
-	-- 03-progression.md § Reputation tracks, § Vaultbreaker Level (D81, D82).
+	-- 03-progression.md § Reputation tracks, § Level (D81, D82).
 	Progression = {
-		-- Vaultbreaker Level = sum of the three track levels (D82). Each track
+		-- Level = sum of the three track levels (D82). Each track
 		-- (Miner/Trader/Raider, D81) turns XP into a track level with:
 		--   XP needed to REACH track level n = floor(BaseXP * n ^ Exponent)
 		-- Exponent > 1 makes each level cost more than the last, which also

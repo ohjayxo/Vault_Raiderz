@@ -40,6 +40,37 @@ export type BaseState = {
 	DefenseSlots: number,
 }
 
+-- One raid on your base (02 § Raid log path map, D105). Path and Triggers
+-- are plot-local {x, z} in studs from the plot centre, rounded.
+-- Outcome: "Stolen" (they escaped), "Recovered" (knocked loose / ran out of
+-- time / left). Taken: resource -> units the victim lost.
+export type RaidLogEntry = {
+	Id: string,
+	At: number,
+	RaiderName: string,
+	Offline: boolean,
+	Outcome: string,
+	Taken: { [string]: number },
+	Path: { { number } },
+	Triggers: { { any } },
+}
+
+-- What a raid's raider / escort / victim sees (RaidState remote). Times are
+-- workspace:GetServerTimeNow(). Lockpick is only sent to the raider:
+-- Progress 0..1 is the current pin; Warmth 0..1 is how close the last turn
+-- was to the secret sweet angle (0 = the lock didn't move).
+export type RaidView = {
+	Id: string,
+	Role: string, -- "Raider" | "Escort" | "Victim"
+	Phase: string, -- "Breached" | "Unlocked" | "Carrying"
+	EndsAt: number,
+	RaiderName: string,
+	VictimName: string,
+	Lockpick: { Pins: number, PinsDone: number, Progress: number, Warmth: number }?,
+	Loot: { [string]: number }?,
+	CanSabotage: boolean,
+}
+
 -- Tier = index into Config.Combat.PickaxeTiers; Slot = one of Config.Combat.ArmorSlots.
 export type ArmorPiece = { Tier: number, Slot: string }
 
@@ -91,6 +122,9 @@ export type ProfileData = {
 	-- Pickaxe skins: skin id -> how many you own (spares trade in step 9).
 	-- EquippedPickaxeSkin "" = the plain tier-coloured pickaxe. R1: never lootable.
 	Cosmetics: { PickaxeSkins: { [string]: number }, EquippedPickaxeSkin: string },
+	-- Step 7 (D105): newest raids on this player's base, and the raid ids
+	-- already applied (so an offline-raid message can never apply twice).
+	RaidLog: { Entries: { RaidLogEntry }, Applied: { string } },
 	-- D80 bitpacked words (layouts in Config.Data.Packed). Use get/setPacked.
 	Packed: { [string]: number },
 }
@@ -110,6 +144,7 @@ export type SectionName =
 	| "Shields"
 	| "DefenseUse"
 	| "Cosmetics"
+	| "RaidLog"
 	| "Packed"
 
 return {}

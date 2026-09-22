@@ -1,6 +1,6 @@
 --!strict
--- XP -> level math for the Reputation tracks and the Vaultbreaker Level
--- (03-progression.md § Reputation tracks, § Vaultbreaker Level; D81, D82).
+-- XP -> level math for the Reputation tracks and the player Level
+-- (03-progression.md § Reputation tracks, § Level; D81, D82).
 -- Pure functions, shared so UI can draw progress bars. The server is still the
 -- only one that grants XP (R5). Numbers live in Config.Progression.LevelCurve.
 
@@ -36,8 +36,8 @@ function LevelCurve.trackLevel(xp: number): number
 	return level
 end
 
--- Vaultbreaker Level = the sum of the three track levels (D82).
-function LevelCurve.vaultbreakerLevel(minerXP: number, traderXP: number, raiderXP: number): number
+-- Level = the sum of the three track levels (D82).
+function LevelCurve.playerLevel(minerXP: number, traderXP: number, raiderXP: number): number
 	return LevelCurve.trackLevel(minerXP) + LevelCurve.trackLevel(traderXP) + LevelCurve.trackLevel(raiderXP)
 end
 

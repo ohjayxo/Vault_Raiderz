@@ -1016,13 +1016,13 @@ surrounded by neighbors outside their own raid band.
 ## D80 — Minimal bitpacking now for v5.3's new small fields `[LOCKED]`
 **Decision:** the handful of new per-item/per-player flags added this
 round (Robux-pool marker, market-acquired flag, lifetime peak tier,
-Vaultbreaker Level, Reputation values) are bitpacked from the start.
+Level, Reputation values) are bitpacked from the start.
 Full payload compression for larger fields (Tech Path state, raid logs)
 still waits on real usage data, per D54.
 
-**Build note (D111 round):** Vaultbreaker Level is not stored — it is
+**Build note (D111 round):** Level is not stored — it is
 derived from the three packed Reputation XP values (D82: Level is the sum
-of the tracks; curve in `03-progression.md § Vaultbreaker Level`), so it
+of the tracks; curve in `03-progression.md § Level`), so it
 can't drift from them. Only the XP values are packed.
 
 **Why:** cheap insurance for small, cheap-to-pack fields; doesn't
@@ -1041,8 +1041,8 @@ only, no stat effects.
 
 **Rejected:** keeping Mastery tracks as originally written.
 
-## D82 — Vaultbreaker Level locked, trading gates at Level 10 `[LOCKED]`
-**Decision:** locks the permanent Vaultbreaker Level (sum of Reputation
+## D82 — Level locked, trading gates at Level 10 `[LOCKED]`
+**Decision:** locks the permanent Level (sum of Reputation
 tracks, never resets) and sets the market/Exchange access gate
 (`06-economy.md § Access gating`) at Level 10 [PH].
 
@@ -1314,7 +1314,7 @@ individual wealth, and a genuine streamer/community moment.
 ## D107 — Vertical slice scope is final (resolves Q23) `[LOCKED]`
 **Decision:** the slice is exactly the `10-roadmap.md § Vertical Slice`
 in-scope table, which now also includes raid escort (D101) and a minimal
-Vaultbreaker Level + Reputation (required because D82 gates direct
+Level + Reputation (required because D82 gates direct
 trading, and direct trading is in the slice).
 
 **Why:** every open item Q23 was waiting on has since been decided

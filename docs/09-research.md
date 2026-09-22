@@ -19,7 +19,7 @@ before building against it.**
 
 **Two dominant 2026 trends:** fast meme-driven titles pulling millions
 within days, and deep long-session experiences at 45+ minutes per session.
-Vaultbreakers targets the second lane with the first lane's hook.
+Vault Raiderz targets the second lane with the first lane's hook.
 
 ---
 
@@ -168,7 +168,7 @@ to manually enable it. This rolled out globally through early-to-mid
 2026, driven partly by state-level lawsuits alleging inadequate minor
 protection.
 
-**Why this matters here:** several Vaultbreakers mechanics lean on
+**Why this matters here:** several Vault Raiderz mechanics lean on
 players being able to actually talk to each other — crew coordination
 when splitting the Tech Path (`03-progression.md § Crews`), the
 deliberately "manual, trust-based" Workshop III rental interaction
@@ -266,7 +266,7 @@ each server having its own independent quota. Alongside this, there is
 now a **hard total storage cap per experience**: baseline 500 MB plus
 1 MB per lifetime player, effective July 2026.
 
-**Why this matters here specifically:** Vaultbreakers' core design
+**Why this matters here specifically:** Vault Raiderz' core design
 assumes persistent plots for every player, forever (`07-decisions.md §
 D6`), plus a global cross-server market. That combination is exactly the
 unbounded-growth pattern the new cap is built to catch. A genuinely
@@ -278,7 +278,7 @@ first-class architectural decision, not a later cleanup pass.
 **Minimal bitpacking now `[LOCKED — D80, revises D54]`:** D54 deferred
 payload compression generally, but v5.3 added several new small
 per-item/per-player flags (Robux-pool marker, market-acquired flag,
-lifetime peak tier, Vaultbreaker Level, Reputation values). These are
+lifetime peak tier, Level, Reputation values). These are
 bitpacked from the start as cheap insurance — full payload compression
 for the larger, more complex fields (Tech Path state, raid logs) still
 waits for real usage data per D54.
@@ -303,7 +303,7 @@ There's now a real target to design against.
 | Triangles per UGC accessory | ~4,000 |
 | Diffuse/PBR texture resolution | 1024×1024 max |
 
-**Why this is tight for Vaultbreakers specifically:** the design leans on
+**Why this is tight for Vault Raiderz specifically:** the design leans on
 visually scouting neighboring bases from a distance as a core mechanic
 (`02-core-loop.md § World Structure`). That means the rendering budget
 has to simultaneously cover your own base, every visible neighboring

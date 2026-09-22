@@ -325,6 +325,7 @@ local function onCharacter(player: Player, character: Model)
 	if diedOnce[player] then
 		local spawnAt = PlotService.getSpawnCFrame(player)
 		if spawnAt then
+			MovementService.expectTeleport(player)
 			character:PivotTo(spawnAt)
 		end
 	end

@@ -137,7 +137,7 @@ Then:
 DataStores and MemoryStores **only work in a published place**, including
 during Studio testing.
 1. In Studio: File → Publish to Roblox → create a new experience named
-   Vaultbreakers. Keep it **private**.
+   Vault Raiderz. Keep it **private**.
 2. Home → Game Settings → Security → turn on **Enable Studio Access to API
    Services**.
 3. Save the place file somewhere outside the repo (Rojo syncs code into
@@ -386,7 +386,7 @@ Preconditions`, `01-pillars.md § R6`, D66, D67, D75, D79, D92.
 ### Step 9 — NPC selling, direct trade, Level/Reputation gate
 **Docs:** `06-economy.md § Two tiers of selling`, `§ NPC price decay`
 (D94), `§ Zero-chat trade` (D61), `§ Trade Safety`, `§ Access gating`
-(D82); `03-progression.md § Reputation tracks`, `§ Vaultbreaker Level`.
+(D82); `03-progression.md § Reputation tracks`, `§ Level`.
 - [ ] Selling to the NPC gives Credits; price drops per sale, resets daily
 - [ ] Reputation XP from mining/trading/raiding; Level updates
 - [ ] Direct trade locked until Level 10 [PH]

@@ -167,6 +167,36 @@ needs the same edits.**
    (keeps tier a private power stat, like gear score, D92).
 2. **A duplicate skin drop is kept as a spare** (tradeable in step 9, D111).
 
+## v5.9 (2026-09-22) — applied to `docs/` with Josh's double confirmation
+
+**Game renamed Vaultbreakers → Vault Raiderz** (GitHub repo `vault_raiderz`,
+experience "Vault Raiderz"); **"Vaultbreaker Level" is now just "Level"**
+(no title). 31 lines across 11 docs files + `00-README.md` v5.9 +
+`10-roadmap.md` v5.9 row; history rows keep the old name. Code, CLAUDE.md
+and docs-build renamed too. Not yet renamed: the local folder
+`~/vaultbreakers` (Josh: later). **The design project still needs this.**
+
+## Step 7 design-gap answers (2026-09-22) — NOT yet in `docs/`
+
+1. **Offline bases appear on free plots** (recent leavers, shown for up to
+   7 days [PH]), so scouting stays visual (02 § The raid sequence).
+2. **Escape = off the victim's plot and its bridge.** The bridge is the
+   Chase's chokepoint (02: "escape to the zone boundary").
+3. **Escort = one Roblox friend of the raider who opts in** when offered at
+   breach (D101). Their hits don't knock the loot loose; defenses treat them
+   as an intruder.
+4. **One grab takes the whole theft share** (25% online / 8% offline,
+   capped per tier [PH]).
+5. Interpretations: the 90 s window starts at breach (the Decoy "wastes ~20 s
+   of the 90 s window"); tiers 5–7 sabotage = one defense offline 15 min,
+   back by itself for free; a failed raid (knocked loose, died, left, time
+   out) ends the raid.
+6. **Engineering rule with a gameplay effect (needs your OK / design
+   project):** an offline base can be raided **at most once per absence**:
+   after an offline theft the victim is "theft pending" until their next
+   login. Needed so two raids can't take the same loot twice (review H2).
+   Fits "offline raids capped low" (02 § Theft math).
+
 ## Flagged for redesign (step 2 review, 2026-09-20) — ANSWERED 2026-09-21 (see above)
 
 Not decided yet. Take these to the design project; the build keeps the

@@ -35,7 +35,7 @@ The 8 files are already generated in `docs-build/perfspike/meshes/`
 (`python3 docs-build/perfspike/gen_meshes.py` regenerates them and checks every
 triangle count).
 
-1. Open your Vaultbreakers place in Studio.
+1. Open your Vault Raiderz place in Studio.
 2. **Explorer** → hover **ServerStorage** → click **+** → **Folder**. Name it
    exactly **`PerfSpikeKit`**.
 3. **Home** tab → **Import 3D** (if you can't find it: **View → Asset Manager**
@@ -115,10 +115,10 @@ Shard (you + 3 neighbors) and Precise (identical to Baseline, see "LOD compariso
 ## Step 3: publish privately and join from the phone
 
 1. Studio: **File → Publish to Roblox** (updates your existing private
-   Vaultbreakers; don't choose "as new"). Rojo's code and the mesh kit are in the
+   Vault Raiderz; don't choose "as new"). Rojo's code and the mesh kit are in the
    place, so they publish with it.
 2. Check it's private: Creator Hub (create.roblox.com) → **Creations** →
-   Vaultbreakers → **Settings → Privacy** should say **Private**. Only you can join.
+   Vault Raiderz → **Settings → Privacy** should say **Private**. Only you can join.
 3. Get the Place ID: Studio → **View → Command Bar**, type `print(game.PlaceId)`,
    Enter, read the number in Output.
 4. On the iPhone, **log into the same Roblox account** in the Roblox app. Then

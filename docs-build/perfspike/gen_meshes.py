@@ -224,7 +224,7 @@ def make_kit() -> dict:
 
 def write_obj(path: str, mesh: Mesh) -> None:
     with open(path, "w") as f:
-        f.write("# Vaultbreakers perf spike stand-in (throwaway)\n")
+        f.write("# Vault Raiderz perf spike stand-in (throwaway)\n")
         for (x, y, z) in mesh.verts:
             f.write(f"v {x:.5f} {y:.5f} {z:.5f}\n")
         for (x, y, z) in mesh.verts:  # simple planar UVs so the importer has some

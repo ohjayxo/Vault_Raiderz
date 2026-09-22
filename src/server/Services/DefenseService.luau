@@ -22,7 +22,7 @@
 --   ShockFence     brief stun on contact.
 --   DecoyVault     Scavs go there first and waste time (raids: step 7).
 --   GuardDrone     zaps the nearest intruder for a little damage.
---   LockUpgrade    makes lockpicking harder (step 7 reads lockBonus).
+--   LockUpgrade    makes lockpicking harder (RaidService: useLockUpgrades).
 -- A Disruptor gadget switches one defense off for a while (disruptNearest).
 
 local CollectionService = game:GetService("CollectionService")
@@ -66,13 +66,21 @@ type Defense = {
 	slowed: { [Humanoid]: boolean }, -- SpikeFloor: who it's slowing now
 	nextZapAt: number,
 	disabledUntil: number,
+	-- Offline bases (step 7) are read-only copies: their charges are counted
+	-- here, never saved (an offline raid doesn't drain the owner's charges).
+	offlineUsed: number?,
 }
 type Intruder = { model: Model, humanoid: Humanoid, root: BasePart, player: Player? }
 
 local defenses: { [Model]: Defense } = {}
 local logAnomaly = AnomalyLog.new("Defense")
+local triggeredEvent = Instance.new("BindableEvent")
 
 local DefenseService = {}
+
+-- Fires (ownerId, kind, position, intruder: Model) when a defense fires at
+-- someone (the raid log's path map marks these, D105).
+DefenseService.Triggered = triggeredEvent.Event
 
 -- ── Charges ──────────────────────────────────────────────────────────────
 
@@ -83,7 +91,8 @@ local function usedOf(ownerId: number, pieceId: string): number
 end
 
 local function chargesLeft(defense: Defense): number
-	return math.max(0, kindCfgs[defense.kind].Charges - usedOf(defense.ownerId, defense.pieceId))
+	local used = defense.offlineUsed or usedOf(defense.ownerId, defense.pieceId)
+	return math.max(0, kindCfgs[defense.kind].Charges - used)
 end
 
 local function showCharges(defense: Defense)
@@ -101,6 +110,14 @@ end
 -- Uses one charge. False (and nothing happens) if it's empty or its owner
 -- isn't loaded.
 local function spendCharge(defense: Defense): boolean
+	if defense.offlineUsed then
+		if chargesLeft(defense) <= 0 then
+			return false
+		end
+		defense.offlineUsed += 1
+		showCharges(defense)
+		return true
+	end
 	local owner = Players:GetPlayerByUserId(defense.ownerId)
 	if not owner or chargesLeft(defense) <= 0 then
 		return false
@@ -184,6 +201,7 @@ local function tripwire(defense: Defense, intruders: { Intruder }, now: number)
 			and spendCharge(defense)
 		then
 			defense.lastHit[intruder.model] = now
+			triggeredEvent:Fire(defense.ownerId, defense.kind, defense.hitbox.Position, intruder.model)
 			markIntruder(intruder.model, cfg.MarkSeconds)
 			alertOwner(defense.ownerId, "Tripwire", "Tripwire! Someone is at your base")
 		end
@@ -207,6 +225,7 @@ local function spikeFloor(defense: Defense, intruders: { Intruder })
 			if defense.slowed[intruder.humanoid] or spendCharge(defense) then
 				still[intruder.humanoid] = true
 				if not defense.slowed[intruder.humanoid] then
+					triggeredEvent:Fire(defense.ownerId, defense.kind, defense.hitbox.Position, intruder.model)
 					MovementService.setSlow(intruder.humanoid, key, cfg.SlowMultiplier)
 				end
 			end
@@ -235,6 +254,7 @@ local function shockFence(defense: Defense, intruders: { Intruder }, now: number
 			and spendCharge(defense)
 		then
 			defense.lastHit[intruder.model] = now
+			triggeredEvent:Fire(defense.ownerId, defense.kind, defense.hitbox.Position, intruder.model)
 			MovementService.stun(intruder.humanoid, cfg.StunSeconds)
 		end
 	end
@@ -277,6 +297,7 @@ local function guardDrone(defense: Defense, intruders: { Intruder }, now: number
 		damage *= 1 - ArmorService.damageReduction(best.player)
 	end
 	best.humanoid:TakeDamage(damage)
+	triggeredEvent:Fire(defense.ownerId, defense.kind, defense.hitbox.Position, best.model)
 	local top = defense.hitbox.Position + Vector3.new(0, defense.hitbox.Size.Y / 2 - 1, 0)
 	zapBeam(top, best.root.Position)
 end
@@ -328,13 +349,14 @@ function DefenseService.claimDecoy(ownerId: number): BasePart?
 	return nil
 end
 
--- Extra lockpick difficulty from this owner's working Lock Upgrades
--- (step 7 calls this at the start of a lockpick and spends a charge each).
-function DefenseService.lockBonus(ownerId: number): number
+-- Extra lockpick difficulty from this owner's working Lock Upgrades. Each
+-- one that counts spends a charge (a raid's lockpick starts: step 7).
+function DefenseService.useLockUpgrades(ownerId: number): number
 	local bonus = 0
 	for _, defense in defenses do
-		if defense.kind == "LockUpgrade" and defense.ownerId == ownerId and isActive(defense) then
+		if defense.kind == "LockUpgrade" and defense.ownerId == ownerId and isActive(defense) and spendCharge(defense) then
 			bonus += kindCfgs.LockUpgrade.ExtraDifficulty
+			triggeredEvent:Fire(defense.ownerId, defense.kind, defense.hitbox.Position, nil)
 		end
 	end
 	return bonus
@@ -459,6 +481,7 @@ local function onAdded(instance: Instance)
 		slowed = {},
 		nextZapAt = 0,
 		disabledUntil = 0,
+		offlineUsed = if instance:GetAttribute("Offline") then (instance:GetAttribute("UsedCharges") :: number? or 0) else nil,
 	}
 	defenses[instance] = defense
 	showCharges(defense)

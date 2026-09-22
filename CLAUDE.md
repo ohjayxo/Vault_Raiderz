@@ -1,6 +1,6 @@
-# CLAUDE.md — Vaultbreakers (Roblox, Luau, Rojo)
+# CLAUDE.md — Vault Raiderz (Roblox, Luau, Rojo)
 
-You are building the **vertical slice** of Vaultbreakers, a Roblox game.
+You are building the **vertical slice** of Vault Raiderz, a Roblox game.
 The owner (Josh) is new to Roblox development: explain what you're doing
 in plain language, plan before building, and tell him exactly how to test
 each change in Studio.

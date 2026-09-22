@@ -206,7 +206,7 @@ share.
 constrains the other.** A Pristine item can have a dull seed; a Scarred
 one can be a legendary seed.
 
-### Implementation in Vaultbreakers `[LOCKED]`
+### Implementation in Vault Raiderz `[LOCKED]`
 
 - Most cosmetics ship with **uniform finishes** where Pattern does nothing
 - A handful ship as **Unstable Finishes** where Pattern dramatically changes
