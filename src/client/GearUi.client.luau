@@ -27,6 +27,7 @@ local buyRemote = Remotes.getFunction("BuyUpgrade")
 local respecRemote = Remotes.getFunction("RespecUpgrades")
 local equipRemote = Remotes.getFunction("EquipArmor")
 local gadgetRemote = Remotes.getFunction("UseGadget")
+local skinRemote = Remotes.getFunction("EquipSkin")
 
 local REASON_TEXT: { [string]: string } = {
 	Busy = "Too fast",
@@ -37,6 +38,7 @@ local REASON_TEXT: { [string]: string } = {
 	CantAfford = "Not enough resources",
 	NothingToRespec = "Nothing to respec",
 	NotFound = "You don't have that any more",
+	NoArt = "That skin's model is missing (see Output)",
 	Dead = "You're down",
 	Carrying = "No gadgets while carrying loot",
 	NoDefense = "No defense to disrupt",
@@ -114,6 +116,7 @@ end
 local gui = Instance.new("ScreenGui")
 gui.Name = "GearUi"
 gui.ResetOnSpawn = false
+gui.DisplayOrder = 10 -- menus draw above HUD (the vault meter was covering this)
 
 local gearButton = makeButton(gui, "Gear", SIZE, SIZE * 0.6)
 gearButton.AnchorPoint = Vector2.new(1, 0)
@@ -164,6 +167,12 @@ local armorRow = makeList(panel, true, 4)
 local armorLabel = makeLabel(armorRow, "Armor:", 70, 0)
 armorLabel.TextXAlignment = Enum.TextXAlignment.Left
 local armorButtons: { TextButton } = {}
+
+-- Skins: the plain pickaxe plus every skin you own (spares show x2).
+local skinRow = makeList(panel, true, 5)
+local skinLabel = makeLabel(skinRow, "Skin:", 70, 0)
+skinLabel.TextXAlignment = Enum.TextXAlignment.Left
+local skinButtons: { TextButton } = {}
 
 -- Gadget bar: a column on the right edge, under the Gear button. Buttons
 -- only for gadgets you own.
@@ -268,6 +277,30 @@ local function render()
 				ask(equipRemote, if worn then "" else piece.Id)
 			end)
 			table.insert(armorButtons, button)
+		end
+	end
+
+	for _, button in skinButtons do
+		button:Destroy()
+	end
+	table.clear(skinButtons)
+	local skinCfgs: { [string]: { Name: string } } = Config.Cosmetics.PickaxeSkins :: any
+	local function addSkinButton(skinId: string, label: string, order: number)
+		local equipped = current.EquippedSkin == skinId
+		local button = makeButton(skinRow, label, SIZE * 1.5, 40, order)
+		button.BackgroundColor3 = if equipped then Color3.fromRGB(40, 110, 70) else Color3.fromRGB(45, 45, 60)
+		button.Activated:Connect(function()
+			if not equipped then
+				ask(skinRemote, skinId)
+			end
+		end)
+		table.insert(skinButtons, button)
+	end
+	addSkinButton("", Config.Cosmetics.DefaultSkinName, 1)
+	for order, skinId in Config.Cosmetics.SkinOrder do
+		local count = current.Skins[skinId] or 0
+		if count > 0 then
+			addSkinButton(skinId, skinCfgs[skinId].Name .. (if count > 1 then ` x{count}` else ""), order + 1)
 		end
 	end
 

@@ -161,6 +161,12 @@ needs the same edits.**
    though PvP is on there. The server refuses a Riftsalt spawn point outside a
    Contested zone at start-up.
 
+## Pickaxe skins (2026-09-22) — NOT yet in `docs/`
+
+1. **An equipped skin replaces the whole pickaxe look;** the tier isn't shown
+   (keeps tier a private power stat, like gear score, D92).
+2. **A duplicate skin drop is kept as a spare** (tradeable in step 9, D111).
+
 ## Flagged for redesign (step 2 review, 2026-09-20) — ANSWERED 2026-09-21 (see above)
 
 Not decided yet. Take these to the design project; the build keeps the

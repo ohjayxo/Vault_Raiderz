@@ -48,6 +48,7 @@ local Config = {
 			Crew = "CrewService", -- step 11
 			Shields = "RaidProtectionService", -- step 8 (R6, D67, D75)
 			DefenseUse = "DefenseService", -- step 6: charges used per defense piece
+			Cosmetics = "CosmeticService", -- pickaxe skins (05 § Cosmetics; R1: never lootable)
 		},
 
 		-- D80: small per-player fields bitpacked from the start. Each word is one
@@ -550,6 +551,7 @@ local Config = {
 			ButtonSize = 72, -- px: big enough for thumbs
 			GhostTransparency = 0.5,
 			EdgeGhostThickness = 1, -- studs: walls/gates/fences are 1 thick
+			PiecesPerRow = 3, -- build menu grid, so 6 defenses don't cover Done
 			GhostColor = Color3.fromRGB(80, 220, 120),
 			SelectColor = Color3.fromRGB(255, 210, 60),
 			MessageSeconds = 2,
@@ -690,6 +692,23 @@ local Config = {
 		},
 	},
 
+	-- Pickaxe skins. 05-items.md § Pickaxes are not tradeable (D111: the
+	-- skins are the tradeable product), § Cosmetics; R1 (never lootable).
+	-- A skin = a template model in ServerStorage.PickaxeSkins (src/assets/
+	-- PickaxeSkins): a "Handle" part (the grip) + a "Visual" folder (the art).
+	-- Adding one = a new model + one line here. A skin replaces the whole
+	-- look: the pickaxe tier isn't shown (Josh's call, 2026-09-22).
+	Cosmetics = {
+		SkinFolderName = "PickaxeSkins",
+		-- id -> display name. The id is the template model's name.
+		PickaxeSkins = {
+			CaptainsCleaver = { Name = "Captain's Cleaver" }, -- [PH] name (v5.8)
+		},
+		SkinOrder = { "CaptainsCleaver" }, -- menu order
+		DefaultSkinName = "Standard", -- the plain tier-coloured pickaxe
+		DebugSkin = "CaptainsCleaver", -- Studio key 7
+	},
+
 	-- Walk speed modifiers (gadgets now; Chase loot slow + carry speed in
 	-- step 7). One owner, MovementService, so modifiers never fight.
 	Movement = {
@@ -821,10 +840,12 @@ local Config = {
 		SuccessRewardPerTier = { Stone = 30, Ore = 10 }, -- [PH] invented
 		-- Captain Guaranteed bucket: "materials scaled to tier" (x tier).
 		CaptainMaterialsPerTier = { Stone = 60, Ore = 25, Riftsalt = 3 }, -- [PH] invented
-		-- TEMPORARY stand-ins (Josh's call, step 6) until step 10 adds Common
-		-- blueprints and the design names a signature item:
-		CaptainRareScrap = 40, -- Rare bucket: Research Scrap instead of a blueprint
-		CaptainSignatureArmorTier = 2, -- Signature bucket: an Iron armor piece
+		-- TEMPORARY stand-in (Josh's call, step 6) until step 10 adds Common
+		-- blueprints: Rare bucket = Research Scrap instead of a blueprint.
+		CaptainRareScrap = 40,
+		-- Signature bucket: the Captain pickaxe skin (v5.8, 04 § The PvE
+		-- ladder). A duplicate is kept as a tradeable spare (Josh's call).
+		CaptainSignatureSkin = "CaptainsCleaver",
 		FloodCount = 6, -- Studio key: waves queued at once to test the cap
 	},
 

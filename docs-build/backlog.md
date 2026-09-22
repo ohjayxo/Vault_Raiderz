@@ -85,11 +85,21 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
   `DefenseService.lockBonus(ownerId)` at lockpick start and spend a Lock
   Upgrade charge; Decoy Vault wasting raid time is still to wire.
 - **Step 9:** Scav Wave success should grant Reputation (logged for now).
-- **Step 10:** Captain Rare = Research Scrap and Signature = Iron armor are
-  TEMPORARY stand-ins (`Config.ScavWaves.CaptainRareScrap`,
-  `.CaptainSignatureArmorTier`); swap Rare for Common blueprints.
+- **Step 10:** Captain Rare = Research Scrap is a TEMPORARY stand-in
+  (`Config.ScavWaves.CaptainRareScrap`); swap it for Common blueprints.
+  (Signature is now the real Captain's Cleaver skin, 2026-09-22.)
 - **Step 14:** waves start once a Vault Core exists; the FTUE's scripted
   1:00 Scav (02 § FTUE spec) is separate and should not trigger the timer
   early.
 - **D64 threat strip:** base alerts use a simple banner (`BaseAlerts.client`);
   the priority strip is due when raids add more alerts (step 7).
+
+## Pickaxe skins (2026-09-22)
+
+- **Art-ready pass is next** (Josh's call): art out of `gen_world.py`,
+  code-built looks (Scavs, default pickaxe, armor plate, effects) into
+  templates, islands split into Hitbox + Visual, and an artist guide.
+- **Step 9:** direct trading must move skin counts (`Cosmetics.PickaxeSkins`)
+  between players; never let a raid touch them (R1).
+- **Step 14:** the FTUE's free cosmetic can be a skin via
+  `CosmeticService.grantSkin`.

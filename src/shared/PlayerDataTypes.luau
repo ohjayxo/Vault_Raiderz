@@ -54,6 +54,8 @@ export type GearState = {
 	ArmorEquipped: string, -- piece id, "" = none
 	ArmorPieces: { { Id: string, Tier: number, Slot: string } },
 	Gadgets: { [string]: number },
+	Skins: { [string]: number }, -- skin id -> owned count
+	EquippedSkin: string, -- "" = the plain pickaxe
 }
 
 export type ProfileData = {
@@ -86,6 +88,9 @@ export type ProfileData = {
 	-- Step 6: charges USED per defense piece id (missing = full). Stored as
 	-- "used" so a new defense needs no setup and a refill just deletes the key.
 	DefenseUse: { [string]: number },
+	-- Pickaxe skins: skin id -> how many you own (spares trade in step 9).
+	-- EquippedPickaxeSkin "" = the plain tier-coloured pickaxe. R1: never lootable.
+	Cosmetics: { PickaxeSkins: { [string]: number }, EquippedPickaxeSkin: string },
 	-- D80 bitpacked words (layouts in Config.Data.Packed). Use get/setPacked.
 	Packed: { [string]: number },
 }
@@ -104,6 +109,7 @@ export type SectionName =
 	| "Crew"
 	| "Shields"
 	| "DefenseUse"
+	| "Cosmetics"
 	| "Packed"
 
 return {}

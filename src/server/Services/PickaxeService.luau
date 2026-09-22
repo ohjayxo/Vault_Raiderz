@@ -13,7 +13,7 @@
 -- * Other services read the effects through the stat functions below;
 --   nothing else looks inside Gear.
 -- * Also sends the owner's Gear menu state (GearState: pickaxe + armor +
---   gadgets). Gear score is never in it.
+--   gadgets + skins). Gear score is never in it.
 -- * Better tiers come from Workshop crafting (step 10); Studio debug only now.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -28,6 +28,7 @@ local PlayerDataService = require(script.Parent.PlayerDataService)
 local VaultService = require(script.Parent.VaultService)
 local ArmorService = require(script.Parent.ArmorService)
 local InventoryService = require(script.Parent.InventoryService)
+local CosmeticService = require(script.Parent.CosmeticService)
 
 local OWNER = "PickaxeService"
 local combatCfg = Config.Combat
@@ -145,7 +146,8 @@ function PickaxeService.getState(player: Player): Types.GearState?
 	local gear = gearOf(player)
 	local armor = ArmorService.get(player)
 	local items = InventoryService.getAll(player)
-	if not gear or not armor or not items then
+	local cosmetics = CosmeticService.get(player)
+	if not gear or not armor or not items or not cosmetics then
 		return nil
 	end
 	local ranks: { [string]: number } = {}
@@ -171,6 +173,8 @@ function PickaxeService.getState(player: Player): Types.GearState?
 		ArmorEquipped = armor.Equipped[combatCfg.ArmorSlots[1]] or "",
 		ArmorPieces = pieces,
 		Gadgets = gadgets,
+		Skins = cosmetics.PickaxeSkins,
+		EquippedSkin = cosmetics.EquippedPickaxeSkin,
 	}
 end
 
@@ -270,6 +274,7 @@ function PickaxeService.start()
 	-- The menu shows armor and gadgets too, so refresh when they change.
 	ArmorService.Changed:Connect(PickaxeService.refresh)
 	InventoryService.Changed:Connect(PickaxeService.refresh)
+	CosmeticService.Changed:Connect(PickaxeService.refresh)
 	PlayerDataService.Loaded:Connect(function(player: Player)
 		if combatCfg.Ui.ShowBeforeFtue then
 			PickaxeService.setMenuVisible(player, true)

@@ -35,6 +35,10 @@
       "PieceTemplates": {
         "$className": "Folder",
         "$path": "src/assets/PieceTemplates"
+      },
+      "PickaxeSkins": {
+        "$className": "Folder",
+        "$path": "src/assets/PickaxeSkins"
       }
     }
   }

@@ -75,6 +75,7 @@ local busy = false
 local gui = Instance.new("ScreenGui")
 gui.Name = "BuildUi"
 gui.ResetOnSpawn = false
+gui.DisplayOrder = 10 -- menus draw above HUD
 gui.Enabled = false
 
 local SIZE = uiCfg.ButtonSize
@@ -118,10 +119,13 @@ local buildButton = makeButton(gui, "Build", 0, SIZE * 1.3)
 buildButton.AnchorPoint = Vector2.new(1, 1)
 buildButton.Position = UDim2.new(1, -16, 1, -16 - SIZE * 1.6) -- above the jump button
 buildButton.Size = UDim2.fromOffset(SIZE * 1.3, SIZE * 1.3)
+buildButton.ZIndex = 10 -- Build/Done always stays tappable, above the panel
 
 local panel = Instance.new("Frame")
 panel.AnchorPoint = Vector2.new(0.5, 1)
-panel.Position = UDim2.new(0.5, 0, 1, -12)
+-- Centred in the space left of the right-hand button column (Build/Done,
+-- Attack, Jump), so the panel never covers them.
+panel.Position = UDim2.new(0.5, -(SIZE * 1.3 + 32) / 2, 1, -12)
 panel.AutomaticSize = Enum.AutomaticSize.XY
 panel.Size = UDim2.fromOffset(0, 0)
 panel.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -150,7 +154,21 @@ infoLabel.TextSize = 15
 infoLabel.Parent = panel
 
 local tabRow = makeRow(panel, 2)
-local pieceRow = makeRow(panel, 3)
+-- Piece buttons in a grid (Config PiecesPerRow per row) instead of one
+-- long row: six defenses side by side were wider than a phone.
+local pieceRow = Instance.new("Frame")
+pieceRow.LayoutOrder = 3
+pieceRow.BackgroundTransparency = 1
+pieceRow.AutomaticSize = Enum.AutomaticSize.XY
+pieceRow.Size = UDim2.fromOffset(0, 0)
+local pieceGrid = Instance.new("UIGridLayout")
+pieceGrid.CellSize = UDim2.fromOffset(SIZE * 1.4, SIZE)
+pieceGrid.CellPadding = UDim2.fromOffset(8, 8)
+pieceGrid.FillDirectionMaxCells = uiCfg.PiecesPerRow
+pieceGrid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+pieceGrid.SortOrder = Enum.SortOrder.LayoutOrder
+pieceGrid.Parent = pieceRow
+pieceRow.Parent = panel
 local actionRow = makeRow(panel, 4)
 
 -- "TripwireAlarm" -> "Tripwire Alarm"

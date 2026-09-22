@@ -12,7 +12,7 @@
 -- K = next pickaxe tier (wraps), J = +1 of every gadget, U = +1 armor piece
 -- (alternates Wooden / Iron), Y = toggle PvP protection (FTUE rule 3 hook),
 -- Q = Scav Wave on your base now, 6 = wave led by a Scav Captain,
--- Z = queue many waves at once (D59 cap test).
+-- Z = queue many waves at once (D59 cap test), 7 = +1 Captain's Cleaver skin.
 -- (M = mine-remote spam lives entirely on the client: it fires the real
 -- MineNode remote, exactly like an exploit script would.)
 
@@ -35,6 +35,7 @@ local PickaxeService = require(script.Parent.PickaxeService)
 local ArmorService = require(script.Parent.ArmorService)
 local InventoryService = require(script.Parent.InventoryService)
 local ScavWaveService = require(script.Parent.ScavWaveService)
+local CosmeticService = require(script.Parent.CosmeticService)
 
 -- Key B: more items than MaxPending (6), mixed priorities, all at once.
 -- Expected with the step 2 Config: flex 1 goes out at once; Vaultborn 2
@@ -146,6 +147,11 @@ local commands: { [string]: (Player) -> () } = {
 		local protected = not player:GetAttribute(attribute)
 		player:SetAttribute(attribute, protected)
 		print(`[Debug] {player.Name} PvP protection {if protected then "ON (can't hit or be hit by players)" else "OFF"}`)
+	end,
+	GrantSkin = function(player)
+		local skinId = Config.Cosmetics.DebugSkin
+		local ok = CosmeticService.grantSkin(player, skinId)
+		print(`[Debug] +1 {skinId} skin for {player.Name}: {if ok then "ok" else "FAILED"} (equip it in the Gear menu)`)
 	end,
 	StartWave = function(player)
 		ScavWaveService.debugStartWave(player, false)

@@ -28,7 +28,7 @@ local ServerConfig = require(ServerScriptService.ServerConfig)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 local VaultService = require(script.Parent.VaultService)
 local InventoryService = require(script.Parent.InventoryService)
-local ArmorService = require(script.Parent.ArmorService)
+local CosmeticService = require(script.Parent.CosmeticService)
 local PlotService = require(script.Parent.PlotService)
 local ScavService = require(script.Parent.ScavService)
 
@@ -121,11 +121,12 @@ local function captainLoot(owner: Player, tier: number)
 		VaultService.depositScrap(owner, waveCfg.CaptainRareScrap)
 		table.insert(lines, `{waveCfg.CaptainRareScrap} Research Scrap`)
 	end
-	-- Signature (~5-8%): TEMPORARY Iron armor until a signature item is named.
+	-- Signature (~5-8%): the Captain pickaxe skin (v5.8). A duplicate is
+	-- kept as a spare to trade (Josh's call, 2026-09-22).
 	if rng:NextNumber() < odds.Signature then
-		local armorTier = waveCfg.CaptainSignatureArmorTier
-		ArmorService.grant(owner, armorTier, Config.Combat.ArmorSlots[1])
-		table.insert(lines, `a {Config.Combat.PickaxeTiers[armorTier]} chest armor (rare!)`)
+		local skinId = waveCfg.CaptainSignatureSkin
+		CosmeticService.grantSkin(owner, skinId)
+		table.insert(lines, `the {(Config.Cosmetics.PickaxeSkins :: any)[skinId].Name} pickaxe skin (rare!)`)
 	end
 	print(`[Waves] Scav Captain loot for {owner.Name}: {table.concat(lines, "; ")}`)
 	alert(owner, "CaptainLoot", `Scav Captain defeated! Loot: {table.concat(lines, "; ")}`)

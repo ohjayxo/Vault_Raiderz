@@ -30,6 +30,7 @@ require(Services.PlotService).start()
 -- Step 5: combat, pickaxe upgrades, armor, gadgets. (MovementService and
 -- InventoryService have nothing to start.)
 require(Services.ArmorService).start()
+require(Services.CosmeticService).start()
 require(Services.PickaxeService).start()
 require(Services.GadgetService).start()
 require(Services.CombatService).start()

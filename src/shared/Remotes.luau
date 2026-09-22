@@ -62,6 +62,9 @@ local definitions: { [string]: RemoteKind } = {
 	-- Step 6: defenses + Scav Waves.
 	RefillDefense = "Function", -- (pieceId) -> (ok, reason?)
 	BaseAlert = "Event", -- server -> owner: (kind, text) about their own base
+
+	-- Pickaxe skins.
+	EquipSkin = "Function", -- (skinId or "") -> (ok, reason?)
 }
 
 local Remotes = {}

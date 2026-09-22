@@ -36,6 +36,7 @@ local MovementService = require(script.Parent.MovementService)
 local GadgetService = require(script.Parent.GadgetService)
 local PlotService = require(script.Parent.PlotService)
 local PlayerDataService = require(script.Parent.PlayerDataService)
+local CosmeticService = require(script.Parent.CosmeticService)
 
 local combatCfg = Config.Combat
 local TOOL_NAME = "Pickaxe"
@@ -67,6 +68,36 @@ local function buildTool(player: Player): Tool
 	tool.GripForward = Vector3.new(-1, 0, 0)
 	tool.GripRight = Vector3.new(0, 1, 0)
 	tool.GripUp = Vector3.new(0, 0, 1)
+
+	-- An equipped skin replaces the whole look (Josh's call, 2026-09-22).
+	-- Skin template contract: Handle = the grip, Visual = the art. Welding
+	-- the art to the Handle is the only thing code does with a Visual.
+	local skin = CosmeticService.equippedTemplate(player)
+	if skin then
+		local clone = skin:Clone()
+		local skinHandle = clone:FindFirstChild("Handle") :: BasePart
+		local visual = clone:FindFirstChild("Visual")
+		skinHandle.CanCollide = false
+		skinHandle.CanQuery = false
+		skinHandle.CanTouch = false
+		skinHandle.Massless = true
+		if visual then
+			for _, descendant in visual:GetDescendants() do
+				if descendant:IsA("BasePart") then
+					descendant.Anchored = false
+					descendant.Massless = true
+					local weld = Instance.new("WeldConstraint")
+					weld.Part0 = skinHandle
+					weld.Part1 = descendant
+					weld.Parent = descendant
+				end
+			end
+			visual.Parent = tool
+		end
+		skinHandle.Parent = tool
+		clone:Destroy()
+		return tool
+	end
 
 	local handle = Instance.new("Part")
 	handle.Name = "Handle"
@@ -329,6 +360,7 @@ function CombatService.start()
 	-- New tier = new head colour; the first spawn may come before the
 	-- profile (and so the real tier) has loaded.
 	PickaxeService.Changed:Connect(equipTool)
+	CosmeticService.Changed:Connect(equipTool)
 	PlayerDataService.Loaded:Connect(equipTool)
 
 	local rate = combatCfg.SwingRateLimit

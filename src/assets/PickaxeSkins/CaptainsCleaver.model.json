@@ -1,0 +1,320 @@
+{
+  "className": "Model",
+  "attributes": {
+    "SkinId": "CaptainsCleaver"
+  },
+  "children": [
+    {
+      "name": "Handle",
+      "className": "Part",
+      "properties": {
+        "Anchored": false,
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "Massless": true,
+        "Size": [
+          0.3,
+          0.3,
+          3.5
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "orientation": [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                0,
+                1
+              ]
+            ]
+          }
+        },
+        "Color": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "Material": "SmoothPlastic",
+        "Transparency": 1,
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Visual",
+      "className": "Folder",
+      "children": [
+        {
+          "name": "Shaft",
+          "className": "Part",
+          "properties": {
+            "Anchored": false,
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "Massless": true,
+            "Size": [
+              0.35,
+              0.35,
+              3.6
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "orientation": [
+                  [
+                    1,
+                    0,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.1765,
+              0.1373,
+              0.1373
+            ],
+            "Material": "Metal",
+            "Transparency": 0,
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth"
+          }
+        },
+        {
+          "name": "Blade",
+          "className": "Part",
+          "properties": {
+            "Anchored": false,
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "Massless": true,
+            "Size": [
+              0.25,
+              2.4,
+              1.9
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  0,
+                  0.55,
+                  1.6
+                ],
+                "orientation": [
+                  [
+                    1,
+                    0,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.4706,
+              0.1569,
+              0.1569
+            ],
+            "Material": "Metal",
+            "Transparency": 0,
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth"
+          }
+        },
+        {
+          "name": "Edge",
+          "className": "Part",
+          "properties": {
+            "Anchored": false,
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "Massless": true,
+            "Size": [
+              0.3,
+              0.25,
+              1.9
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  0,
+                  1.8,
+                  1.6
+                ],
+                "orientation": [
+                  [
+                    1,
+                    0,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.902,
+              0.902,
+              0.9216
+            ],
+            "Material": "Metal",
+            "Transparency": 0,
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth"
+          }
+        },
+        {
+          "name": "Spike",
+          "className": "Part",
+          "properties": {
+            "Anchored": false,
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "Massless": true,
+            "Size": [
+              0.3,
+              0.9,
+              0.3
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  0,
+                  -0.9,
+                  1.6
+                ],
+                "orientation": [
+                  [
+                    1,
+                    0,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.1765,
+              0.1373,
+              0.1373
+            ],
+            "Material": "Metal",
+            "Transparency": 0,
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth"
+          }
+        },
+        {
+          "name": "Wrap",
+          "className": "Part",
+          "properties": {
+            "Anchored": false,
+            "CanCollide": false,
+            "CanQuery": false,
+            "CanTouch": false,
+            "Massless": true,
+            "Size": [
+              0.45,
+              0.45,
+              0.9
+            ],
+            "CFrame": {
+              "CFrame": {
+                "position": [
+                  0,
+                  0,
+                  -1.2
+                ],
+                "orientation": [
+                  [
+                    1,
+                    0,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ]
+                ]
+              }
+            },
+            "Color": [
+              0.5882,
+              0.4314,
+              0.1569
+            ],
+            "Material": "Fabric",
+            "Transparency": 0,
+            "TopSurface": "Smooth",
+            "BottomSurface": "Smooth"
+          }
+        }
+      ]
+    }
+  ]
+}
