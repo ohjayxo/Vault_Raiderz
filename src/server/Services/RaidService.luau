@@ -11,7 +11,7 @@
 -- in, one grab takes the whole share.
 --
 -- The raid: Breach (at the victim's plot; starts the 90 s window) ->
--- Lockpick (server-timed dial, speed not failure) -> Grab (Exposed only) ->
+-- Lockpick (server-run Skyrim-style lock, speed not failure) -> Grab (Exposed only) ->
 -- the Chase -> Escape. Any player's hit, death, leaving or running out of
 -- time sends the loot home.
 --
@@ -44,6 +44,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local NodeMath = require(ReplicatedStorage.Shared.NodeMath)
 local Types = require(ReplicatedStorage.Shared.PlayerDataTypes)
+local LockpickModel = require(ReplicatedStorage.Shared.LockpickModel)
 local RateLimiter = require(ServerScriptService.Util.RateLimiter)
 local AnomalyLog = require(ServerScriptService.Util.AnomalyLog)
 local RaidLock = require(ServerScriptService.Util.RaidLock)
@@ -55,6 +56,7 @@ local DefenseService = require(script.Parent.DefenseService)
 local MovementService = require(script.Parent.MovementService)
 local CombatService = require(script.Parent.CombatService)
 local PickaxeService = require(script.Parent.PickaxeService)
+local InventoryService = require(script.Parent.InventoryService)
 local BroadcastQueue = require(script.Parent.BroadcastQueue)
 
 local OWNER = "RaidService"
@@ -82,14 +84,16 @@ type Raid = {
 	plotHitbox: BasePart,
 	phase: string, -- "Breached" | "Unlocked" | "Carrying" | "Over"
 	endsAt: number,
-	pins: number,
-	pinsDone: number,
-	sweet: number, -- the secret angle for this pin (0..1)
-	tolerance: number,
-	progress: number, -- 0..1 of the current pin
-	holdToken: number, -- newest "stand still while picking" timer
-	warmth: number, -- how close the last turn was (0 = lock didn't move)
-	lastTurnAt: number,
+	-- Lockpick (shared/LockpickModel). Only this server knows the sweet spot.
+	stages: { LockpickModel.StageConfig }, -- this lock's stages (tier + Lock Upgrades)
+	stage: number, -- the stage being picked, 1..#stages
+	center: number, -- the secret sweet-spot angle for this stage (degrees)
+	side: number, -- which side of centre it's on (-1 / 1)
+	prevSide: number?, -- the last SOLVED stage's side (same-side rule)
+	lock: LockpickModel.State,
+	pickBreakScale: number, -- this pick's durability roll (BreakVariance)
+	picking: boolean, -- kneeling at the lock: can't move until it opens or they cancel
+	feelAt: number, -- when the raider was last sent a LockpickFeel
 	loot: Loot?,
 	sabotaged: boolean,
 	path: { { number } },
@@ -195,7 +199,12 @@ local function viewFor(raid: Raid, role: string): Types.RaidView
 		RaiderName = raid.raider.Name,
 		VictimName = raid.victimName,
 		Lockpick = if role == "Raider" and raid.phase == "Breached"
-			then { Pins = raid.pins, PinsDone = raid.pinsDone, Progress = raid.progress, Warmth = raid.warmth }
+			then {
+				Picking = raid.picking,
+				Stage = raid.stage,
+				Stages = #raid.stages,
+				Picks = InventoryService.count(raid.raider, pickCfg.ItemId),
+			}
 			else nil,
 		Loot = if raid.loot then totalsOf(raid.loot) else nil,
 		CanSabotage = canSabotage,
@@ -346,6 +355,9 @@ end
 -- The loot goes home (knocked loose, died, left, timed out, cancelled).
 -- Nothing was ever taken from the victim, so there's nothing to give back:
 -- only the log entry and the lock. Yields for offline raids.
+local victimLeft: (player: Player) -> () -- defined below failRaid
+local stopPicking: (raid: Raid) -> () -- lets a raider move again
+
 local function failRaid(raid: Raid, outcome: string, text: string)
 	-- Once an escape is settling (message in flight), only escape() may
 	-- finish the raid: a second path would race it for the lock.
@@ -456,6 +468,30 @@ local function escape(raid: Raid)
 	cleanup(raid)
 end
 
+-- A victim leaving. Called from BOTH leave paths (PlayerDataService's
+-- before-release hook and PlayerRemoving), whichever fires first; the
+-- second call does nothing. Mid-Chase their loot is taken while their save
+-- is still live, and the raider still has to escape with it (review H1).
+-- Before the grab there's nothing at stake, so the raid is cancelled.
+victimLeft = function(player: Player)
+	local victimRaid = raidOnVictim[player.UserId]
+	if type(victimRaid) ~= "table" then
+		return
+	end
+	local raid = victimRaid :: Raid
+	if raid.victim ~= player then
+		return -- already settled by the other path
+	end
+	raid.victim = nil
+	if raid.phase == "Carrying" and raid.loot and PlayerDataService.isLoaded(player) then
+		raid.taken = VaultService.takeLoot(player, raid.loot :: Loot)
+		print(`[Raid] {player.Name} left mid-Chase: took {describe(raid.taken :: Loot)} from their save; {raid.raider.Name} still has to escape`)
+	else
+		print(`[Raid] {player.Name} left during {raid.phase}: cancelling the raid`)
+		failRaid(raid, "Cancelled", `{player.Name} left`)
+	end
+end
+
 -- ── Breach ───────────────────────────────────────────────────────────────
 
 local function offerEscort(raid: Raid)
@@ -491,19 +527,26 @@ local function startPathSampler(raid: Raid)
 	end)
 end
 
-local function newPin(raid: Raid)
-	raid.sweet = rng:NextNumber(0, 1)
-	raid.progress = 0
-	raid.warmth = 0
-	raid.lastTurnAt = 0
+-- A fresh sweet spot for the current stage (on a new stage, and when the
+-- raider cancels: walking away can't keep a half-found spot, guide §6).
+local function newStage(raid: Raid)
+	raid.center, raid.side = LockpickModel.rollCenter(rng, raid.prevSide, raid.stages[raid.stage].SweetWidth)
 end
 
-local function newLockpick(raid: Raid, bonusPins: number)
-	local tierSteps = math.max(0, raid.tier - 1)
-	raid.pins = pickCfg.PinsBase + pickCfg.PinsPerTier * tierSteps + pickCfg.LockUpgradeExtraPins * bonusPins
-	raid.pinsDone = 0
-	raid.tolerance = math.max(pickCfg.MinTolerance, pickCfg.Tolerance + pickCfg.TolerancePerTier * tierSteps)
-	newPin(raid)
+-- A fresh pick: its own durability roll (Josh's pick from the guide's extras).
+local function newPick(raid: Raid)
+	raid.pickBreakScale = 1 + (rng:NextNumber() * 2 - 1) * pickCfg.BreakVariance
+end
+
+-- Always the same number of stages; vault tier and the victim's Lock
+-- Upgrades only make each one harder (Josh's call, 2026-09-22).
+local function newLock(raid: Raid, lockUpgradeSteps: number)
+	raid.stages = LockpickModel.stagesFor(math.max(0, raid.tier - 1) + lockUpgradeSteps)
+	raid.stage = 1
+	raid.prevSide = nil
+	raid.lock = LockpickModel.newState()
+	newPick(raid)
+	newStage(raid)
 end
 
 local breachInner: (Player) -> (boolean, string?)
@@ -607,14 +650,15 @@ breachInner = function(player: Player): (boolean, string?)
 		plotHitbox = base.hitbox,
 		phase = "Breached",
 		endsAt = now() + raidCfg.WindowSeconds,
-		pins = 0,
-		pinsDone = 0,
-		sweet = 0,
-		tolerance = 0.2,
-		progress = 0,
-		warmth = 0,
-		holdToken = 0,
-		lastTurnAt = 0,
+		stages = {},
+		stage = 1,
+		center = 0,
+		side = 1,
+		prevSide = nil,
+		lock = LockpickModel.newState(),
+		pickBreakScale = 1,
+		picking = false,
+		feelAt = 0,
 		loot = nil,
 		sabotaged = false,
 		path = {},
@@ -626,7 +670,7 @@ breachInner = function(player: Player): (boolean, string?)
 	base.plot:SetAttribute("RaidId", raidId) -- an offline base mid-raid is never evicted
 	player:SetAttribute(RAIDING_ATTR, base.ownerId) -- defenses fire at raiders (step 6)
 	MovementService.setEnforced(player, true)
-	newLockpick(raid, DefenseService.useLockUpgrades(base.ownerId))
+	newLock(raid, DefenseService.useLockUpgrades(base.ownerId))
 
 	print(`[Raid] {player.Name} breached {base.ownerName}'s base ({if base.offline then "offline" else "online"}, tier {base.tier})`)
 	alertVictim(raid, "RaidAlert", `RAID! {player.Name} breached your base`)
@@ -642,7 +686,11 @@ breachInner = function(player: Player): (boolean, string?)
 	return true, nil
 end
 
--- ── Lockpick: Skyrim-style dial (speed, never fail-locked) ───────────────
+-- ── Lockpick: Skyrim-style lock (speed, never fail-locked) ──────────────
+-- The raider streams (pick angle, holding Turn). This server runs the lock
+-- every frame with the secret sweet spot and sends back only how the lock
+-- responds (LockpickFeel). Dead on, a stage takes FullTurn / TurnSpeed
+-- seconds, which is also the floor no script can beat.
 
 local function nearCore(player: Player, raid: Raid): boolean
 	local root = rootOf(player)
@@ -650,70 +698,128 @@ local function nearCore(player: Player, raid: Raid): boolean
 	return root ~= nil and core ~= nil and NodeMath.distanceToHitbox(core, root.Position) <= raidCfg.CoreRange
 end
 
--- The raider holds Turn and sends the pick's angle a few times a second.
--- The lock only moves while the angle is within `tolerance` of this pin's
--- secret sweet angle, fastest dead on it. Time, not luck: at the sweet
--- angle a pin takes SecondsPerPin, which is also the floor no script can
--- beat, so a bot is never faster than a good player.
-local function turn(player: Player, angleArg: unknown): (boolean, string?)
+local function sendFeel(raid: Raid, event: string?)
+	raid.feelAt = now()
+	if not raid.raider.Parent then
+		return
+	end
+	local s = raid.lock
+	local stage = raid.stages[raid.stage]
+	local feel: Types.LockpickFeel = {
+		Stage = raid.stage,
+		Stages = #raid.stages,
+		LockAngle = s.lockAngle,
+		Stalled = s.stalled,
+		-- Only while stalled: otherwise sweeping the pick without turning
+		-- would read out the sweet spot for free.
+		Closeness = if s.stalled then s.closeness else 0,
+		Damage = s.damage,
+		Lockout = s.lockout,
+		Picks = InventoryService.count(raid.raider, pickCfg.ItemId),
+		Event = event,
+		Debug = if RunService:IsStudio() and pickCfg.StudioOverlay and stage
+			then { Center = raid.center, SweetWidth = stage.SweetWidth, PartialWidth = stage.PartialWidth }
+			else nil,
+	}
+	Remotes.getEvent("LockpickFeel"):FireClient(raid.raider, feel)
+end
+
+-- Kneeling at the lock: both hands busy, so no walking (Josh's call).
+local function startPicking(player: Player): (boolean, string?)
 	local raid = raidOf[player]
 	if not raid or raid.raider ~= player or raid.phase ~= "Breached" then
 		return false, "NotPicking"
 	end
-	if typeof(angleArg) ~= "number" or angleArg ~= angleArg then
-		logAnomaly(player, "sent a bad pick angle")
-		return false, "Invalid"
-	end
 	if not nearCore(player, raid) then
 		return false, "TooFar"
 	end
-	local angle = math.clamp(angleArg :: number, 0, 1)
-	local t = now()
-	-- Both hands on the lock: the raider stands still while working it, and
-	-- can move again shortly after they stop (Josh's call, 2026-09-22).
 	local _, humanoid = rootOf(player)
-	if humanoid then
-		MovementService.setMultiplier(humanoid, "Lockpick", 0)
-		local hold = raid.holdToken + 1
-		raid.holdToken = hold
-		task.delay(pickCfg.HoldStillSeconds, function()
-			if raid.holdToken == hold then
-				local _, stillThere = rootOf(player)
-				if stillThere then
-					MovementService.setMultiplier(stillThere, "Lockpick", nil)
-				end
-			end
-		end)
+	if not humanoid then
+		return false, "Dead"
 	end
-	-- First update of a hold (or after a pause) only starts the clock.
-	local step = if raid.lastTurnAt > 0 then math.min(t - raid.lastTurnAt, pickCfg.MaxTurnStepSeconds) else 0
-	raid.lastTurnAt = t
-
-	local off = math.abs(angle - raid.sweet) / raid.tolerance
-	if off >= 1 then
-		raid.warmth = 0
-		sendState(raid)
-		return true, "stuck" -- the lock doesn't budge
-	end
-	-- Full speed dead on, EdgeRate at the edge of tolerance.
-	local rate = pickCfg.EdgeRate + (1 - pickCfg.EdgeRate) * (1 - off)
-	raid.warmth = 1 - off
-	raid.progress += step * rate / pickCfg.SecondsPerPin
-	if raid.progress >= 1 then
-		raid.pinsDone += 1
-		newPin(raid)
-		if raid.pinsDone >= raid.pins then
-			raid.phase = "Unlocked"
-			raid.holdToken += 1 -- free their feet at once
-			local _, freed = rootOf(player)
-			if freed then
-				MovementService.setMultiplier(freed, "Lockpick", nil)
-			end
-			alertVictim(raid, "RaidAlert", `{player.Name} picked your vault's lock!`)
-		end
-	end
+	raid.picking = true
+	raid.lock.tension = false
+	raid.lock.needsRelease = false
+	MovementService.setMultiplier(humanoid, "Lockpick", 0)
 	sendState(raid)
-	return true, "turning"
+	sendFeel(raid, nil)
+	return true, nil
+end
+
+stopPicking = function(raid: Raid)
+	raid.picking = false
+	raid.lock.tension = false
+	raid.lock.stalled = false
+	raid.lock.lockAngle = 0
+	local _, humanoid = rootOf(raid.raider)
+	if humanoid then
+		MovementService.setMultiplier(humanoid, "Lockpick", nil)
+	end
+end
+
+-- Standing up re-rolls this stage's sweet spot but keeps the pick's damage,
+-- so walking away never resets a nearly-snapped pick (guide §6).
+local function cancelPicking(player: Player): (boolean, string?)
+	local raid = raidOf[player]
+	if not raid or raid.raider ~= player or not raid.picking then
+		return false, "NotPicking"
+	end
+	stopPicking(raid)
+	newStage(raid)
+	sendState(raid)
+	return true, nil
+end
+
+-- (pick angle, holding Turn): intents only. The model ignores angle changes
+-- while Turn is held (both hands on the lock).
+local function lockpickInput(player: Player, angleArg: unknown, tensionArg: unknown)
+	local raid = raidOf[player]
+	if not raid or raid.raider ~= player or raid.phase ~= "Breached" or not raid.picking then
+		return
+	end
+	if typeof(angleArg) ~= "number" or angleArg ~= angleArg or typeof(tensionArg) ~= "boolean" then
+		logAnomaly(player, "sent a bad lockpick input")
+		return
+	end
+	if not nearCore(player, raid) then
+		LockpickModel.setInput(raid.lock, raid.lock.pickAngle, false)
+		return
+	end
+	LockpickModel.setInput(raid.lock, angleArg :: number, tensionArg :: boolean)
+end
+
+-- One server frame of a raider's lock (Heartbeat).
+local function stepLock(raid: Raid, dt: number)
+	local s = raid.lock
+	local stage = raid.stages[raid.stage]
+	local hasPick = InventoryService.count(raid.raider, pickCfg.ItemId) > 0
+	-- No picks left: improvising is slow, never impossible (02 § Lockpick
+	-- skill model).
+	local turnSpeed = pickCfg.TurnSpeed * (if hasPick then 1 else pickCfg.NoPickTurnScale)
+	local result = LockpickModel.step(s, dt, raid.center, stage, turnSpeed, stage.BreakSeconds * raid.pickBreakScale)
+	if result == "broke" then
+		-- A snapped pick costs one pick and a refit; the sweet spot stays.
+		local hadPick = InventoryService.consume(raid.raider, pickCfg.ItemId, 1)
+		LockpickModel.onBreak(s, if hadPick then pickCfg.RefitSeconds else pickCfg.NoPickRefitSeconds)
+		newPick(raid)
+		sendFeel(raid, "broke")
+	elseif result == "solved" then
+		LockpickModel.onSolved(s)
+		raid.prevSide = raid.side
+		if raid.stage >= #raid.stages then
+			sendFeel(raid, "open")
+			raid.phase = "Unlocked"
+			stopPicking(raid) -- they can move again
+			alertVictim(raid, "RaidAlert", `{raid.raider.Name} picked your vault's lock!`)
+		else
+			raid.stage += 1
+			newStage(raid)
+			sendFeel(raid, "solved")
+		end
+		sendState(raid)
+	elseif now() - raid.feelAt >= pickCfg.FeelSendSeconds then
+		sendFeel(raid, nil)
+	end
 end
 
 -- ── Grab + the Chase ─────────────────────────────────────────────────────
@@ -951,25 +1057,9 @@ function RaidService.start()
 
 	-- H1: a victim leaving mid-Chase. Their save is still live here, so take
 	-- the loot now; escape() pays the raider from exactly this.
-	PlayerDataService.setBeforeRelease(function(player: Player)
-		local victimRaid = raidOnVictim[player.UserId]
-		if type(victimRaid) ~= "table" then
-			return
-		end
-		local vr = victimRaid :: Raid
-		if vr.victim ~= player then
-			return
-		end
-		vr.victim = nil -- no more alerts to them
-		if vr.phase == "Carrying" and vr.loot then
-			vr.taken = VaultService.takeLoot(player, vr.loot :: Loot)
-			print(`[Raid] {player.Name} left mid-Chase: took {describe(vr.taken :: Loot)} from their save; {vr.raider.Name} still has to escape`)
-		else
-			-- Nothing is at stake before the grab.
-			print(`[Raid] {player.Name} left during {vr.phase}: cancelling the raid`)
-			failRaid(vr, "Cancelled", `{player.Name} left`)
-		end
-	end)
+	-- Whichever leave-handler runs first settles it (the order of
+	-- PlayerRemoving connections isn't something to rely on).
+	PlayerDataService.setBeforeRelease(victimLeft)
 
 	-- 02 § The Chase 5: any player's hit knocks the loot loose, except the
 	-- raider's own escort (D101: they're on the raider's side).
@@ -994,8 +1084,8 @@ function RaidService.start()
 		end
 	end)
 
-	-- Escape check + deaths.
-	RunService.Heartbeat:Connect(function()
+	-- Escape check + deaths + the lockpick.
+	RunService.Heartbeat:Connect(function(dt: number)
 		for _, raid in raids do
 			if raid.phase == "Carrying" then
 				local root = rootOf(raid.raider)
@@ -1006,6 +1096,8 @@ function RaidService.start()
 				end
 			elseif raid.phase ~= "Over" and raid.phase ~= "Settling" and not rootOf(raid.raider) then
 				task.spawn(failRaid, raid, "Died", `{raid.raider.Name} went down`)
+			elseif raid.phase == "Breached" and raid.picking then
+				stepLock(raid, dt)
 			end
 		end
 	end)
@@ -1022,20 +1114,7 @@ function RaidService.start()
 		-- A victim leaving is handled in setBeforeRelease above, while their
 		-- profile is still live (H1). If that never ran (no profile loaded),
 		-- there was nothing to take, so cancel.
-		local victimRaid = raidOnVictim[player.UserId]
-		if type(victimRaid) == "table" and (victimRaid :: Raid).victim == player then
-			local vr = victimRaid :: Raid
-			vr.victim = nil
-			-- The hook didn't run (see the [PlayerData] line above). Their
-			-- profile may still be live for a moment: try to settle anyway.
-			if vr.phase == "Carrying" and vr.loot and PlayerDataService.isLoaded(player) then
-				vr.taken = VaultService.takeLoot(player, vr.loot :: Loot)
-				warn(`[Raid] {player.Name} left mid-Chase; the hook didn't run, took {describe(vr.taken :: Loot)} in the fallback`)
-			else
-				warn(`[Raid] {player.Name} left ({vr.phase}) and nothing could be taken: cancelling`)
-				task.spawn(failRaid, vr, "Cancelled", `{player.Name} left`)
-			end
-		end
+		victimLeft(player)
 	end)
 
 	local allow = RateLimiter.new("Raid", raidCfg.RequestCooldownSeconds)
@@ -1048,17 +1127,18 @@ function RaidService.start()
 		end
 	end
 	Remotes.getFunction("Breach").OnServerInvoke = guarded(breach)
+	Remotes.getFunction("StartLockpick").OnServerInvoke = guarded(startPicking)
+	Remotes.getFunction("CancelLockpick").OnServerInvoke = guarded(cancelPicking)
 	Remotes.getFunction("Grab").OnServerInvoke = guarded(grab)
 	Remotes.getFunction("Sabotage").OnServerInvoke = guarded(sabotage)
 	Remotes.getFunction("JoinEscort").OnServerInvoke = guarded(joinEscort)
-	-- Turn updates stream while the button is held: their own, looser limit.
-	local allowTurn = RateLimiter.newBucket("LockpickTurn", 20, 15)
-	Remotes.getFunction("LockpickTurn").OnServerInvoke = function(player: Player, angle: unknown): (boolean, string?)
-		if not allowTurn(player) then
-			return false, "Busy"
+	-- Lockpick input streams while picking: its own, looser limit.
+	local allowInput = RateLimiter.newBucket("LockpickInput", pickCfg.InputBurst, pickCfg.InputPerSecond)
+	Remotes.getEvent("LockpickInput").OnServerEvent:Connect(function(player: Player, angle: unknown, tension: unknown)
+		if allowInput(player) then
+			lockpickInput(player, angle, tension)
 		end
-		return turn(player, angle)
-	end
+	end)
 	local allowLog = RateLimiter.new("GetRaidLog", Config.Bank.SnapshotCooldownSeconds)
 	Remotes.getFunction("GetRaidLog").OnServerInvoke = function(player: Player): { Types.RaidLogEntry }?
 		if not allowLog(player) then

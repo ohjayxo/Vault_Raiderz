@@ -477,10 +477,6 @@ local function onPlayerRemoving(player: Player)
 		if not ok then
 			warn(`[PlayerData] before-release hook failed for {player.Name}: {err}`)
 		end
-	elseif RunService:IsStudio() then
-		-- Studio: say which part was missing (a raid settling on a leaving
-		-- victim depends on this running).
-		print(`[PlayerData] no before-release for {player.Name}: profile {if profile then "loaded" else "MISSING"}, hook {if hook then "set" else "MISSING"}, session {if profile and profile:IsActive() then "active" else "ENDED"}`)
 	end
 	if profile then
 		if profile:IsActive() then

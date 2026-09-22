@@ -68,7 +68,10 @@ local definitions: { [string]: RemoteKind } = {
 
 	-- Step 7: raiding. All intents; the server picks the target base itself.
 	Breach = "Function", -- () -> (ok, reason?) raid the base you're standing at
-	LockpickTurn = "Function", -- (angle 0..1) -> (ok, "turning"|"stuck"|reason) while holding Turn
+	StartLockpick = "Function", -- () -> (ok, reason?) kneel at the vault (you can't move)
+	CancelLockpick = "Function", -- () -> (ok, reason?) stand up again
+	LockpickInput = "Event", -- client -> server: (pickAngle -90..90, holdingTurn) sent on change
+	LockpickFeel = "Event", -- server -> raider: (LockpickFeel) how the lock responds, ~15x a second
 	Grab = "Function", -- () -> (ok, reason?)
 	Sabotage = "Function", -- (defense: Model) -> (ok, reason?) tiers 5-7
 	JoinEscort = "Function", -- (raidId) -> (ok, reason?)

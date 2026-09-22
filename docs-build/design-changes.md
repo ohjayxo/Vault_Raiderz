@@ -187,11 +187,31 @@ and docs-build renamed too. Not yet renamed: the local folder
    as an intruder.
 4. **One grab takes the whole theft share** (25% online / 8% offline,
    capped per tier [PH]).
-5. Interpretations: the 90 s window starts at breach (the Decoy "wastes ~20 s
+5. **Lockpicking (2026-09-22, reworked from Josh's LOCKPICKING GUIDE):**
+   Skyrim-style lock. Aim the pick (mouse / drag / right stick), hold
+   **Turn** (D, W, Space, the TURN button, or right trigger). Each of the
+   **3 stages** has a hidden sweet spot: dead on, the lock turns all the way;
+   in the **partial zones** beside it, it turns part way (further the
+   closer you are: the "getting warm" hint); outside, it barely budges.
+   Holding Turn against the stop **shakes** the lock (less when close) and
+   **wears the pick** until it snaps. Every stage re-rolls its sweet spot
+   and lands on the **same side only 12%** of the time. Vault tier and
+   Lock Upgrades make the stages narrower and picks break sooner; they
+   never add stages. The raider **can't move while picking**; Cancel stands
+   up and re-rolls the current stage (pick damage is kept).
+   **Lockpicks are items** crafted from Ore at Workshop I (step 10). A snap
+   costs one pick and a short refit; **with none left you improvise at ~35%
+   turn speed**, never blocked, so 02 § Lockpick skill model ("speed, not
+   success/failure") holds. The hidden turn direction was dropped (Josh).
+   **Applied to docs/ (Josh confirmed twice, 2026-09-22):**
+   `02-core-loop.md § The raid sequence` and `14-claude-code-prompts.md`
+   Prompt 7 now say "Skyrim-style" instead of "timing-bar/timing
+   minigame". **Still to copy into the design project.**
+6. Interpretations: the 90 s window starts at breach (the Decoy "wastes ~20 s
    of the 90 s window"); tiers 5–7 sabotage = one defense offline 15 min,
    back by itself for free; a failed raid (knocked loose, died, left, time
    out) ends the raid.
-6. **Engineering rule with a gameplay effect (needs your OK / design
+7. **Engineering rule with a gameplay effect (needs your OK / design
    project):** an offline base can be raided **at most once per absence**:
    after an offline theft the victim is "theft pending" until their next
    login. Needed so two raids can't take the same loot twice (review H2).

@@ -118,6 +118,9 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
   raid "pending" after the theft message was sent, the raid lock expires in
   150 s and a second offline raid could read the old save. Needs a
   MemoryStore write failure right after a DataStore success.
+- **Step 10:** Workshop I crafts **lockpicks** from Ore
+  (`Config.Raiding.Lockpick.ItemId`, item "Lockpick"); Studio key 9 grants
+  them until then.
 - **Step 8:** fill `RaidService.checkBreach` / `consumeBreach` (Breach
   Charges, raid band, 48-h and post-raid shields). D75's 30-min post-raid
   shield belongs there (the raid lock's "pending" state is only the

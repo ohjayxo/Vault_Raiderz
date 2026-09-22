@@ -237,7 +237,7 @@ queue; docs/01-pillars.md R1, R2, R5, R6; 13-build-guide.md Part D
 
 Build RaidService end to end:
 - Breach (charges will come in step 8 — gate it behind a function that
-  step 8 fills in), lockpick timing minigame scaled by vault tier
+  step 8 fills in), Skyrim-style lockpick (3 stages) scaled by vault tier
   (speed-based, never fail-locked), grab from Exposed only, 90s escape
   window.
 - The Chase: carrier slowed, gadgets disabled, owner alerted (including

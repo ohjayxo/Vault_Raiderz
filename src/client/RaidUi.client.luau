@@ -4,12 +4,14 @@
 -- 02-core-loop.md § Raiding, § Lockpick skill model, § The Chase, § Raid
 -- escort (D101), § Raid log path map (D105).
 --
--- Display + intents only. The server picks the target base, times the
--- lockpick itself, and decides every outcome (R5). The lockpick bar here is
--- a picture of the server's bar (same start time + speed), drawn with
--- workspace:GetServerTimeNow() so it lines up.
+-- Display + intents only. The server picks the target base, runs the lock
+-- itself, and decides every outcome (R5). The lockpick dial sends only
+-- (pick angle, holding Turn) and draws how the server's lock responds
+-- (LockpickFeel); the sweet spot never reaches this client outside Studio.
 
 local CollectionService = game:GetService("CollectionService")
+local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,6 +25,8 @@ local Types = require(Shared:WaitForChild("PlayerDataTypes"))
 
 local player = Players.LocalPlayer
 local raidCfg = Config.Raiding
+local pickCfg = raidCfg.Lockpick
+local pickUi = pickCfg.Ui
 local SIZE = Config.Combat.Ui.ButtonSize
 
 local REASON_TEXT: { [string]: string } = {
@@ -100,36 +104,41 @@ sabotageButton.Position = UDim2.new(1, -16, 1, -16 - SIZE * 4.1)
 local banner = label(UDim2.fromOffset(420, 44), UDim2.new(0.5, 0, 0, 104), 18)
 local message = label(UDim2.fromOffset(360, 30), UDim2.new(0.5, 0, 0.62, 0), 16)
 
--- Lockpick dial (Skyrim-style, Josh's call): turn the pick with A/D or by
--- dragging, hold TURN. The lock only moves near the pin's secret angle.
+-- Lockpick dial (Skyrim-style, Josh's call + his LOCKPICKING GUIDE): point
+-- the pick (mouse, drag, or right stick), hold Turn. Near the secret angle
+-- the lock turns further; dead on it opens the stage.
+-- The lock plate (square, like Skyrim's), with the lock in the middle.
 local dial = Instance.new("Frame")
 dial.AnchorPoint = Vector2.new(0.5, 1)
 dial.Position = UDim2.new(0.5, 0, 1, -SIZE * 1.6)
-dial.Size = UDim2.fromOffset(190, 190)
-dial.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-dial.BackgroundTransparency = 0.15
+dial.Size = UDim2.fromOffset(200, 200)
+dial.BackgroundColor3 = Color3.fromRGB(58, 58, 64)
+dial.BackgroundTransparency = 0.1
 dial.Visible = false
 dial.Parent = gui
-local dialRound = Instance.new("UICorner")
-dialRound.CornerRadius = UDim.new(1, 0)
-dialRound.Parent = dial
+local plateRound = Instance.new("UICorner")
+plateRound.CornerRadius = UDim.new(0, 10)
+plateRound.Parent = dial
 
 -- The lock face turns as the pin gives.
 local face = Instance.new("Frame")
 face.AnchorPoint = Vector2.new(0.5, 0.5)
 face.Position = UDim2.fromScale(0.5, 0.5)
-face.Size = UDim2.fromOffset(120, 120)
-face.BackgroundColor3 = Color3.fromRGB(90, 90, 105)
+face.Size = UDim2.fromOffset(128, 128)
+face.BackgroundColor3 = Color3.fromRGB(150, 120, 60) -- brass
 face.Parent = dial
 local faceRound = Instance.new("UICorner")
 faceRound.CornerRadius = UDim.new(1, 0)
 faceRound.Parent = face
-local keyway = Instance.new("Frame") -- the slot, shows the face turning
+local keyway = Instance.new("Frame") -- the keyhole, turns with the lock
 keyway.AnchorPoint = Vector2.new(0.5, 0.5)
 keyway.Position = UDim2.fromScale(0.5, 0.5)
-keyway.Size = UDim2.fromOffset(14, 86)
-keyway.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+keyway.Size = UDim2.fromOffset(16, 62)
+keyway.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 keyway.Parent = face
+local keyholeRound = Instance.new("UICorner")
+keyholeRound.CornerRadius = UDim.new(0, 6)
+keyholeRound.Parent = keyway
 
 -- The tension wrench sits in the keyway and turns with the lock.
 local wrench = Instance.new("Frame")
@@ -140,19 +149,30 @@ wrench.BackgroundColor3 = Color3.fromRGB(120, 120, 140)
 wrench.ZIndex = 2
 wrench.Parent = dial
 
--- The pick: anchored in the keyhole (dial centre), sweeping left to right
--- like Skyrim's. Its tip is the end that touches the pin.
+-- The pick pivots on ONE point: the middle of the keyhole. Roblox rotates a
+-- frame around its own centre, so the pick lives inside an invisible pivot
+-- frame centred on the keyhole; rotating the pivot swings the pick's free
+-- end while its tip stays put in the hole.
+local PICK_LENGTH = 92
+local pickPivot = Instance.new("Frame")
+pickPivot.AnchorPoint = Vector2.new(0.5, 0.5)
+pickPivot.Position = UDim2.fromScale(0.5, 0.5) -- = the keyhole
+pickPivot.Size = UDim2.fromOffset(PICK_LENGTH * 2, PICK_LENGTH * 2)
+pickPivot.BackgroundTransparency = 1
+pickPivot.ZIndex = 3
+pickPivot.Parent = dial
+
 local pickArm = Instance.new("Frame")
-pickArm.AnchorPoint = Vector2.new(0.5, 1)
+pickArm.AnchorPoint = Vector2.new(0.5, 1) -- its bottom end sits at the pivot
 pickArm.Position = UDim2.fromScale(0.5, 0.5)
-pickArm.Size = UDim2.fromOffset(5, 92)
+pickArm.Size = UDim2.fromOffset(5, PICK_LENGTH)
 pickArm.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
 pickArm.ZIndex = 3
-pickArm.Parent = dial
-local pickTip = Instance.new("Frame")
-pickTip.AnchorPoint = Vector2.new(0.5, 0)
-pickTip.Position = UDim2.fromScale(0.5, 0)
-pickTip.Size = UDim2.fromOffset(12, 10)
+pickArm.Parent = pickPivot
+local pickTip = Instance.new("Frame") -- the bit in the hole
+pickTip.AnchorPoint = Vector2.new(0.5, 1)
+pickTip.Position = UDim2.fromScale(0.5, 1)
+pickTip.Size = UDim2.fromOffset(9, 14)
 pickTip.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
 pickTip.ZIndex = 3
 pickTip.Parent = pickArm
@@ -167,10 +187,64 @@ pinsLabel.Font = Enum.Font.GothamBold
 pinsLabel.TextSize = 16
 pinsLabel.Parent = dial
 
+-- Studio only (guide §7): tick marks round the plate tint the sweet spot
+-- (green) and partial zones (yellow), for tuning. Live servers never send
+-- the data, so these stay hidden there.
+local OVERLAY_STEP = 2 -- degrees between ticks
+local OVERLAY_RADIUS = 94
+local overlayTicks: { [number]: Frame } = {}
+if RunService:IsStudio() and pickCfg.StudioOverlay then
+	for angle = -pickCfg.PickLimit, pickCfg.PickLimit, OVERLAY_STEP do
+		local tick = Instance.new("Frame")
+		tick.AnchorPoint = Vector2.new(0.5, 0.5)
+		local radians = math.rad(angle)
+		tick.Position = UDim2.new(0.5, math.sin(radians) * OVERLAY_RADIUS, 0.5, -math.cos(radians) * OVERLAY_RADIUS)
+		tick.Size = UDim2.fromOffset(4, 9)
+		tick.Rotation = angle
+		tick.BorderSizePixel = 0
+		tick.Visible = false
+		tick.Parent = dial
+		overlayTicks[angle] = tick
+	end
+end
+
+-- Turn the lock: one hold button (phone), or hold D / W / Space (PC) or
+-- the right trigger (gamepad).
 local turnButton = button("TURN", Color3.fromRGB(60, 150, 80))
-turnButton.AnchorPoint = Vector2.new(0.5, 1)
-turnButton.Position = UDim2.new(0.5, 0, 1, -SIZE * 0.5)
-turnButton.Size = UDim2.fromOffset(SIZE * 2.4, SIZE * 0.9)
+turnButton.AnchorPoint = Vector2.new(0, 0.5)
+turnButton.Position = UDim2.new(0.5, 112, 1, -SIZE * 1.6 - 100)
+turnButton.Size = UDim2.fromOffset(SIZE * 1.3, SIZE * 1.3)
+turnButton.TextSize = 20
+local cancelPick = button("Cancel", Color3.fromRGB(90, 60, 60))
+cancelPick.AnchorPoint = Vector2.new(0.5, 1)
+cancelPick.Position = UDim2.new(0.5, 0, 1, -SIZE * 0.6)
+cancelPick.Size = UDim2.fromOffset(SIZE * 1.6, SIZE * 0.7)
+cancelPick.TextSize = 16
+
+-- Lockpick sounds: PLACEHOLDERS (Config ...Lockpick.Ui.Sounds). Each play
+-- picks a random clip and jitters the pitch so it never sounds looped.
+local function newSound(id: string): Sound
+	local sound = Instance.new("Sound")
+	sound.SoundId = id
+	sound.Parent = gui -- not in a part: plays flat, only for this player
+	return sound
+end
+local function playSound(ids: { string }, volume: number, pitch: number)
+	local sound = newSound(ids[math.random(1, #ids)])
+	sound.Volume = volume
+	sound.PlaybackSpeed = pitch * (0.95 + math.random() * 0.1)
+	sound.Ended:Once(function()
+		sound:Destroy()
+	end)
+	sound:Play()
+	task.delay(5, function() -- in case a clip never loads
+		if sound.Parent then
+			sound:Destroy()
+		end
+	end)
+end
+local grindSound = newSound(pickUi.Sounds.Grind)
+grindSound.Looped = true
 
 -- Escort offer.
 local offer = button("Join as escort", Color3.fromRGB(40, 110, 170))
@@ -300,11 +374,21 @@ end
 
 -- ── Per-frame refresh ────────────────────────────────────────────────────
 
--- Pick angle (0..1 across the dial) and whether TURN is held.
-local pickAngle = 0.5
-local holdingTurn = false
-local ANGLE_KEY_SPEED = 0.6 -- [PH] invented: A/D sweep, dial widths per second
-local TURN_SEND_SECONDS = 0.1 -- [PH] invented: how often a held turn is sent
+-- The lockpick, client side. pickAngle is in degrees (-90..90, 0 = up)
+-- and is frozen while Turn is held (both hands on the lock). The lock's
+-- shown angle chases the server's at the same speeds, so it's smooth
+-- between updates and springs back the moment Turn is let go.
+local pickAngle = 0
+local keyTurn = false -- D / W / Space / right trigger held
+local buttonTurn = false -- the on-screen TURN button held
+local feel: Types.LockpickFeel? = nil
+local shownLock = 0
+local lockoutUntil = 0 -- os.clock(): fitting a fresh pick
+local stageFlashUntil = 0 -- os.clock(): "Pin set!"
+
+local function holdingTurn(): boolean
+	return keyTurn or buttonTurn
+end
 
 local function lootText(loot: { [string]: number }?): string
 	if not loot then
@@ -321,7 +405,7 @@ end
 
 local actionKind = "" -- what actionButton does right now
 
-RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function(dt: number)
 	local root = myRoot()
 	local current = state
 	local t = workspace:GetServerTimeNow()
@@ -351,25 +435,77 @@ RunService.RenderStepped:Connect(function()
 	-- Lockpick dial (raider, before the lock opens, near the vault).
 	local lockpick = if current and current.Role == "Raider" then current.Lockpick else nil
 	local core = if current and current.Role == "Raider" then victimCore() else nil
-	if lockpick and core then
+	if lockpick and core and lockpick.Picking then
 		dial.Visible = true
 		turnButton.Visible = true
-		-- Angle 0..1 maps across a half turn; the pick points that way.
-		local stuck = holdingTurn and lockpick.Warmth <= 0
-		-- The pick pivots in the keyhole; A/D (or a drag) sweeps it, and it
-		-- judders when the lock won't give.
-		pickArm.Rotation = -90 + pickAngle * 180 + (if stuck then math.random(-2, 2) else 0)
-		local warmColor = Color3.fromRGB(200, 200, 200):Lerp(Color3.fromRGB(70, 230, 110), lockpick.Warmth)
-		pickArm.BackgroundColor3 = warmColor
-		pickTip.BackgroundColor3 = warmColor
-		-- The lock (and the wrench in it) turns as the pin gives.
-		face.Rotation = lockpick.Progress * 80
-		wrench.Rotation = face.Rotation
-		keyway.Rotation = 0
-		pinsLabel.Text = `Pins {lockpick.PinsDone}/{lockpick.Pins}` .. (if stuck then "   (stuck: move the pick)" else "")
+		cancelPick.Visible = true
+		local clock = os.clock()
+		local f = feel
+		local held = holdingTurn()
+		local refitting = clock < lockoutUntil
+		-- The lock: towards the server's angle while Turn is held, springing
+		-- back as soon as it's let go (visual only; the server decides).
+		local target = if held and f and not refitting then f.LockAngle else 0
+		if target > shownLock then
+			shownLock = math.min(target, shownLock + pickCfg.TurnSpeed * dt)
+		else
+			shownLock = math.max(target, shownLock - pickCfg.ReturnSpeed * dt)
+		end
+		-- Stalled: the lock shakes, less the closer the pick is (guide §4).
+		-- Computed fresh every frame, never stored (pitfall 3).
+		local stalled = held and f ~= nil and f.Stalled and not refitting
+		local shake = 0
+		if stalled and f then
+			local amp = pickUi.ShakeNear + (pickUi.ShakeFar - pickUi.ShakeNear) * (1 - f.Closeness)
+			shake = amp * math.sin(clock * pickUi.ShakeHz * 2 * math.pi) + amp * 0.4 * math.noise(clock * 30, 0.5)
+		end
+		face.Rotation = shownLock + shake
+		wrench.Rotation = shownLock + shake
+		keyway.Rotation = 0 -- sits in the face, so it turns with it
+		-- The pick sits in the turning cylinder, so it turns with the lock.
+		pickPivot.Rotation = pickAngle + shownLock + shake * pickUi.PickShakeScale
+		pickPivot.Visible = not refitting
+		-- Worn picks redden a little (the pick's own damage, not the spot).
+		local wear = if f then f.Damage else 0
+		local pickColor = Color3.fromRGB(235, 235, 235):Lerp(Color3.fromRGB(220, 90, 70), wear)
+		pickArm.BackgroundColor3 = pickColor
+		pickTip.BackgroundColor3 = pickColor
+		-- The grind, louder and higher as the pick wears.
+		if stalled then
+			grindSound.Volume = 0.25 + 0.4 * wear
+			grindSound.PlaybackSpeed = 0.55 + 0.25 * wear
+			if not grindSound.IsPlaying then
+				grindSound:Play()
+			end
+		elseif grindSound.IsPlaying then
+			grindSound:Stop()
+		end
+		-- Studio tuning overlay.
+		local debug = f and f.Debug
+		for angle, tick in overlayTicks do
+			local zone = 0
+			if debug then
+				local d = math.abs(angle - debug.Center)
+				zone = if d <= debug.SweetWidth / 2 then 2 elseif d <= debug.SweetWidth / 2 + debug.PartialWidth then 1 else 0
+			end
+			tick.Visible = zone > 0
+			tick.BackgroundColor3 = if zone == 2 then Color3.fromRGB(70, 230, 110) else Color3.fromRGB(230, 200, 60)
+		end
+		local picks = if f then f.Picks else lockpick.Picks
+		local stageNumber = if f then f.Stage else lockpick.Stage
+		local stages = if f then f.Stages else lockpick.Stages
+		pinsLabel.Text = if refitting
+			then (if picks > 0 then "Pick snapped: fitting another..." else "No picks: improvising...")
+			elseif clock < stageFlashUntil then "Pin set!"
+			else `Pin {stageNumber}/{stages}   ·   Picks {picks}` .. (if picks <= 0 then "  (improvising: slow)" else "")
 	else
 		dial.Visible = false
 		turnButton.Visible = false
+		cancelPick.Visible = false
+		shownLock = 0
+		if grindSound.IsPlaying then
+			grindSound:Stop()
+		end
 	end
 
 	-- The context button.
@@ -379,8 +515,9 @@ RunService.RenderStepped:Connect(function()
 	elseif current and current.Role == "Raider" and current.Phase == "Unlocked" and core then
 		actionKind = "Grab"
 		actionButton.Text = "GRAB"
-	elseif current and current.Role == "Raider" and current.Phase == "Breached" and not core then
-		actionKind = "" -- walk to the vault: the banner says so
+	elseif lockpick and core and not lockpick.Picking then
+		actionKind = "Pick"
+		actionButton.Text = "Pick lock"
 	end
 	actionButton.Visible = actionKind ~= ""
 
@@ -394,6 +531,10 @@ end)
 actionButton.Activated:Connect(function()
 	if actionKind == "Breach" then
 		ask(Remotes.getFunction("Breach"))
+	elseif actionKind == "Pick" then
+		if ask(Remotes.getFunction("StartLockpick")) then
+			showMessage("Both hands on the lock: you can't move until it opens")
+		end
 	elseif actionKind == "Grab" then
 		local ok, reason = ask(Remotes.getFunction("Grab"))
 		if ok and reason == "Empty" then
@@ -404,18 +545,21 @@ end)
 
 -- ── Lockpick input ──────────────────────────────────────────────────────
 
--- Drag anywhere on the dial (phone or mouse) to point the pick.
+-- The pick points at the pointer (polar aim, guide §5): straight up = 0,
+-- right = +90, left = -90. Ignored while Turn is held.
 local function aimAt(position: Vector2)
+	if holdingTurn() then
+		return
+	end
 	local centre = dial.AbsolutePosition + dial.AbsoluteSize / 2
 	local offset = position - centre
 	if offset.Magnitude < 8 then
 		return
 	end
-	-- Straight up = 0.5; right = 1, left = 0.
-	local degrees = math.deg(math.atan2(offset.X, -offset.Y))
-	pickAngle = math.clamp(0.5 + degrees / 180, 0, 1)
+	pickAngle = math.clamp(math.deg(math.atan2(offset.X, -offset.Y)), -pickCfg.PickLimit, pickCfg.PickLimit)
 end
 
+-- Phone (or mouse click): drag on the dial to point the pick.
 dial.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
 		aimAt(Vector2.new(input.Position.X, input.Position.Y))
@@ -430,44 +574,133 @@ dial.InputChanged:Connect(function(input)
 	end
 end)
 
--- Hold TURN (mouse or thumb). PC also turns the pick with A and D.
+-- The TURN button: hold it (thumb or mouse).
+local function isPress(input: InputObject): boolean
+	return input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1
+end
 turnButton.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-		holdingTurn = true
+	if isPress(input) then
+		buttonTurn = true
 	end
 end)
-local function stopTurning(input: InputObject)
-	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-		holdingTurn = false
+turnButton.InputEnded:Connect(function(input)
+	if isPress(input) then
+		buttonTurn = false
 	end
-end
-turnButton.InputEnded:Connect(stopTurning)
-UserInputService.InputEnded:Connect(stopTurning)
+end)
+UserInputService.InputEnded:Connect(function(input) -- let go off the button
+	if isPress(input) then
+		buttonTurn = false
+	end
+end)
 
-local turning = false
-local lastTurnSent = 0
-RunService.RenderStepped:Connect(function(dt)
+local function cancel()
+	keyTurn = false
+	buttonTurn = false
+	ask(Remotes.getFunction("CancelLockpick"))
+end
+cancelPick.Activated:Connect(cancel)
+
+-- Keys + gamepad, bound only while the dial is up. Sinking them keeps
+-- W / D / Space from reaching the character (guide pitfall 10) and the
+-- right stick from turning the camera. (Escape is Roblox's own and
+-- Backspace drops tools, so cancel is the on-screen button or gamepad B.)
+local TURN_KEYS = { Enum.KeyCode.D, Enum.KeyCode.W, Enum.KeyCode.Space, Enum.KeyCode.ButtonR2 }
+local turnKeysDown: { [Enum.KeyCode]: boolean } = {}
+local bound = false
+local function bindLockpickKeys()
+	ContextActionService:BindActionAtPriority("LockpickTurn", function(_, inputState, input)
+		if inputState == Enum.UserInputState.Begin then
+			turnKeysDown[input.KeyCode] = true
+		elseif inputState == Enum.UserInputState.End or inputState == Enum.UserInputState.Cancel then
+			turnKeysDown[input.KeyCode] = nil
+		end
+		keyTurn = next(turnKeysDown) ~= nil
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.ContextActionPriority.High.Value, table.unpack(TURN_KEYS))
+	ContextActionService:BindActionAtPriority("LockpickAim", function(_, _, input)
+		local stick = Vector2.new(input.Position.X, input.Position.Y)
+		if stick.Magnitude >= pickUi.AimDeadzone and not holdingTurn() then
+			pickAngle = math.clamp(math.deg(math.atan2(stick.X, stick.Y)), -pickCfg.PickLimit, pickCfg.PickLimit)
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.Thumbstick2)
+	ContextActionService:BindActionAtPriority("LockpickCancel", function(_, inputState)
+		if inputState == Enum.UserInputState.Begin then
+			task.spawn(cancel)
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.ButtonB)
+end
+local function unbindLockpickKeys()
+	ContextActionService:UnbindAction("LockpickTurn")
+	ContextActionService:UnbindAction("LockpickAim")
+	ContextActionService:UnbindAction("LockpickCancel")
+	table.clear(turnKeysDown)
+	keyTurn = false
+end
+
+local function usingGamepadOrTouch(): boolean
+	local last = UserInputService:GetLastInputType()
+	return last == Enum.UserInputType.Touch or string.sub(last.Name, 1, 7) == "Gamepad"
+end
+
+-- Send (angle, holding Turn) when either changes, at most InputSendSeconds
+-- apart; the server does everything else.
+local sentAngle: number? = nil
+local sentTurn = false
+local lastSend = 0
+local lastScrapeAngle = 0
+local lastScrape = 0
+RunService.RenderStepped:Connect(function()
 	if not dial.Visible then
-		holdingTurn = false
+		if bound then
+			bound = false
+			unbindLockpickKeys()
+		end
+		buttonTurn = false
+		sentAngle = nil
+		sentTurn = false
 		return
 	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-		pickAngle = math.clamp(pickAngle - ANGLE_KEY_SPEED * dt, 0, 1)
+	if not bound then
+		bound = true
+		bindLockpickKeys()
 	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-		pickAngle = math.clamp(pickAngle + ANGLE_KEY_SPEED * dt, 0, 1)
+	-- PC: the pick follows the mouse, no clicking needed.
+	if UserInputService.MouseEnabled and not usingGamepadOrTouch() then
+		aimAt(UserInputService:GetMouseLocation() - GuiService:GetGuiInset())
 	end
-	-- While TURN is held, stream the angle; the server does the timing.
 	local now = os.clock()
-	if holdingTurn and not turning and now - lastTurnSent >= TURN_SEND_SECONDS then
-		lastTurnSent = now
-		turning = true
-		task.spawn(function()
-			pcall(function()
-				Remotes.getFunction("LockpickTurn"):InvokeServer(pickAngle)
-			end)
-			turning = false
-		end)
+	local held = holdingTurn()
+	-- A scrape as the pick moves (throttled), a click as Turn goes on.
+	if not held and math.abs(pickAngle - lastScrapeAngle) > 1.5 and now - lastScrape >= pickUi.ScrapeSeconds then
+		lastScrape = now
+		lastScrapeAngle = pickAngle
+		playSound(pickUi.Sounds.Scrape, 0.15, 1.4)
+	end
+	if held and not sentTurn then
+		playSound(pickUi.Sounds.TurnStart, 0.4, 0.8)
+	end
+	local changed = held ~= sentTurn or sentAngle == nil or math.abs(pickAngle - (sentAngle :: number)) > 0.2
+	if changed and now - lastSend >= pickCfg.InputSendSeconds then
+		lastSend = now
+		sentAngle = pickAngle
+		sentTurn = held
+		Remotes.getEvent("LockpickInput"):FireServer(pickAngle, held)
+	end
+end)
+
+Remotes.getEvent("LockpickFeel").OnClientEvent:Connect(function(update: Types.LockpickFeel)
+	feel = update
+	lockoutUntil = os.clock() + update.Lockout
+	if update.Event == "broke" then
+		playSound(pickUi.Sounds.Snap, 0.8, 1.8)
+	elseif update.Event == "solved" then
+		stageFlashUntil = os.clock() + 0.6
+		playSound(pickUi.Sounds.Stage, 0.8, 0.6)
+	elseif update.Event == "open" then
+		playSound(pickUi.Sounds.Open, 0.9, 1)
 	end
 end)
 

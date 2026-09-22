@@ -780,7 +780,8 @@ local Config = {
 			DecoyVault = { Charges = 3, RefillCost = { Stone = 40 }, WasteSeconds = 20 },
 			-- "NPC harasser": a hovering drone that zaps the nearest intruder.
 			GuardDrone = { Charges = 20, RefillCost = { Stone = 30, Ore = 20 }, Radius = 16, ZapSeconds = 1.5, ZapDamage = 4 },
-			-- "Increases lockpick difficulty": used by lockpicking in step 7.
+			-- "Increases lockpick difficulty": each charge used = one lockpick
+			-- difficulty step (Config.Raiding.Lockpick WidthScalePerStep).
 			LockUpgrade = { Charges = 3, RefillCost = { Ore = 30 }, ExtraDifficulty = 1 },
 		},
 		RefillCooldownSeconds = 0.5, -- [PH] invented
@@ -876,29 +877,87 @@ local Config = {
 		BreachRange = 10, -- [PH] invented: studs from the victim's plot edge
 		CoreRange = 10, -- [PH] invented: studs from the Vault Core Hitbox (pick / grab)
 		-- 02 § Lockpick skill model: speed, never fail-locked. Skyrim-style
-		-- (Josh's call, 2026-09-22): turn the pick to an angle and hold Turn.
-		-- Each pin has a secret sweet angle: dead on, it sets in
-		-- SecondsPerPin; near the edge of Tolerance it crawls; outside, the
-		-- lock doesn't budge. Nothing ever breaks or fails. Harder with vault
-		-- tier (and Lock Upgrades). All [PH] invented.
+		-- (Josh's calls, 2026-09-22; tuned from his LOCKPICKING GUIDE, see
+		-- docs-build/design-changes.md). Point the pick at an angle, hold Turn:
+		--   sweet spot     the lock turns all the way -> the stage is solved
+		--   partial zone   it turns part way, further the closer you are
+		--   outside        it barely budges
+		-- Holding Turn against a stop wears the pick until it snaps. The
+		-- server runs the lock (shared/LockpickModel); the sweet spot never
+		-- leaves it (R5). Angles in degrees: pick -90..90 (0 = straight up),
+		-- lock 0 (resting) .. FullTurn (open). All [PH] invented unless noted.
 		Lockpick = {
-			PinsBase = 3,
-			PinsPerTier = 1,
-			-- Angles are 0..1 across the dial (a half turn).
-			Tolerance = 0.18, -- how far off the sweet angle still turns the lock
-			TolerancePerTier = -0.015,
-			MinTolerance = 0.07,
-			-- Dead on the sweet angle a pin takes this long: also the floor a
-			-- bot can't beat.
-			SecondsPerPin = 0.5,
-			-- At the very edge of Tolerance progress is this share of full speed.
-			EdgeRate = 0.35,
-			-- Longest gap between turn updates that still counts (lag guard).
-			MaxTurnStepSeconds = 0.2,
-			LockUpgradeExtraPins = 1, -- per working Lock Upgrade (Config.Defenses)
-			-- You stand still while working the lock (Josh's call): both hands
-			-- are busy. Movement returns this long after you stop turning.
-			HoldStillSeconds = 0.6, -- [PH] invented
+			-- Always 3 stages (Josh). Tier 1 values = the guide's §10.2 table.
+			Stages = {
+				{ SweetWidth = 9.0, PartialWidth = 20, BreakSeconds = 1.3 },
+				{ SweetWidth = 6.5, PartialWidth = 17, BreakSeconds = 1.0 },
+				{ SweetWidth = 4.5, PartialWidth = 14, BreakSeconds = 0.75 },
+			},
+			-- 02 § The raid sequence "difficulty scales with vault tier": every
+			-- tier above 1, and every working Lock Upgrade (Config.Defenses
+			-- ExtraDifficulty), is one difficulty step. Each step narrows the
+			-- zones and shortens break time; stages never get added (Josh).
+			WidthScalePerStep = 0.9,
+			BreakScalePerStep = 0.92,
+			MinSweetWidth = 2.5,
+			MinPartialWidth = 8,
+			MinBreakSeconds = 0.4,
+			-- Each stage re-rolls its sweet spot. After stage 1 it stays on the
+			-- same side of centre only this often (Josh: "low"). If players learn
+			-- to always try the other side first, 0.3-0.4 is less predictable.
+			SameSideChance = 0.12,
+			MinOffset = 12, -- sweet spots keep off dead centre so "side" means something
+			PickLimit = 90,
+			FullTurn = 90,
+			-- "Getting warm" (Josh): in a partial zone the lock turns up to
+			-- NearMax, shaped by Curve (<1 = turns further earlier, a generous
+			-- hint). Completely wrong, it budges MinBudge.
+			NearMax = 80,
+			MinBudge = 4,
+			Curve = 0.7,
+			Epsilon = 0.5, -- degrees: "at the stop"
+			TurnSpeed = 110, -- deg/s: dead on, a stage takes ~0.8 s (the floor no script beats)
+			ReturnSpeed = 300, -- deg/s: the lock springs back when Turn is let go
+			-- Each new pick lasts BreakSeconds x (1 +/- this), so picks don't all
+			-- feel the same (Josh's pick from the guide's extras).
+			BreakVariance = 0.15,
+			-- Lockpicks are items (Josh, 2026-09-22; crafted from Ore at
+			-- Workshop I, step 10). A snapped pick costs one and a refit. With
+			-- none left you improvise: slower, never impossible (02 § Lockpick
+			-- skill model stands).
+			ItemId = "Lockpick",
+			RefitSeconds = 0.8,
+			NoPickTurnScale = 0.35, -- turn speed while improvising
+			NoPickRefitSeconds = 3,
+			DebugPickGrant = 5, -- Studio key 9
+			-- Input stream: the client sends (angle, holding Turn) at most this
+			-- often; the server's limit is a little looser.
+			InputSendSeconds = 0.05,
+			InputBurst = 30,
+			InputPerSecond = 25,
+			FeelSendSeconds = 1 / 15, -- server -> raider lock updates
+			-- Studio only: the dial tints the sweet spot and partial zones
+			-- (guide §7). Live servers never send them.
+			StudioOverlay = true,
+			-- The dial (client look only).
+			Ui = {
+				ShakeNear = 0.8, -- degrees of shake when stalled close to the spot
+				ShakeFar = 3.5, -- ... and far from it: shakes less the closer you are
+				ShakeHz = 28,
+				PickShakeScale = 0.6,
+				AimDeadzone = 0.35, -- gamepad right stick
+				-- PLACEHOLDER sounds: Studio's few built-in clips. Swap for real
+				-- asset ids later; each event picks one of its list at random.
+				Sounds = {
+					Scrape = { "rbxasset://sounds/volume_slider.ogg" },
+					TurnStart = { "rbxasset://sounds/volume_slider.ogg" },
+					Grind = "rbxasset://sounds/action_footsteps_plastic.mp3", -- loops while stalled
+					Snap = { "rbxasset://sounds/action_jump_land.mp3" },
+					Stage = { "rbxasset://sounds/volume_slider.ogg" },
+					Open = { "rbxasset://sounds/action_get_up.mp3" },
+				},
+				ScrapeSeconds = 0.07, -- at most one scrape this often while moving the pick
+			},
 		},
 		-- The Chase (02 § The Chase).
 		CarrySpeedMultiplier = 0.6, -- [PH] invented: "movement speed drops sharply"

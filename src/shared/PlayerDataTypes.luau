@@ -55,10 +55,26 @@ export type RaidLogEntry = {
 	Triggers: { { any } },
 }
 
+-- How the lock responds, server -> raider only (LockpickFeel remote), ~15x
+-- a second while picking. Never carries the sweet spot outside Studio (R5):
+-- Closeness is only sent while the lock is stalled (it drives the shake),
+-- so sweeping the pick without turning reveals nothing.
+export type LockpickFeel = {
+	Stage: number,
+	Stages: number,
+	LockAngle: number, -- degrees, 0 .. Config FullTurn
+	Stalled: boolean,
+	Closeness: number, -- 0..1, only while Stalled (else 0)
+	Damage: number, -- 0..1 wear on the current pick
+	Lockout: number, -- seconds left fitting a fresh pick (0 = ready)
+	Picks: number,
+	Event: string?, -- "solved" | "broke" | "open" on the update that caused it
+	Debug: { Center: number, SweetWidth: number, PartialWidth: number }?, -- Studio overlay only
+}
+
 -- What a raid's raider / escort / victim sees (RaidState remote). Times are
--- workspace:GetServerTimeNow(). Lockpick is only sent to the raider:
--- Progress 0..1 is the current pin; Warmth 0..1 is how close the last turn
--- was to the secret sweet angle (0 = the lock didn't move).
+-- workspace:GetServerTimeNow(). Lockpick is only sent to the raider; the
+-- dial's live feel comes separately (LockpickFeel).
 export type RaidView = {
 	Id: string,
 	Role: string, -- "Raider" | "Escort" | "Victim"
@@ -66,7 +82,9 @@ export type RaidView = {
 	EndsAt: number,
 	RaiderName: string,
 	VictimName: string,
-	Lockpick: { Pins: number, PinsDone: number, Progress: number, Warmth: number }?,
+	-- Picking = at the lock and unable to move until it opens or they cancel.
+	-- Stage = the stage being picked (1..Stages); Picks = lockpicks left.
+	Lockpick: { Picking: boolean, Stage: number, Stages: number, Picks: number }?,
 	Loot: { [string]: number }?,
 	CanSabotage: boolean,
 }

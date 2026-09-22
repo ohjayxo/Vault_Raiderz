@@ -200,7 +200,7 @@ Only Prismatic and Vaultborn skip the trip (§ Special cases).
 ## The raid sequence
 1. Scout — bases are visually tiered, so target selection is visual
 2. Breach — consume charges, enter
-3. **Lockpick** — timing-bar minigame, difficulty scales with vault tier
+3. **Lockpick** — Skyrim-style: find the hidden sweet spot, 3 stages, difficulty scales with vault tier
 4. Grab — take from Exposed only
 5. **Escape** to the zone boundary within a 90-second window [PH]
 

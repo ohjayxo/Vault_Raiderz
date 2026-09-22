@@ -13,7 +13,8 @@
 -- (alternates Wooden / Iron), Y = toggle PvP protection (FTUE rule 3 hook),
 -- Q = Scav Wave on your base now, 6 = wave led by a Scav Captain,
 -- Z = queue many waves at once (D59 cap test), 7 = +1 Captain's Cleaver skin,
--- 8 = fill free plots with offline bases now (instead of waiting 30 s).
+-- 8 = fill free plots with offline bases now (instead of waiting 30 s),
+-- 9 = +5 lockpicks (crafted at Workshop I from step 10).
 -- (M = mine-remote spam lives entirely on the client: it fires the real
 -- MineNode remote, exactly like an exploit script would.)
 
@@ -158,6 +159,11 @@ local commands: { [string]: (Player) -> () } = {
 	FillOfflineBases = function(player)
 		print(`[Debug] {player.Name}: filling free plots with offline bases...`)
 		task.spawn(OfflineBaseService.refill)
+	end,
+	GrantLockpicks = function(player)
+		local amount = Config.Raiding.Lockpick.DebugPickGrant
+		local ok = InventoryService.add(player, Config.Raiding.Lockpick.ItemId, amount)
+		print(`[Debug] +{amount} lockpicks for {player.Name}: {if ok then "ok" else "FAILED"}`)
 	end,
 	StartWave = function(player)
 		ScavWaveService.debugStartWave(player, false)
