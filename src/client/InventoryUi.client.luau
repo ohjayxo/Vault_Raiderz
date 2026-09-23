@@ -10,6 +10,8 @@
 -- Shown with the vault meter (Config.Bank.Meter.VisibleAttribute): the FTUE
 -- controls it (R4). The Gear tab follows the Gear button's attribute; the
 -- Items tab only shows once you own an item.
+-- Studio only: a Debug tab with every debug key (Shared/DebugKeyList) and a
+-- Run button for each, plus small X buttons that delete items / armor.
 -- Other scripts open it with the "Open" BindableEvent inside this ScreenGui
 -- (argument: tab name): the vault meter and the Gear menu's Armor/Skin rows.
 
@@ -21,6 +23,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Types = require(Shared:WaitForChild("PlayerDataTypes"))
+local DebugKeyList = require(Shared:WaitForChild("DebugKeyList"))
 
 local player = Players.LocalPlayer
 local bagCfg = Config.Inventory
@@ -45,8 +48,8 @@ local REASON_TEXT: { [string]: string } = {
 	NoArt = "That skin's model is missing (see Output)",
 }
 
-type Tab = "Resources" | "Gear" | "Items"
-local TABS: { Tab } = { "Resources", "Gear", "Items" }
+type Tab = "Resources" | "Gear" | "Items" | "Debug"
+local TABS: { Tab } = { "Resources", "Gear", "Items", "Debug" }
 
 local vault: Types.VaultState? = nil
 local gear: Types.GearState? = nil
@@ -439,6 +442,27 @@ local function renderItems()
 	end
 end
 
+-- Studio only: every debug key, grouped, with a Run button (same command
+-- as the key; DebugService re-checks IsStudio).
+local function renderDebug()
+	heading("STUDIO ONLY: press the key, or Run. Results print in Output.")
+	local group = ""
+	for _, entry in DebugKeyList do
+		if entry.Group ~= group then
+			group = entry.Group
+			heading(group:upper())
+		end
+		local command = entry.Command
+		row({
+			{ text = `[{entry.Label}]`, width = 44, color = Color3.fromRGB(255, 210, 90) },
+			{ text = entry.Text, width = 330 },
+		}, if command ~= "" then "Run" else nil, function()
+			debugEvent:FireServer(command)
+		end)
+	end
+	heading("Bag: the small X on Items / Gear rows deletes them.")
+end
+
 local function gearTabAllowed(): boolean
 	return player:GetAttribute(combatCfg.Ui.GearVisibleAttribute) == true
 end
@@ -447,7 +471,8 @@ render = function()
 	-- Tabs you can't use yet stay hidden (R4).
 	tabButtons.Gear.Visible = gearTabAllowed()
 	tabButtons.Items.Visible = anyItem()
-	if (currentTab == "Gear" and not tabButtons.Gear.Visible) or (currentTab == "Items" and not tabButtons.Items.Visible) then
+	tabButtons.Debug.Visible = STUDIO_DELETE
+	if not tabButtons[currentTab].Visible then
 		currentTab = "Resources"
 	end
 	for tab, b in tabButtons do
@@ -461,8 +486,10 @@ render = function()
 		renderResources()
 	elseif currentTab == "Gear" then
 		renderGear()
-	else
+	elseif currentTab == "Items" then
 		renderItems()
+	else
+		renderDebug()
 	end
 end
 
@@ -521,7 +548,7 @@ for _, tab in TABS do
 	end)
 end
 openEvent.Event:Connect(function(tab: any)
-	open(if tab == "Gear" or tab == "Items" or tab == "Resources" then tab :: Tab else nil)
+	open(if tab == "Gear" or tab == "Items" or tab == "Resources" or tab == "Debug" then tab :: Tab else nil)
 end)
 
 Remotes.getEvent("VaultChanged").OnClientEvent:Connect(function(state: Types.VaultState)
@@ -536,7 +563,9 @@ end)
 -- ── Visibility (server-controlled, R4) ───────────────────────────────────
 
 local function applyVisibility()
-	local visible = player:GetAttribute(meterCfg.VisibleAttribute) == true
+	-- In Studio the Bag stays reachable even with the meter hidden (key H),
+	-- so the Debug tab can always turn it back on.
+	local visible = player:GetAttribute(meterCfg.VisibleAttribute) == true or STUDIO_DELETE
 	bagButton.Visible = visible
 	if not visible then
 		panel.Visible = false

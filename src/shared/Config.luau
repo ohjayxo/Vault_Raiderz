@@ -555,6 +555,11 @@ local Config = {
 		-- the vault meter, so the FTUE (step 14) can control it (R4).
 		BuildUi = {
 			VisibleAttribute = "HudBuildButton",
+			-- The Build button only shows while you stand on your own plot
+			-- (Josh, 2026-09-23); walking off closes build mode. The server's
+			-- own limit is Config.Plots.BuildReach. [PH] invented: studs,
+			-- measured from your character to the plot's build surface.
+			ShowWithinStuds = 6,
 			ShowBeforeFtue = true, -- TEMPORARY until step 14, same as Bank.Meter
 			-- Set by the build UI on its own client only; NodeInput ignores taps
 			-- while it's true. Never replicated, never trusted by the server.

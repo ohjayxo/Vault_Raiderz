@@ -19,32 +19,16 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local debugEvent = Remotes.getEvent("DebugCommand")
 local mineEvent = Remotes.getEvent("MineNode")
 
--- Avoids I/O (camera zoom: Roblox marks them as handled, so they never
--- reach this script), WASD/Space, E (prompts), R (build rotate), 1-4 (gadgets).
-local KEYS: { [Enum.KeyCode]: string } = {
-	[Enum.KeyCode.P] = "PrintProfile",
-	[Enum.KeyCode.C] = "GrantCredits",
-	[Enum.KeyCode.L] = "PrintPresence",
-	[Enum.KeyCode.X] = "GrantMinerXP",
-	[Enum.KeyCode.V] = "ForceVaultborn",
-	[Enum.KeyCode.B] = "BroadcastTest",
-	[Enum.KeyCode.T] = "NextVaultTier",
-	[Enum.KeyCode.F] = "GrantExposedResources",
-	[Enum.KeyCode.G] = "GrantScrap",
-	[Enum.KeyCode.H] = "ToggleMeter",
-	[Enum.KeyCode.N] = "PrintBand",
-	[Enum.KeyCode.K] = "NextPickaxeTier",
-	[Enum.KeyCode.J] = "GrantGadgets",
-	[Enum.KeyCode.U] = "GrantArmor",
-	[Enum.KeyCode.Y] = "TogglePvpProtection",
-	[Enum.KeyCode.Q] = "StartWave",
-	[Enum.KeyCode.Six] = "StartCaptainWave",
-	[Enum.KeyCode.Z] = "FloodWaves",
-	[Enum.KeyCode.Seven] = "GrantSkin",
-	[Enum.KeyCode.Eight] = "FillOfflineBases",
-	[Enum.KeyCode.Nine] = "GrantLockpicks",
-	[Enum.KeyCode.Zero] = "GrantSprintSerum",
-}
+-- The keys live in Shared/DebugKeyList (also the Bag's Debug tab). They
+-- avoid I/O (camera zoom: Roblox marks them as handled, so they never reach
+-- this script), WASD/Space, E (prompts), R (build rotate), 1-4 (gadgets).
+local DebugKeyList = require(Shared:WaitForChild("DebugKeyList"))
+local KEYS: { [Enum.KeyCode]: string } = {}
+for _, entry in DebugKeyList do
+	if entry.Command ~= "" then
+		KEYS[entry.Key] = entry.Command
+	end
+end
 
 -- Key M: the rate-limit test. Fires the REAL MineNode remote many times in
 -- one frame at the nearest node, exactly what an exploit script would do.
@@ -90,4 +74,8 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
-print("[Debug] Studio keys: P = print profile, C = +Credits, L = presence, X = +Miner XP, M = spam mine remote, V = next hit Vaultborn, B = test broadcasts, T = next Vault tier, F = +Stone/Ore/Riftsalt (Exposed), G = +Scrap, H = toggle meter, N = print band, K = next pickaxe tier, J = +gadgets, U = +armor, Y = toggle PvP protection, Q = Scav Wave, 6 = Captain wave, Z = flood waves, 7 = +skin, 8 = fill offline bases, 9 = +lockpicks, 0 = 999 Sprint Serum (everyone); Bag X = delete (Studio)")
+local parts = {}
+for _, entry in DebugKeyList do
+	table.insert(parts, `{entry.Label} = {entry.Text}`)
+end
+print("[Debug] Studio keys (also in the Bag's Debug tab): " .. table.concat(parts, ", ") .. "; Bag X = delete")

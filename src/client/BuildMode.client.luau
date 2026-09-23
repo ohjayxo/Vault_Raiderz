@@ -23,6 +23,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local PlotGrid = require(Shared:WaitForChild("PlotGrid"))
+local NodeMath = require(Shared:WaitForChild("NodeMath"))
 local Types = require(Shared:WaitForChild("PlayerDataTypes"))
 
 local player = Players.LocalPlayer
@@ -549,7 +550,20 @@ UserInputService.TouchTapInWorld:Connect(function(position: Vector2, processedBy
 	end
 end)
 
+-- Only on your own plot (a hint: the server checks reach itself).
+local function onOwnPlot(): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local hitbox = myPlotHitbox()
+	return root ~= nil and hitbox ~= nil and NodeMath.distanceToHitbox(hitbox, root.Position) <= uiCfg.ShowWithinStuds
+end
+
 RunService.RenderStepped:Connect(function()
+	local onPlot = onOwnPlot()
+	if active and not onPlot then
+		setActive(false) -- walked off your plot
+	end
+	buildButton.Visible = onPlot
 	if active then
 		updateGhost()
 	end
