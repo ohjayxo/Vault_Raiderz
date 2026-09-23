@@ -175,6 +175,7 @@ function PickaxeService.getState(player: Player): Types.GearState?
 		Gadgets = gadgets,
 		Skins = cosmetics.PickaxeSkins,
 		EquippedSkin = cosmetics.EquippedPickaxeSkin,
+		Items = items, -- a copy (InventoryService.getAll): the owner's own counts, for the Bag
 	}
 end
 

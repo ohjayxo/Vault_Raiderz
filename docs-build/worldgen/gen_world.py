@@ -320,6 +320,8 @@ assert PLOT_COUNT == config_number(r"Plots = \{[^}]*?Count = (\d+)"), "PLOT_COUN
 assert PLOT_SIZE == config_number(r"Plots = \{[^}]*?SizeStuds = (\d+)"), "PLOT_SIZE != Config.Plots.SizeStuds"
 escape = config_number(r"EscapeRadiusStuds = (\d+)")
 spawn_distance = config_number(r"SpawnDistance = (\d+)")
+# Raid log map points are saved shifted by LogCoordOffset (no negatives in a profile).
+assert config_number(r"LogCoordOffset = (\d+)") > escape, "Config.Raiding.LogCoordOffset must exceed EscapeRadiusStuds"
 blen_plot = lengths.pop()
 for idx, _, _, far in plot_bridges:
     # Standing anywhere on your own plot or bridge never counts as escaped.

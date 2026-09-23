@@ -57,6 +57,7 @@ local MovementService = require(script.Parent.MovementService)
 local CombatService = require(script.Parent.CombatService)
 local PickaxeService = require(script.Parent.PickaxeService)
 local InventoryService = require(script.Parent.InventoryService)
+local ArmorService = require(script.Parent.ArmorService)
 local BroadcastQueue = require(script.Parent.BroadcastQueue)
 
 local OWNER = "RaidService"
@@ -95,6 +96,13 @@ type Raid = {
 	picking: boolean, -- kneeling at the lock: can't move until it opens or they cancel
 	feelAt: number, -- when the raider was last sent a LockpickFeel
 	loot: Loot?,
+	-- D112: the grab also takes the victim's best spare armor piece
+	-- (Josh's call 2026-09-23). armorTaken = taken from a victim who left.
+	armorId: string?,
+	armor: Types.ArmorPiece?,
+	armorTaken: Types.ArmorPiece?,
+	chaseStuds: number?, -- Carrying: the distance last sent to the raid's players (steps)
+	halfwayAlerted: boolean,
 	sabotaged: boolean,
 	path: { { number } },
 	triggers: { { any } },
@@ -147,7 +155,7 @@ local function coreOf(ownerId: number): BasePart?
 	return nil
 end
 
-local function describe(loot: Loot): string
+local function describe(loot: Loot, armor: Types.ArmorPiece?): string
 	local totals: { [string]: number } = {}
 	for resource, grades in loot.Resources do
 		for _, amount in grades do
@@ -163,11 +171,17 @@ local function describe(loot: Loot): string
 	if loot.Scrap > 0 then
 		table.insert(parts, `{loot.Scrap} Scrap`)
 	end
+	if armor then
+		table.insert(parts, ArmorService.describe(armor))
+	end
 	return if #parts > 0 then table.concat(parts, ", ") else "nothing"
 end
 
-local function totalsOf(loot: Loot?): { [string]: number }
+local function totalsOf(loot: Loot?, armor: Types.ArmorPiece?): { [string]: number }
 	local totals: { [string]: number } = {}
+	if armor then
+		totals[ArmorService.describe(armor)] = 1
+	end
 	if loot then
 		for resource, grades in loot.Resources do
 			for _, amount in grades do
@@ -206,8 +220,9 @@ local function viewFor(raid: Raid, role: string): Types.RaidView
 				Picks = InventoryService.count(raid.raider, pickCfg.ItemId),
 			}
 			else nil,
-		Loot = if raid.loot then totalsOf(raid.loot) else nil,
+		Loot = if raid.loot then totalsOf(raid.loot, raid.armor) else nil,
 		CanSabotage = canSabotage,
+		ChaseStuds = if raid.phase == "Carrying" then raid.chaseStuds else nil,
 	}
 end
 
@@ -226,21 +241,60 @@ end
 
 -- ── Raid log (D105) ──────────────────────────────────────────────────────
 
-local function logEntry(raid: Raid, outcome: string, taken: Loot?): Types.RaidLogEntry
+-- Map points are plot-local studs (negative on half the plot), but a
+-- profile never stores a negative number (PlayerDataService validate), so
+-- they're saved shifted by LogCoordOffset. RaidUi shifts them back. (Bug
+-- found 2026-09-23: every entry with a negative point was being rejected,
+-- raid id and all.)
+local function shifted(v: number): number
+	local offset = raidCfg.LogCoordOffset
+	return math.clamp(v + offset, 0, 2 * offset)
+end
+
+local function logEntry(raid: Raid, outcome: string, taken: Loot?, armor: Types.ArmorPiece?): Types.RaidLogEntry
+	local path: { { number } } = {}
+	for _, point in raid.path do
+		table.insert(path, { shifted(point[1]), shifted(point[2]) })
+	end
+	local triggers: { { any } } = {}
+	for _, trigger in raid.triggers do
+		table.insert(triggers, { shifted(trigger[1]), shifted(trigger[2]), trigger[3] })
+	end
 	return {
 		Id = raid.id,
 		At = os.time(),
 		RaiderName = raid.raider.Name,
 		Offline = raid.offline,
 		Outcome = outcome,
-		Taken = totalsOf(taken),
-		Path = raid.path,
-		Triggers = raid.triggers,
+		Taken = totalsOf(taken, armor),
+		Path = path,
+		Triggers = triggers,
 	}
 end
 
+local addEntry: (log: { Entries: { Types.RaidLogEntry }, Applied: { string } }, entry: Types.RaidLogEntry) -> ()
+
+-- The raider's own log (Josh, 2026-09-23: Raids shows raids you did too):
+-- what they got, or why it failed. Only while they're loaded here.
+local function logForRaider(raid: Raid, outcome: string, got: Loot?, armor: Types.ArmorPiece?, note: string?)
+	if not raid.raider.Parent or not PlayerDataService.isLoaded(raid.raider) then
+		return
+	end
+	local entry = logEntry(raid, outcome, got, armor)
+	entry.AsRaider = true
+	entry.VictimName = raid.victimName
+	entry.Note = note
+	local logged = PlayerDataService.update(raid.raider, "RaidLog", OWNER, function(log)
+		addEntry(log, entry)
+		return log
+	end)
+	if not logged then
+		warn(`[Raid] {raid.id}: couldn't write {raid.raider.Name}'s raid log`)
+	end
+end
+
 -- Adds an entry (newest first, capped) and remembers the raid id.
-local function addEntry(log: { Entries: { Types.RaidLogEntry }, Applied: { string } }, entry: Types.RaidLogEntry)
+addEntry = function(log: { Entries: { Types.RaidLogEntry }, Applied: { string } }, entry: Types.RaidLogEntry)
 	table.insert(log.Entries, 1, entry)
 	while #log.Entries > raidCfg.LogEntries do
 		table.remove(log.Entries)
@@ -370,6 +424,7 @@ local function failRaid(raid: Raid, outcome: string, text: string)
 	end
 	local hadLoot = raid.loot ~= nil
 	local takenOnLeave = raid.taken
+	local armorOnLeave = raid.armorTaken
 	cleanup(raid)
 	print(`[Raid] {raid.raider.Name} -> {raid.victimName}: {outcome} ({text})`)
 	if hadLoot then
@@ -377,20 +432,25 @@ local function failRaid(raid: Raid, outcome: string, text: string)
 	end
 	alertVictim(raid, "RaidOver", `Raid over: {text}. You lost nothing.`)
 	local entry = logEntry(raid, "Recovered", nil)
+	entry.Note = text
+	logForRaider(raid, "Recovered", nil, nil, text)
 	if takenOnLeave then
 		-- The victim left mid-Chase and we already took the loot from their
 		-- save: send it back. If this send fails they lose it (never a dupe).
 		task.spawn(function()
-			local sent = PlayerDataService.messageAsync(raid.victimId, { Kind = "RaidReturn", RaidId = raid.id, Loot = takenOnLeave, Entry = entry })
+			local sent = PlayerDataService.messageAsync(raid.victimId, { Kind = "RaidReturn", RaidId = raid.id, Loot = takenOnLeave, Armor = armorOnLeave, Entry = entry })
 			if not sent then
-				warn(`[Raid] couldn't return {describe(takenOnLeave)} to {raid.victimName} (raid {raid.id})`)
+				warn(`[Raid] couldn't return {describe(takenOnLeave, armorOnLeave)} to {raid.victimName} (raid {raid.id})`)
 			end
 		end)
 	elseif raid.victim and raid.victim.Parent and PlayerDataService.isLoaded(raid.victim) then
-		PlayerDataService.update(raid.victim, "RaidLog", OWNER, function(log)
+		local logged = PlayerDataService.update(raid.victim, "RaidLog", OWNER, function(log)
 			addEntry(log, entry)
 			return log
 		end)
+		if not logged then
+			warn(`[Raid] {raid.id}: couldn't write {raid.victimName}'s raid log`)
+		end
 	elseif raid.lockHeld then
 		-- Offline: a log-only message, then free the lock (not "pending": nothing stolen).
 		task.spawn(function()
@@ -429,10 +489,30 @@ end
 -- something: jumping off an island can't cross the line in mid-air and then
 -- fall to a respawn with the loot (the fall fails the raid, § Escape and
 -- carrier death).
-local function hasEscaped(raid: Raid, root: BasePart, humanoid: Humanoid): boolean
+local function chaseDistance(raid: Raid, root: BasePart): number
 	local offset = root.Position - raid.plotHitbox.Position
-	local horizontal = Vector3.new(offset.X, 0, offset.Z).Magnitude
-	return horizontal > raidCfg.EscapeRadiusStuds and humanoid.FloorMaterial ~= Enum.Material.Air
+	return Vector3.new(offset.X, 0, offset.Z).Magnitude
+end
+
+local function hasEscaped(raid: Raid, root: BasePart, humanoid: Humanoid): boolean
+	return chaseDistance(raid, root) > raidCfg.EscapeRadiusStuds and humanoid.FloorMaterial ~= Enum.Material.Air
+end
+
+-- Chase progress for the raid's players (Josh, 2026-09-23): their banners
+-- show the carrier's distance in steps, and the victim is told once when
+-- the carrier passes the halfway mark. Display only; hasEscaped decides.
+local function updateChaseProgress(raid: Raid, root: BasePart)
+	local distance = chaseDistance(raid, root)
+	local step = raidCfg.ChaseProgressStepStuds
+	local shown = math.min(math.floor(distance / step) * step, raidCfg.EscapeRadiusStuds)
+	if shown ~= raid.chaseStuds then
+		raid.chaseStuds = shown
+		sendState(raid)
+	end
+	if not raid.halfwayAlerted and distance >= raidCfg.EscapeRadiusStuds * raidCfg.ChaseHalfwayFraction then
+		raid.halfwayAlerted = true
+		alertVictim(raid, "RaidAlert", `{raid.raider.Name} is halfway out with your loot! Hit them now`)
+	end
 end
 
 -- The carrier got away. Debit the victim (clamped), credit the raider 80%
@@ -445,23 +525,31 @@ local function escape(raid: Raid)
 	raid.phase = "Settling" -- no second escape / knock-loose from here on
 
 	local taken: Loot
+	local takenArmor: Types.ArmorPiece? = nil
 	if raid.taken then
 		-- The victim left mid-Chase: already taken from their save as they left.
 		taken = raid.taken
-		local entry = logEntry(raid, "Stolen", taken)
+		takenArmor = raid.armorTaken
+		local entry = logEntry(raid, "Stolen", taken, takenArmor)
 		task.spawn(PlayerDataService.messageAsync, raid.victimId, { Kind = "RaidLog", RaidId = raid.id, Entry = entry })
 	elseif not raid.offline and raid.victim and raid.victim.Parent and PlayerDataService.isLoaded(raid.victim) then
 		-- Online: the victim's profile is live here.
 		taken = VaultService.takeLoot(raid.victim, loot)
-		local entry = logEntry(raid, "Stolen", taken)
-		PlayerDataService.update(raid.victim, "RaidLog", OWNER, function(log)
+		-- Clamped like resources: nothing if they've put that piece on since.
+		takenArmor = if raid.armorId then ArmorService.takeSpare(raid.victim, raid.armorId) else nil
+		local entry = logEntry(raid, "Stolen", taken, takenArmor)
+		local logged = PlayerDataService.update(raid.victim, "RaidLog", OWNER, function(log)
 			addEntry(log, entry)
 			return log
 		end)
+		if not logged then
+			warn(`[Raid] {raid.id}: couldn't write {raid.victimName}'s raid log`)
+		end
 	elseif raid.lockHeld then
 		-- Offline: send while still holding the raid lock, THEN mark pending.
 		taken = loot
-		local entry = logEntry(raid, "Stolen", loot)
+		takenArmor = raid.armor
+		local entry = logEntry(raid, "Stolen", loot, takenArmor)
 		-- Still ours? (keepLockAlive renews it for the whole raid.) If it
 		-- lapsed, someone else may be reading the same save: don't steal.
 		if not RaidLock.extend(raid.victimId, raid.id) then
@@ -469,7 +557,7 @@ local function escape(raid: Raid)
 			failRaid(raid, "Failed", "the raid lock was lost")
 			return
 		end
-		local sent = PlayerDataService.messageAsync(raid.victimId, { Kind = "RaidTheft", RaidId = raid.id, Loot = loot, Entry = entry })
+		local sent = PlayerDataService.messageAsync(raid.victimId, { Kind = "RaidTheft", RaidId = raid.id, Loot = loot, ArmorId = raid.armorId, Entry = entry })
 		if not sent then
 			raid.phase = "Carrying" -- back out of Settling so failRaid can run
 			failRaid(raid, "Failed", "the theft couldn't be saved")
@@ -498,10 +586,15 @@ local function escape(raid: Raid)
 	end
 	if raid.raider.Parent and PlayerDataService.isLoaded(raid.raider) then
 		VaultService.depositLoot(raid.raider, credit)
+		-- A single piece arrives whole (no in-transit destruction).
+		if takenArmor then
+			ArmorService.grant(raid.raider, takenArmor.Tier, takenArmor.Slot)
+		end
 	end
-	print(`[Raid] {raid.raider.Name} escaped from {raid.victimName}: victim lost {describe(taken)}, raider got {describe(credit)}`)
+	logForRaider(raid, "Stolen", credit, takenArmor, nil)
+	print(`[Raid] {raid.raider.Name} escaped from {raid.victimName}: victim lost {describe(taken, takenArmor)}, raider got {describe(credit, takenArmor)}`)
 	BroadcastQueue.push("ChasePing", `{raid.raider.Name} escaped with loot from {raid.victimName}'s base!`)
-	alertVictim(raid, "RaidLost", `{raid.raider.Name} escaped with {describe(taken)} from your Exposed`)
+	alertVictim(raid, "RaidLost", `{raid.raider.Name} escaped with {describe(taken, takenArmor)} from your base`)
 	cleanup(raid)
 end
 
@@ -522,7 +615,8 @@ victimLeft = function(player: Player)
 	raid.victim = nil
 	if raid.phase == "Carrying" and raid.loot and PlayerDataService.isLoaded(player) then
 		raid.taken = VaultService.takeLoot(player, raid.loot :: Loot)
-		print(`[Raid] {player.Name} left mid-Chase: took {describe(raid.taken :: Loot)} from their save; {raid.raider.Name} still has to escape`)
+		raid.armorTaken = if raid.armorId then ArmorService.takeSpare(player, raid.armorId) else nil
+		print(`[Raid] {player.Name} left mid-Chase: took {describe(raid.taken :: Loot, raid.armorTaken)} from their save; {raid.raider.Name} still has to escape`)
 	else
 		print(`[Raid] {player.Name} left during {raid.phase}: cancelling the raid`)
 		failRaid(raid, "Cancelled", `{player.Name} left`)
@@ -712,6 +806,11 @@ breachInner = function(player: Player): (boolean, string?)
 		picking = false,
 		feelAt = 0,
 		loot = nil,
+		armorId = nil,
+		armor = nil,
+		armorTaken = nil,
+		chaseStuds = nil,
+		halfwayAlerted = false,
 		sabotaged = false,
 		path = {},
 		triggers = {},
@@ -934,11 +1033,14 @@ local function grab(player: Player): (boolean, string?)
 		return false, "TooFar"
 	end
 	local loot = planLoot(raid)
-	if next(loot.Resources) == nil and loot.Scrap == 0 then
+	-- D112: plus their best spare armor piece (never the worn one, R1).
+	local armorId, armor = ArmorService.bestSpareIn(if raid.view then raid.view.Armor elseif raid.victim then ArmorService.get(raid.victim) else nil)
+	if next(loot.Resources) == nil and loot.Scrap == 0 and not armor then
 		failRaid(raid, "Empty", "their Exposed was empty")
 		return true, "Empty"
 	end
 	raid.loot = loot
+	raid.armorId, raid.armor = armorId, armor
 	raid.phase = "Carrying"
 	local _, humanoid = rootOf(player)
 	if humanoid then
@@ -955,8 +1057,8 @@ local function grab(player: Player): (boolean, string?)
 	end
 	player:SetAttribute(CARRYING_ATTR, true) -- 02 § The Chase 2: gadgets off
 	markCarrier(player)
-	print(`[Raid] {player.Name} grabbed {describe(loot)} from {raid.victimName}`)
-	alertVictim(raid, "RaidAlert", `{player.Name} grabbed {describe(loot)}! Hit them to get it back`)
+	print(`[Raid] {player.Name} grabbed {describe(loot, armor)} from {raid.victimName}`)
+	alertVictim(raid, "RaidAlert", `{player.Name} grabbed {describe(loot, armor)}! Hit them to get it back`)
 	BroadcastQueue.push("ChasePing", `{player.Name} is escaping with loot from {raid.victimName}'s base! Hit them to knock it loose`)
 	sendState(raid)
 	return true, nil
@@ -1063,13 +1165,14 @@ local function onTheftMessage(player: Player, message: { [string]: any }, update
 		return true
 	end
 	local taken = VaultService.takeLootVia(update, cleanLoot(message.Loot))
+	local takenArmor = if type(message.ArmorId) == "string" then ArmorService.takeSpareVia(update, message.ArmorId) else nil
 	local entry = message.Entry
-	entry.Taken = totalsOf(taken)
+	entry.Taken = totalsOf(taken, takenArmor)
 	update("RaidLog", OWNER, function(log)
 		addEntry(log, entry)
 		return log
 	end)
-	print(`[Raid] applied offline raid {raidId} to {player.Name}: lost {describe(taken)}`)
+	print(`[Raid] applied offline raid {raidId} to {player.Name}: lost {describe(taken, takenArmor)}`)
 	if PlayerDataService.isLoaded(player) then
 		task.defer(VaultService.refresh, player)
 	end
@@ -1087,11 +1190,15 @@ local function onReturnMessage(player: Player, message: { [string]: any }, updat
 	end
 	local loot = cleanLoot(message.Loot)
 	VaultService.depositLootVia(update, loot)
+	local armor = ArmorService.clean(message.Armor)
+	if armor then
+		ArmorService.grantVia(update, armor)
+	end
 	update("RaidLog", OWNER, function(log)
 		addEntry(log, message.Entry)
 		return log
 	end)
-	print(`[Raid] returned {describe(loot)} to {player.Name} (raid {raidId})`)
+	print(`[Raid] returned {describe(loot, armor)} to {player.Name} (raid {raidId})`)
 	if PlayerDataService.isLoaded(player) then
 		task.defer(VaultService.refresh, player)
 	end
@@ -1160,10 +1267,14 @@ function RaidService.start()
 				local root, humanoid = rootOf(raid.raider)
 				if not root or not humanoid then
 					task.spawn(failRaid, raid, "Died", `{raid.raider.Name} went down`)
-				elseif MovementService.checkNow(raid.raider) and hasEscaped(raid, root, humanoid) then
+				elseif MovementService.checkNow(raid.raider) then
 					-- Checked first: an escape is never judged on a teleport
 					-- the movement check would undo (review 2026-09-22 #6).
-					task.spawn(escape, raid)
+					if hasEscaped(raid, root, humanoid) then
+						task.spawn(escape, raid)
+					else
+						updateChaseProgress(raid, root)
+					end
 				end
 			elseif raid.phase ~= "Over" and raid.phase ~= "Settling" and not rootOf(raid.raider) then
 				task.spawn(failRaid, raid, "Died", `{raid.raider.Name} went down`)

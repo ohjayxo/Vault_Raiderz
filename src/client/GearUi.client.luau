@@ -1,5 +1,7 @@
 --!strict
--- Gear menu (pickaxe upgrades, respec, armor) and the gadget bar (step 5).
+-- Gear menu (pickaxe upgrades, respec, armor/skin) and the gadget bar (step 5).
+-- Armor and skins are picked in the Bag's Gear tab (InventoryUi): the two
+-- buttons here never grow with what you own (Josh, 2026-09-23).
 -- 02-core-loop.md § Pickaxe upgrade tree, § Gadgets; 05-items.md § Armor.
 --
 -- Display and intents only: every buy / respec / equip / use is decided by
@@ -12,6 +14,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
@@ -25,9 +28,7 @@ local SIZE = combatCfg.Ui.ButtonSize
 
 local buyRemote = Remotes.getFunction("BuyUpgrade")
 local respecRemote = Remotes.getFunction("RespecUpgrades")
-local equipRemote = Remotes.getFunction("EquipArmor")
 local gadgetRemote = Remotes.getFunction("UseGadget")
-local skinRemote = Remotes.getFunction("EquipSkin")
 
 local REASON_TEXT: { [string]: string } = {
 	Busy = "Too fast",
@@ -163,16 +164,14 @@ end
 
 local respecButton = makeButton(panel, "Respec", SIZE * 4, 34, 3)
 
-local armorRow = makeList(panel, true, 4)
-local armorLabel = makeLabel(armorRow, "Armor:", 70, 0)
-armorLabel.TextXAlignment = Enum.TextXAlignment.Left
-local armorButtons: { TextButton } = {}
+-- Worn armor and skin: fixed-size buttons that open the Bag's Gear tab.
+local wearRow = makeList(panel, true, 4)
+local armorButton = makeButton(wearRow, "Armor", COLUMN_WIDTH * 1.4, 40, 1)
+local skinButton = makeButton(wearRow, "Skin", COLUMN_WIDTH * 1.4, 40, 2)
 
--- Skins: the plain pickaxe plus every skin you own (spares show x2).
-local skinRow = makeList(panel, true, 5)
-local skinLabel = makeLabel(skinRow, "Skin:", 70, 0)
-skinLabel.TextXAlignment = Enum.TextXAlignment.Left
-local skinButtons: { TextButton } = {}
+-- Never spill off a small screen: shrink the panel to fit.
+local panelScale = Instance.new("UIScale")
+panelScale.Parent = panel
 
 -- Gadget bar: a column on the right edge, under the Gear button. Buttons
 -- only for gadgets you own.
@@ -260,49 +259,19 @@ local function render()
 	respecButton.Text = `Respec (all points back): {costText(combatCfg.RespecCost)}`
 	respecButton.Visible = current.PointsUsed > 0
 
-	for _, button in armorButtons do
-		button:Destroy()
-	end
-	table.clear(armorButtons)
-	if #current.ArmorPieces == 0 then
-		armorLabel.Text = "Armor: none"
-	else
-		armorLabel.Text = "Armor:"
-		for i, piece in current.ArmorPieces do
-			local worn = piece.Id == current.ArmorEquipped
-			local button = makeButton(armorRow, `{tierName(piece.Tier)} {piece.Slot:lower()}{if worn then "\n(worn)" else ""}`, SIZE * 1.3, 40, i)
-			button.BackgroundColor3 = if worn then Color3.fromRGB(40, 110, 70) else Color3.fromRGB(45, 45, 60)
-			button.Activated:Connect(function()
-				-- Tap the worn piece to take it off.
-				ask(equipRemote, if worn then "" else piece.Id)
-			end)
-			table.insert(armorButtons, button)
+	local wornName = "none"
+	local spares = 0
+	for _, piece in current.ArmorPieces do
+		if piece.Id == current.ArmorEquipped then
+			wornName = `{tierName(piece.Tier)} {piece.Slot:lower()}`
+		else
+			spares += 1
 		end
 	end
-
-	for _, button in skinButtons do
-		button:Destroy()
-	end
-	table.clear(skinButtons)
+	armorButton.Text = `Armor: {wornName}{if spares > 0 then ` (+{spares} spare)` else ""}  >`
 	local skinCfgs: { [string]: { Name: string } } = Config.Cosmetics.PickaxeSkins :: any
-	local function addSkinButton(skinId: string, label: string, order: number)
-		local equipped = current.EquippedSkin == skinId
-		local button = makeButton(skinRow, label, SIZE * 1.5, 40, order)
-		button.BackgroundColor3 = if equipped then Color3.fromRGB(40, 110, 70) else Color3.fromRGB(45, 45, 60)
-		button.Activated:Connect(function()
-			if not equipped then
-				ask(skinRemote, skinId)
-			end
-		end)
-		table.insert(skinButtons, button)
-	end
-	addSkinButton("", Config.Cosmetics.DefaultSkinName, 1)
-	for order, skinId in Config.Cosmetics.SkinOrder do
-		local count = current.Skins[skinId] or 0
-		if count > 0 then
-			addSkinButton(skinId, skinCfgs[skinId].Name .. (if count > 1 then ` x{count}` else ""), order + 1)
-		end
-	end
+	local skinCfg = skinCfgs[current.EquippedSkin]
+	skinButton.Text = `Skin: {if current.EquippedSkin == "" then Config.Cosmetics.DefaultSkinName elseif skinCfg then skinCfg.Name else current.EquippedSkin}  >`
 
 	local anyGadget = false
 	for gadgetId, button in gadgetButtons do
@@ -319,6 +288,26 @@ end
 gearButton.Activated:Connect(function()
 	panel.Visible = not panel.Visible
 end)
+-- Armor / skin: open the Bag on its Gear tab (above this menu).
+local function openBagGear()
+	local bag = player.PlayerGui:FindFirstChild("InventoryUi")
+	local open = bag and bag:FindFirstChild("Open")
+	if open and open:IsA("BindableEvent") then
+		open:Fire("Gear")
+	end
+end
+armorButton.Activated:Connect(openBagGear)
+skinButton.Activated:Connect(openBagGear)
+local function fitPanel()
+	local camera = Workspace.CurrentCamera
+	local size = panel.AbsoluteSize / math.max(panelScale.Scale, 0.01)
+	if not camera or size.X <= 0 or size.Y <= 0 then
+		return
+	end
+	local view = camera.ViewportSize
+	panelScale.Scale = math.min(1, (view.X - 24) / size.X, (view.Y - 24) / size.Y)
+end
+panel:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitPanel)
 closeButton.Activated:Connect(function()
 	panel.Visible = false
 end)

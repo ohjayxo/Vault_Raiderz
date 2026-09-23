@@ -43,6 +43,7 @@ local KEYS: { [Enum.KeyCode]: string } = {
 	[Enum.KeyCode.Seven] = "GrantSkin",
 	[Enum.KeyCode.Eight] = "FillOfflineBases",
 	[Enum.KeyCode.Nine] = "GrantLockpicks",
+	[Enum.KeyCode.Zero] = "GrantSprintSerum",
 }
 
 -- Key M: the rate-limit test. Fires the REAL MineNode remote many times in
@@ -89,4 +90,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
-print("[Debug] Studio keys: P = print profile, C = +Credits, L = presence, X = +Miner XP, M = spam mine remote, V = next hit Vaultborn, B = test broadcasts, T = next Vault tier, F = +Stone/Ore/Riftsalt (Exposed), G = +Scrap, H = toggle meter, N = print band, K = next pickaxe tier, J = +gadgets, U = +armor, Y = toggle PvP protection, Q = Scav Wave, 6 = Captain wave, Z = flood waves, 7 = +skin, 8 = fill offline bases, 9 = +lockpicks")
+print("[Debug] Studio keys: P = print profile, C = +Credits, L = presence, X = +Miner XP, M = spam mine remote, V = next hit Vaultborn, B = test broadcasts, T = next Vault tier, F = +Stone/Ore/Riftsalt (Exposed), G = +Scrap, H = toggle meter, N = print band, K = next pickaxe tier, J = +gadgets, U = +armor, Y = toggle PvP protection, Q = Scav Wave, 6 = Captain wave, Z = flood waves, 7 = +skin, 8 = fill offline bases, 9 = +lockpicks, 0 = 999 Sprint Serum (everyone); Bag X = delete (Studio)")

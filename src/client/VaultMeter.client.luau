@@ -5,6 +5,8 @@
 -- Display only: every number comes from the server (R5). Shown or hidden
 -- only by the server, through a Player attribute
 -- (Config.Bank.Meter.VisibleAttribute, set by VaultService.setMeterVisible).
+-- Tapping it opens the Bag on Resources (InventoryUi): the meter shows
+-- totals, the Bag shows what they're made of.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,7 +26,9 @@ gui.Name = "VaultMeter"
 gui.ResetOnSpawn = false
 gui.Enabled = false -- hidden until the server says otherwise
 
-local panel = Instance.new("Frame")
+local panel = Instance.new("TextButton")
+panel.Text = ""
+panel.AutoButtonColor = false
 panel.Position = UDim2.fromOffset(12, 60)
 panel.Size = UDim2.fromOffset(meterCfg.Width, 0)
 panel.AutomaticSize = Enum.AutomaticSize.Y
@@ -74,6 +78,14 @@ local scrapLabel = makeLabel(4, Color3.fromRGB(200, 200, 200), 12)
 
 gui.Parent = player:WaitForChild("PlayerGui")
 
+panel.Activated:Connect(function()
+	local bag = player.PlayerGui:FindFirstChild("InventoryUi")
+	local open = bag and bag:FindFirstChild("Open")
+	if open and open:IsA("BindableEvent") then
+		open:Fire("Resources")
+	end
+end)
+
 -- ── Rendering ────────────────────────────────────────────────────────────
 
 local function totalUnits(store: Types.ResourceStore): number
@@ -101,7 +113,7 @@ local function render(state: Types.VaultState?)
 		return
 	end
 	local banked = totalUnits(state.Banked)
-	bankedLabel.Text = `Banked {withCommas(banked)} / {withCommas(state.Capacity)}`
+	bankedLabel.Text = `Banked {withCommas(banked)} / {withCommas(state.Capacity)}   ›`
 	local fill = if state.Capacity > 0 then math.clamp(banked / state.Capacity, 0, 1) else 0
 	barFill.Size = UDim2.fromScale(fill, 1)
 	exposedLabel.Text = `Exposed {withCommas(totalUnits(state.Exposed))}`

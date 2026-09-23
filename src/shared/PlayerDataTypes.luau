@@ -44,10 +44,15 @@ export type BaseState = {
 -- are plot-local {x, z} in studs from the plot centre, rounded.
 -- Outcome: "Stolen" (they escaped), "Recovered" (knocked loose / ran out of
 -- time / left). Taken: resource -> units the victim lost.
+-- Both sides get an entry (Josh, 2026-09-23): AsRaider = a raid you did
+-- (Taken = what you got), else a raid on your base (Taken = what you lost).
 export type RaidLogEntry = {
 	Id: string,
 	At: number,
 	RaiderName: string,
+	VictimName: string?,
+	AsRaider: boolean?,
+	Note: string?, -- why a raid failed ("knocked loose", "time ran out", ...)
 	Offline: boolean,
 	Outcome: string,
 	Taken: { [string]: number },
@@ -87,6 +92,9 @@ export type RaidView = {
 	Lockpick: { Picking: boolean, Stage: number, Stages: number, Picks: number }?,
 	Loot: { [string]: number }?,
 	CanSabotage: boolean,
+	-- Carrying: the carrier's distance from the victim plot's centre, in
+	-- Config.Raiding.ChaseProgressStepStuds steps (the server's number).
+	ChaseStuds: number?,
 }
 
 -- Tier = index into Config.Combat.PickaxeTiers; Slot = one of Config.Combat.ArmorSlots.
@@ -105,6 +113,7 @@ export type GearState = {
 	Gadgets: { [string]: number },
 	Skins: { [string]: number }, -- skin id -> owned count
 	EquippedSkin: string, -- "" = the plain pickaxe
+	Items: { [string]: number }, -- every counted item you own (gadgets, lockpicks...): the Bag shows them
 }
 
 export type ProfileData = {

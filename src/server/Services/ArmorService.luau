@@ -6,7 +6,8 @@
 -- * Pieces are unique items (GUID ids) with a tier (pickaxe tier names) and
 --   a slot (one Chest slot in the slice). A piece never upgrades.
 -- * The worn piece gives knockback resistance + a small damage reduction
---   (Config.Combat.Armor*). It is never stealable (R1); spares are (step 7).
+--   (Config.Combat.Armor*). It is never stealable (R1); a raid's grab takes
+--   the victim's best spare (D112; Josh's call 2026-09-23, RaidService).
 -- * Pieces come from Workshop I crafting (step 10; Josh's call, step 5).
 --   Until then only Studio debug grants them.
 -- * Gear score counts the highest tier OWNED, worn or not (BandMetric).
@@ -141,6 +142,109 @@ function ArmorService.grant(player: Player, tier: number, slot: string): string?
 	end
 	changedEvent:Fire(player)
 	return id
+end
+
+-- ── Raids (D112: one grab takes the victim's best spare piece) ──────────
+
+local function isWorn(armor: ArmorData, id: string): boolean
+	for _, equipped in armor.Equipped do
+		if equipped == id then
+			return true
+		end
+	end
+	return false
+end
+
+-- The best piece in this Armor section that isn't worn: highest tier, ties
+-- broken by id so it's stable. Works on a live section or a read-only save
+-- view (offline raids).
+function ArmorService.bestSpareIn(armor: ArmorData?): (string?, Types.ArmorPiece?)
+	if not armor then
+		return nil, nil
+	end
+	local bestId: string?, best: Types.ArmorPiece? = nil, nil
+	for id, piece in armor.Pieces do
+		if not isWorn(armor, id) then
+			if not best or piece.Tier > best.Tier or (piece.Tier == best.Tier and id < (bestId :: string)) then
+				bestId, best = id, piece
+			end
+		end
+	end
+	return bestId, best
+end
+
+-- Removes spare `id` if its owner still has it and isn't wearing it (R1:
+-- the worn piece is never taken). Returns the piece taken, or nil. `update`
+-- is a live or a message update (PlayerDataService.Update).
+function ArmorService.takeSpareVia(update: PlayerDataService.Update, id: string): Types.ArmorPiece?
+	local taken: Types.ArmorPiece? = nil
+	update("Armor", OWNER, function(armor: ArmorData)
+		local piece = armor.Pieces[id]
+		if piece and not isWorn(armor, id) then
+			armor.Pieces[id] = nil
+			taken = piece
+		end
+		return armor
+	end)
+	return taken
+end
+
+-- takeSpareVia on a loaded player.
+function ArmorService.takeSpare(player: Player, id: string): Types.ArmorPiece?
+	local taken = ArmorService.takeSpareVia(function(section, owner, mutate)
+		return PlayerDataService.update(player, section, owner, mutate)
+	end, id)
+	if taken then
+		changedEvent:Fire(player)
+	end
+	return taken
+end
+
+-- A piece from untrusted saved data (a raid message), or nil if malformed.
+function ArmorService.clean(raw: any): Types.ArmorPiece?
+	if type(raw) ~= "table" or type(raw.Tier) ~= "number" or type(raw.Slot) ~= "string" then
+		return nil
+	end
+	local tier = raw.Tier
+	if tier < 1 or tier > #combatCfg.PickaxeTiers or tier ~= math.floor(tier) or not table.find(combatCfg.ArmorSlots, raw.Slot) then
+		return nil
+	end
+	return { Tier = tier, Slot = raw.Slot }
+end
+
+-- A piece arriving by message (a raid's armor going back to its owner).
+function ArmorService.grantVia(update: PlayerDataService.Update, piece: Types.ArmorPiece)
+	update("Armor", OWNER, function(armor: ArmorData)
+		armor.Pieces[HttpService:GenerateGUID(false)] = { Tier = piece.Tier, Slot = piece.Slot }
+		return armor
+	end)
+end
+
+-- Studio debug (the Bag's X): delete a piece outright, worn or not.
+function ArmorService.debugDelete(player: Player, id: string): boolean
+	local deleted = false
+	PlayerDataService.update(player, "Armor", OWNER, function(armor: ArmorData)
+		if armor.Pieces[id] then
+			armor.Pieces[id] = nil
+			for slot, equipped in armor.Equipped do
+				if equipped == id then
+					armor.Equipped[slot] = nil
+				end
+			end
+			deleted = true
+		end
+		return armor
+	end)
+	if deleted then
+		changedEvent:Fire(player)
+		updateVisual(player)
+	end
+	return deleted
+end
+
+-- "Iron Chest armor", for messages and the raid log.
+function ArmorService.describe(piece: Types.ArmorPiece): string
+	return `{combatCfg.PickaxeTiers[math.min(piece.Tier, #combatCfg.PickaxeTiers)]} {piece.Slot} armor`
 end
 
 -- Wears piece `pieceId` in its slot, or takes the chest piece off with "".

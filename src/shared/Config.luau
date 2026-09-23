@@ -96,6 +96,7 @@ local Config = {
 		DebugCooldownSeconds = 0.5, -- [PH] invented
 		DebugCreditGrant = 10, -- [PH] invented
 		DebugXPGrant = 500, -- [PH] invented: 7 presses = Miner level 10 (3,162 XP)
+		DebugSprintSerumGrant = 999, -- Studio key 0: to EVERY player on the server (Josh's test request)
 	},
 
 	-- ── Step 0B ── THROWAWAY mobile performance spike ──────────────────
@@ -714,6 +715,22 @@ local Config = {
 	-- PickaxeSkins): a "Handle" part (the grip) + a "Visual" folder (the art).
 	-- Adding one = a new model + one line here. A skin replaces the whole
 	-- look: the pickaxe tier isn't shown (Josh's call, 2026-09-22).
+	-- The Bag (Josh, 2026-09-23): one panel showing everything you own,
+	-- split into safe (banked / worn) and at risk (exposed / spare). Opened
+	-- from the Bag button, the vault meter, or the Gear menu's Armor/Skin
+	-- buttons. Shown with the vault meter (Config.Bank.Meter.VisibleAttribute,
+	-- R4). Look only, all [PH] invented.
+	Inventory = {
+		ButtonLabel = "Bag",
+		PanelMaxSize = Vector2.new(640, 340), -- px; the panel also shrinks to 90% of small screens
+		RowHeight = 30,
+		DisplayOrder = 11, -- above the Gear menu (10) and the raid UI (8)
+		-- Counted items on the Items tab, in this order. Gadgets use
+		-- Config.Gadgets.Names; others are named here.
+		ItemOrder = { "Lockpick", "SmokeBomb", "SprintSerum", "ShockTrap", "Disruptor" },
+		ItemNames = { Lockpick = "Lockpicks" },
+		ShowCredits = false, -- step 9 (FTUE hard rule 5 hides 06 until then)
+	},
 	Cosmetics = {
 		SkinFolderName = "PickaxeSkins",
 		-- id -> display name. The id is the template model's name.
@@ -986,6 +1003,11 @@ local Config = {
 		-- centre: ~15 s at carry speed on every plot. gen_world.py checks
 		-- a plot and its bridge sit inside it.
 		EscapeRadiusStuds = 140, -- [PH] per doc
+		-- Chase progress (Josh, 2026-09-23): the raid's players see the
+		-- carrier's distance in their banner, in steps; the victim gets one
+		-- alert when the carrier passes this share of the radius.
+		ChaseProgressStepStuds = 10, -- [PH] invented
+		ChaseHalfwayFraction = 0.5, -- [PH] 70 of 140 studs
 		-- 02 § Tiered raid interaction (D23), tiers 5-7: knock one defense
 		-- offline for 15 min [PH]; it comes back by itself, free.
 		SabotageMinTier = 5,
@@ -993,6 +1015,9 @@ local Config = {
 		SabotageRange = 10, -- [PH] invented
 		-- 02 § Raid log path map (D105).
 		PathSampleSeconds = 0.5, -- [PH] invented
+		-- Raid log map points are saved as studs + this, because a profile
+		-- never stores negative numbers. Must exceed EscapeRadiusStuds.
+		LogCoordOffset = 256,
 		MaxPathPoints = 180, -- [PH] invented (= the 90 s window)
 		LogEntries = 10, -- [PH] invented: raid log keeps the newest N
 		AppliedRaidMemory = 30, -- raid ids remembered so a message never applies twice

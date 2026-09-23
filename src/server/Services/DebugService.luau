@@ -14,7 +14,10 @@
 -- Q = Scav Wave on your base now, 6 = wave led by a Scav Captain,
 -- Z = queue many waves at once (D59 cap test), 7 = +1 Captain's Cleaver skin,
 -- 8 = fill free plots with offline bases now (instead of waiting 30 s),
--- 9 = +5 lockpicks (crafted at Workshop I from step 10).
+-- 9 = +5 lockpicks (crafted at Workshop I from step 10),
+-- 0 = 999 Sprint Serum for EVERY player on the server.
+-- The Bag's small X buttons (Studio only) send DeleteItem / DeleteArmor
+-- with an argument (item id / armor piece id).
 -- (M = mine-remote spam lives entirely on the client: it fires the real
 -- MineNode remote, exactly like an exploit script would.)
 
@@ -61,7 +64,7 @@ local BROADCAST_TEST: { { kind: string, text: string } } = {
 
 local DebugService = {}
 
-local commands: { [string]: (Player) -> () } = {
+local commands: { [string]: (Player, any) -> () } = {
 	PrintProfile = function(player)
 		print(PlayerDataService.debugDescribe(player))
 	end,
@@ -127,6 +130,32 @@ local commands: { [string]: (Player) -> () } = {
 		local ok = PickaxeService.setTier(player, tier)
 		print(`[Debug] {player.Name} pickaxe: {if ok then "ok" else "FAILED"}, now {Config.Combat.PickaxeTiers[tier]} ({Config.Combat.PointsByTier[tier]} points)`)
 	end,
+	GrantSprintSerum = function(_player)
+		local amount = Config.Data.DebugSprintSerumGrant
+		for _, target in game:GetService("Players"):GetPlayers() do
+			local ok = InventoryService.add(target, "SprintSerum", amount)
+			print(`[Debug] +{amount} Sprint Serum for {target.Name}: {if ok then "ok" else "FAILED"}`)
+		end
+	end,
+	-- The Bag's X on an item row: delete all of that item.
+	DeleteItem = function(player, itemId)
+		if type(itemId) ~= "string" then
+			return
+		end
+		local count = InventoryService.count(player, itemId)
+		if count > 0 then
+			InventoryService.consume(player, itemId, count)
+		end
+		print(`[Debug] deleted {count} {itemId} from {player.Name}`)
+	end,
+	-- The Bag's X on an armor row: delete that piece (worn or not).
+	DeleteArmor = function(player, pieceId)
+		if type(pieceId) ~= "string" then
+			return
+		end
+		local ok = ArmorService.debugDelete(player, pieceId)
+		print(`[Debug] deleted armor {pieceId} from {player.Name}: {if ok then "ok" else "not found"}`)
+	end,
 	GrantGadgets = function(player)
 		for _, gadgetId in Config.Gadgets.Order do
 			InventoryService.add(player, gadgetId, 1)
@@ -187,7 +216,7 @@ local commands: { [string]: (Player) -> () } = {
 
 function DebugService.start()
 	local allow = RateLimiter.new("DebugCommand", Config.Data.DebugCooldownSeconds)
-	Remotes.getEvent("DebugCommand").OnServerEvent:Connect(function(player: Player, command: unknown)
+	Remotes.getEvent("DebugCommand").OnServerEvent:Connect(function(player: Player, command: unknown, argument: unknown)
 		-- Rate limit first, so spamming this on a live server can't flood the logs.
 		if not allow(player) then
 			return
@@ -201,7 +230,7 @@ function DebugService.start()
 		end
 		local handler = commands[command]
 		if handler then
-			handler(player)
+			handler(player, argument)
 		end
 	end)
 end

@@ -251,7 +251,10 @@ From `docs-build/consistency-report.md` Part B:
    post-raid shield (D75) starts at the victim's next login. (Already built.)
 2. **#37 Spare armor theft (D112):** one grab takes the victim's **best
    spare** armor piece, whole (no in-transit destruction for a single
-   item); the worn piece never (R1). **Not built yet** (missed in step 7).
+   item); the worn piece never (R1). **Built 2026-09-23** (missed in step 7):
+   ArmorService.bestSpareIn/takeSpare/takeSpareVia; RaidService carries it
+   through grab, escape (online, offline message, victim-left) and returns
+   it on a failed raid.
 3. **#40 Lockpicks and gadgets:** Workshop I crafts **basic** lockpicks and
    gadgets for everyone; Tech Path **Breaching** nodes unlock **better**
    versions. Step 10.
@@ -260,6 +263,25 @@ From `docs-build/consistency-report.md` Part B:
 The Part A doc fixes (38 + D93/label follow-ups) were applied to `docs/`
 with Josh's double confirmation, 2026-09-23. **The design project needs
 the same edits** (list: `docs-build/consistency-report.md` Part A).
+
+## UI + Chase feedback (2026-09-23) — NOT yet in `docs/`
+
+Josh's calls (options designed by a 4-agent workflow, chosen by Josh):
+1. **The Bag:** one panel with tabs Resources | Gear | Items, split into
+   SAFE (banked / worn) vs AT RISK (exposed / spare armor). Tap a resource
+   for its Grades. Opened by a Bag button beside Raids, by tapping the
+   vault meter, or by the Gear menu's Armor/Skin buttons (which replace the
+   old per-piece rows that overflowed). Shown with the vault meter (R4).
+2. **Chase progress:** the raider, victim and escort banners show the
+   carrier's distance ("70/140 studs", 10-stud steps, server-computed); the
+   victim gets one alert when the carrier passes halfway. No server-wide
+   halfway ping (the Chase is ~15 s; the D58 queue would lag behind it).
+3. **Raid log for both sides:** the raider also gets an entry ("You raided
+   X: Got ..." / "Failed: <reason>"); failed raids record why.
+Bug fixed alongside: raid log entries were never saved (map points were
+negative; profiles reject negatives), so they're now stored shifted by
+`Config.Raiding.LogCoordOffset`. This also restores the "applied" raid ids
+that guard offline theft messages against being applied twice.
 
 ## Flagged for redesign (step 2 review, 2026-09-20) — ANSWERED 2026-09-21 (see above)
 

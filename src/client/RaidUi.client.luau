@@ -395,12 +395,26 @@ local function lootText(loot: { [string]: number }?): string
 		return ""
 	end
 	local parts = {}
-	for _, key in { "Stone", "Ore", "Riftsalt", "Scrap" } do
+	local counted = { "Stone", "Ore", "Riftsalt", "Scrap" }
+	for _, key in counted do
 		if (loot[key] or 0) > 0 then
 			table.insert(parts, `{loot[key]} {key}`)
 		end
 	end
+	for key in loot do -- anything else is a stolen armor piece (D112)
+		if not table.find(counted, key) then
+			table.insert(parts, key)
+		end
+	end
 	return table.concat(parts, ", ")
+end
+
+-- "70/140 studs · " while someone's carrying loot (the server's number).
+local function chaseText(view: Types.RaidView): string
+	if view.Phase ~= "Carrying" or not view.ChaseStuds then
+		return ""
+	end
+	return `{view.ChaseStuds}/{raidCfg.EscapeRadiusStuds} studs · `
 end
 
 local actionKind = "" -- what actionButton does right now
@@ -415,12 +429,12 @@ RunService.RenderStepped:Connect(function(dt: number)
 		local left = math.max(0, math.ceil(current.EndsAt - t))
 		if current.Role == "Victim" then
 			banner.Text = if current.Phase == "Carrying"
-				then `{current.RaiderName} has your loot ({lootText(current.Loot)})! Hit them before they escape - {left}s`
+				then `{current.RaiderName} has your loot ({lootText(current.Loot)})! {chaseText(current)}Hit them before they escape - {left}s`
 				else `RAID! {current.RaiderName} is at your base - {left}s`
 		elseif current.Role == "Escort" then
-			banner.Text = `Escorting {current.RaiderName}: body-block anyone chasing them - {left}s`
+			banner.Text = `Escorting {current.RaiderName}: body-block anyone chasing them - {chaseText(current)}{left}s`
 		elseif current.Phase == "Carrying" then
-			banner.Text = `Escape! Get {raidCfg.EscapeRadiusStuds} studs from their base - {left}s   ({lootText(current.Loot)})`
+			banner.Text = `Escape! {chaseText(current)}{left}s   ({lootText(current.Loot)})`
 		elseif current.Phase == "Unlocked" then
 			banner.Text = `Lock open: grab the loot - {left}s`
 		else
@@ -775,11 +789,11 @@ local function drawMap(entry: Types.RaidLogEntry)
 	plotFrame.Parent = map
 	for i, point in entry.Path do
 		local fade = i / math.max(1, #entry.Path)
-		dot(point[1], point[2], Color3.fromRGB(255, math.floor(220 - 150 * fade), 60), 4, nil)
+		dot(point[1] - raidCfg.LogCoordOffset, point[2] - raidCfg.LogCoordOffset, Color3.fromRGB(255, math.floor(220 - 150 * fade), 60), 4, nil)
 	end
 	for _, trigger in entry.Triggers do
 		local kind = tostring(trigger[3] or "?")
-		dot(trigger[1], trigger[2], Color3.fromRGB(200, 40, 40), 14, kind:sub(1, 1))
+		dot(trigger[1] - raidCfg.LogCoordOffset, trigger[2] - raidCfg.LogCoordOffset, Color3.fromRGB(200, 40, 40), 14, kind:sub(1, 1))
 	end
 end
 
@@ -802,7 +816,10 @@ local function refreshLog()
 		local b = Instance.new("TextButton")
 		b.LayoutOrder = i
 		b.Size = UDim2.new(1, -8, 0, 54)
-		b.BackgroundColor3 = if entry.Outcome == "Stolen" then Color3.fromRGB(110, 40, 40) else Color3.fromRGB(40, 90, 50)
+		local asRaider = entry.AsRaider == true
+		b.BackgroundColor3 = if asRaider
+			then (if entry.Outcome == "Stolen" then Color3.fromRGB(120, 95, 30) else Color3.fromRGB(70, 70, 80))
+			else (if entry.Outcome == "Stolen" then Color3.fromRGB(110, 40, 40) else Color3.fromRGB(40, 90, 50))
 		b.TextColor3 = Color3.new(1, 1, 1)
 		b.Font = Enum.Font.Gotham
 		b.TextSize = 13
@@ -813,7 +830,10 @@ local function refreshLog()
 		for key, amount in entry.Taken do
 			table.insert(taken, `{amount} {key}`)
 		end
-		b.Text = `  {entry.RaiderName}{if entry.Offline then " (while you were away)" else ""} - {minutes} min ago\n  {if entry.Outcome == "Stolen" then "Took: " .. (if #taken > 0 then table.concat(taken, ", ") else "nothing") else "Loot recovered"}`
+		local what = if #taken > 0 then table.concat(taken, ", ") else "nothing"
+		b.Text = if asRaider
+			then `  You raided {entry.VictimName or "?"}{if entry.Offline then " (offline)" else ""} - {minutes} min ago\n  {if entry.Outcome == "Stolen" then "Got: " .. what else "Failed: " .. (entry.Note or "no loot")}`
+			else `  {entry.RaiderName}{if entry.Offline then " (while you were away)" else ""} - {minutes} min ago\n  {if entry.Outcome == "Stolen" then "Took: " .. what else "Loot recovered" .. (if entry.Note then ` ({entry.Note})` else "")}`
 		b.Parent = logList
 		b.Activated:Connect(function()
 			drawMap(entry)

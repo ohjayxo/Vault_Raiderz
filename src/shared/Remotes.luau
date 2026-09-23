@@ -25,8 +25,8 @@ local definitions: { [string]: RemoteKind } = {
 	-- THROWAWAY (build step 0B): client asks for a perf-spike test preset by
 	-- name. Delete with src/server/PerfSpike.
 	PerfSpikeSetPreset = "Event",
-	-- Studio-only debug commands (client sends a command NAME; the server
-	-- ignores it outside Studio). Step 1.
+	-- Studio-only debug commands (client sends a command NAME, plus an
+	-- optional argument; the server ignores it outside Studio). Step 1.
 	DebugCommand = "Event",
 
 	-- Step 2: nodes, resources, broadcasts.
