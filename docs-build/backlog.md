@@ -176,3 +176,5 @@ rules + layout) and 1 skeptic that tried to refute each finding.
 - **Offline bases** are any recent leaver for now; step 8 adds band
   matching to `OfflineBaseService.refill`.
 - The raid log map shows path dots + defense trigger markers; greybox.
+- **Launch:** credit the CC-BY pickaxe model in the game description or a
+  credits screen (`docs-build/credits.md`).
