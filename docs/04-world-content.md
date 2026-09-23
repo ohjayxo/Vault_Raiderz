@@ -70,7 +70,7 @@ Every boss rolls across four buckets, not a single drop:
 |---|---|---|
 | **Guaranteed** | 100% | Materials scaled to tier — killing it is never a waste |
 | **Common** | ~60% | Cases, components, gadgets |
-| **Rare** | ~25% | Blueprints of that tier (**visible on the ground before pickup** — `03-progression.md § D52`) |
+| **Rare** | ~25% | Blueprints of that tier (**visible on the ground before pickup** — `03-progression.md § Blueprint drops are visible before pickup`) |
 | **Signature** | ~5–8% | The tier's identity item — the thing you farm for |
 
 The guaranteed floor prevents the rage of a long fight yielding nothing.

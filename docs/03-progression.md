@@ -93,14 +93,14 @@ find an owner; it never grants anything automatically. Scope: v1.0
 **The tech tree replaces the class/specialization system entirely.**
 
 Earlier drafts had players picking Prospector/Engineer/Raider/Trader from
-a menu. That is cut (`07-decisions.md § Specialization`). Instead:
+a menu. That is cut (`07-decisions.md § D11`). Instead:
 
 > **Your tech path is your class.**
 
 ### Why this is better
 - **Emergent, not declared** — you become something through ~40 spending decisions
 - **Gradual** — nobody is locked in at minute 10
-- **Readable** — others infer your build from gear and behavior
+- **Readable** — others infer your build from gear and behavior (armor and behaviour; pickaxe tier is hidden under skins)
 
 ### The mechanism that makes it work
 **You cannot afford the whole tree.** In Rust, clearing everything costs
@@ -322,17 +322,16 @@ knows every recipe and specialization decays.
 |---|---|---|---|
 | **Common** | Progression, quests, early caches | No | **Permanent once learned** (never resets — D72) |
 | **Advanced** | Caches, Riftfall, NPC trader | Until learned | **Wears out — must be relearned**; also resets every 6 weeks (D72) |
-| **Prototype** | Rift bosses, Static Secrets, seasonal | Yes, but 1-per-player | **Wears out — must be relearned**; also resets every 3 weeks (D72); wear-out (D33) does **not** apply to
-  Prototype — the 3-week reset is its only churn (D77) |
+| **Prototype** | Rift bosses, Static Secrets, seasonal | Yes, but 1-per-player | **Resets every 3 weeks** (D72) — its only churn; D33 wear-out does not apply (D77) |
 
 ## Tiered durability `[LOCKED — D33]`
 
 **Low-tier (Common) blueprints stay permanent once learned — friendly
-and low-stakes for new players.** **High-tier (Advanced and Prototype)
-blueprints wear out with repeated use and must eventually be relearned or
-replaced.** This is a deliberate inversion of the naive assumption that
+and low-stakes for new players.** **Advanced blueprints wear out with
+repeated use and must be relearned; Prototype is exempt (D77), its 3-week
+reset is its only churn.** This is a deliberate inversion of the naive assumption that
 rarer should mean more durable: the goal is ongoing demand exactly where
-the economy is deepest. A veteran Engineer with a worn Prototype
+the economy is deepest. A veteran Engineer with a worn Advanced
 blueprint has to go back out and re-earn it — keeping boss-farming crews
 relevant permanently instead of being a one-time unlock that's solved
 forever.
@@ -350,7 +349,7 @@ A blueprint is a tradeable object **right up until you use it.**
 
 **Learning a Prototype blueprint triggers a public announcement**,
 similar in spirit to the Vaultborn Grade announcement. **Advanced no
-longer announces (D78)** — with Tier 3 resetting every 3 weeks (D72),
+longer announces (D78)** — with Tier 2/Advanced resetting every 6 weeks (D72),
 announcing every Advanced relearn would have flooded the broadcast queue
 (D58) with noise. This builds strong social proof — "the guy who just
 learned Riftedge Housing" is an identity — at the cost of painting a
@@ -362,7 +361,7 @@ the design (`01-pillars.md § Design rubric`, criterion 7).
 
 Rift bosses drop **Prototype Blueprints** — recipes obtainable no other
 way:
-- **Unstable Finish cosmetics** (the seed-sensitive ones — the entire
+- **Unstable Finish cosmetics** (the Pattern-sensitive ones — the entire
   collector meta traces back to boss kills)
 - Top-tier pickaxe components
 - Elite defense modules
@@ -414,7 +413,7 @@ Repeated crafting from a blueprint builds Mastery with that recipe:
 **Signature is the sleeper feature.** A maker's mark means a known
 crafter's output carries a reputation premium — player-authored value,
 the same dynamic that makes CS seeds interesting. Someone becomes "the
-guy who makes the good Voltsteel picks," and that identity is worth more
+guy who makes the good Riftedge skins," and that identity is worth more
 than the items.
 
 Mastery is **non-transferable**, so a rich player cannot buy their way
@@ -492,7 +491,7 @@ tracks. **Never resets** (not at season, not at rebirth). Jobs:
    **Level 10 [PH]** (`06-economy.md § Access gating`)
 3. Rewards titles, cosmetics, and slots — never stats
 
-**Level curve `[PH — placeholder, D111 round]`:** each Reputation track turns
+**Level curve `[PH — placeholder, v5.7 build round; D80 note]`:** each Reputation track turns
 XP into a track level, where the XP to **reach** track level *n* is
 `floor(100 × n^1.5)` (levels 1 / 2 / 3 / 5 / 10 / 20 need 100 / 282 / 519 /
 1,118 / 3,162 / 8,944 XP). **Level = the sum of the three track
@@ -525,8 +524,8 @@ purely a faster/richer cosmetic path, never a different reward category.
 | — | Level (D82) | |
 
 Tier 3 also resets at mid-season (week 3 [PH]) with **no** Scrap
-conversion — see `§ Staggered tier reset` for the Rift Fragment re-buy
-proposal that keeps that reset meaningful.
+conversion — see `§ Tier 3 re-buy cost` (D76) for the Rift Fragment re-buy
+that keeps that reset meaningful.
 
 **Why the split:** the Tech Path is treated as its own progression system
 distinct from "the economy." Wiping it every 6 weeks means nobody
@@ -539,7 +538,7 @@ making the reset fictional. The D48 reconciliation is now confirmed and
 refined by D68 and D72.
 
 Each season ships: a themed cosmetic line, **a new Unstable Finish**
-(feeding the seed meta), a rotating world event, an exclusive rank
+(feeding the Pattern meta), a rotating world event, an exclusive rank
 reward, and a swapped Rift boss with a fresh Prototype table.
 
 ### Why seasons earn their place

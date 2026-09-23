@@ -5,9 +5,9 @@
 to reach for, and not burning Opus-level usage on a task Haiku could
 handle. Ordered by where the project actually is (now → later).
 
-This is a **prediction**, not a rulebook. Vault Raiderz is pre-production
-(v5.5) — the vertical slice is locked (D107) and the build phase is
-documented in `13-build-guide.md`, but nothing is built yet. Everything past "Phase 0" below is my best guess at what work
+This is a **prediction**, not a rulebook. Vault Raiderz is in the
+vertical-slice build (docs v5.10, build steps 0–7 done; `13-build-guide.md`).
+Everything past "Phase 0" below was written as a best guess at what work
 is coming, based on `10-roadmap.md`'s build order and scope. Revise this
 file once real phases start.
 
@@ -28,14 +28,14 @@ file once real phases start.
 
 ---
 
-## Quick reference — Phase 0: Planning & Design (where we are now)
+## Quick reference — Phase 0: Planning & Design (done)
 
 | Scenario | Model | Thinking | Why |
 |---|---|---|---|
 | Bouncing ideas / freeform brainstorming | Sonnet | Standard | Conversational, cheap, no benefit from deliberation overhead |
 | "Look up how [other game] handles X" + discuss | Sonnet | Standard | Search-heavy, not reasoning-heavy — Sonnet synthesizes fine |
-| Answering a **low-stakes** open question (`08-questions.md`) | Sonnet | Standard | e.g. Q26 case tier visibility — easy to change later |
-| Answering a **high-priority/hard-to-reverse** question (Q44 tech path wipe, Q49 Riftsalt tradeable, Q38 scrap banking) | Opus | Extended | These ripple across multiple systems and are expensive to reverse once players are in it |
+| Answering a **low-stakes** open question (`08-questions.md`) | Sonnet | Standard | e.g. a cosmetic naming question — easy to change later |
+| Answering a **high-priority/hard-to-reverse** question (e.g. the open Q33/Q34 boss loot distribution) | Opus | Extended | These ripple across multiple systems and are expensive to reverse once players are in it |
 | Quick fact check (a stat, a rule, "did I say X already") | Sonnet or Haiku | Standard | Pure retrieval |
 | Editing one section of an existing doc | Sonnet | Standard | Routine |
 | **Cross-file consistency check** ("does 06-economy contradict 05-items?") | Opus | Extended | Multi-document reasoning across the whole set — this is where subtle contradictions hide |

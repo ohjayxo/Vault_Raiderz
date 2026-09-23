@@ -1,7 +1,7 @@
 # 12 — Nexus (Oversight & Interconnectivity) `[LOCKED as process]`
 
 **This file is infrastructure, not game design.** It contains no pitch,
-no mechanics, no numbers. Its only job is to keep the other 11 files
+no mechanics, no numbers. Its only job is to keep the other files
 honest — one canonical home per concept, a map of what depends on what,
 and rules for where new material is born. Read this like you'd read
 `01-pillars.md § Design rubric`: a process file that gets re-consulted,
@@ -24,7 +24,8 @@ mirrors it; if the two ever disagree, this file wins.
 **Reference as needed, not part of the main sequence:**
 `08-questions.md` (pull up only the section relevant to the question at
 hand) and `09-research.md` (pull up only the source backing a specific
-claim).
+claim); `11-claude-usage-guide.md` (process) and `13-build-guide.md` +
+`14-claude-code-prompts.md` (build phase).
 
 **Why nexus sits before `01-pillars`, not after it:** everything in
 `01-pillars.md` onward assumes you already know where things live. Read
@@ -46,9 +47,9 @@ actually operationalized.)
 |---|---|---|
 | Pitch, pillars, non-negotiable rules (R1–R8), rubric | `01-pillars.md` | Everywhere — every mechanic should trace back to a pillar or a rule |
 | FTUE spec, session structure, world zones, combat, Bank/Exposed, raiding, the Chase, defenses, automation | `02-core-loop.md` | `05-items` (taxonomy stealable column), `06-economy` (sinks), `08-questions` Q20–22 |
-| Workshops, Tech Path, Research Bench, Blueprints (full spec), Mastery, Rebirth, ranks/seasons | `03-progression.md` | `05-items` (Fragments, Blueprints taxonomy summary — **must stay a pointer**), `06-economy` (scrap sink table) |
+| Workshops, Tech Path, Research Bench, Blueprints (full spec), Blueprint Mastery, Reputation tracks, Level, Rebirth, ranks/seasons | `03-progression.md` | `05-items` (Fragments, Blueprints taxonomy summary — **must stay a pointer**), `06-economy` (scrap sink table) |
 | PvE ladder, mobs/bosses, loot buckets, Scav Waves, World Caches, dynamic events (Riftfall etc.), Farming, Teas | `04-world-content.md` | `02-core-loop` (zone table), `05-items` (Grade roll examples), `10-roadmap` (Season Plan headline) |
-| Item taxonomy, Resources, the three rarity rolls (Grade/Condition/Seed), Gear, Cosmetics, Cases, Keys, Components, Fragments | `05-items.md` | `02-core-loop` (world zones), `03-progression` (Fragments gate), `06-economy` (Case/Key triangle) |
+| Item taxonomy, Resources, the three rarity rolls (Grade/Condition/Pattern), Gear (pickaxe + armor), Cosmetics, Cases, Keys, Components, Fragments | `05-items.md` | `02-core-loop` (world zones), `03-progression` (Fragments gate), `06-economy` (Case/Key triangle) |
 | Currencies, the Exchange/market, sinks & faucets, trade safety, market manipulation, monetization | `06-economy.md` | `01-pillars` (R3), `05-items` (taxonomy), `09-research` (platform policy) |
 | **Why** any locked decision was made, and what was rejected | `07-decisions.md` | Every other file states *what*; only this one states *why + rejected alternatives* |
 | Vertical slice, launch scope, season plan, known risks, build order, version history | `10-roadmap.md` | `01-pillars` (rubric scores), `03-progression` (season mechanics vs. roadmap cadence — see § Known drift risks) |
@@ -70,7 +71,7 @@ contradict a rule three files away.
 |---|---|
 | A resource (add/remove/reweight Stone/Ore/Voltstone/Riftsalt) | `02-core-loop` (progressive reveal), `06-economy` (Riftsalt rule), `03-progression` (Voltstone gates Workshop III), `07-decisions` D14 |
 | Tech Path structure or costs | `05-items` (Fragments), `06-economy` (scrap sink table), `08-questions` Q44–48 |
-| Raid theft percentages, timing, or the Chase | `06-economy` (sinks table), `07-decisions` D1/D3/D4/D5, `09-research` (Rust warning it's modeled against) |
+| Raid theft percentages, timing, or the Chase | `06-economy` (sinks table), `07-decisions` D1/D3/D4/D23/D114, `02 § Slice layout` (escape radius vs. plot/bridge sizes), `09-research` (Rust warning it's modeled against) |
 | Cases/Keys model | `06-economy` (Case/Key triangle + Monetization), `07-decisions` D15, `08-questions` Q24–27, `09-research` (platform policy) |
 | A `[LOCKED]` rule (R-number) or decision (D-number) | The rubric in `01-pillars` (does a score assumption still hold?), `10-roadmap` (does scope still match?) |
 | Anything currently `[OPEN]` in `08-questions.md` | Once answered: add a `D#` to `07-decisions.md`, move the `08-questions.md` entry to its Answered table, update the status tag in the mechanic's home file, then update the registries below |
@@ -136,7 +137,7 @@ insurance against a collision.
 # OPERATING INSTRUCTIONS FOR ANY CLAUDE SESSION `[LOCKED]`
 
 1. **Load `00-README.md` and this file first**, every time — both are
-   short, and together they replace needing to read all 11 files for a
+   short, and together they replace needing to read the whole set for a
    narrow question.
 2. **Use the Concept Ownership Index to route the question**, then pull
    in only the 1–3 files that actually own the relevant material. Don't

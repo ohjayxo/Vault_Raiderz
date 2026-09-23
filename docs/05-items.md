@@ -100,7 +100,7 @@ Voltstone arrives in **small amounts as a byproduct of ordinary Ore
 nodes**. Every node has a whiff of the good stuff — you are never mining
 "just stone."
 
-**Stacks with Grade:** a Volatile-grade Ore node paying 10× is a
+**Stacks with Grade:** a Volatile-grade Ore hit paying 10× is a
 meaningful Voltstone windfall. The two systems multiply rather than
 compete.
 
@@ -176,7 +176,7 @@ Prismatic and Vaultborn **auto-bank on pickup** if capacity allows.
 Losing a 0.1% pull to a random raid is the likeliest single event to make
 a player quit forever.
 
-## Roll 2 — CONDITION (gear & cosmetics) — *the float analog*
+## Roll 2 — CONDITION (cosmetics, incl. pickaxe/armor skins) — *the float analog*
 
 A 0.00–1.00 value assigned at creation, banded:
 
@@ -185,12 +185,12 @@ A 0.00–1.00 value assigned at creation, banded:
 **Purely cosmetic. Does NOT affect stats.** The moment Condition affects
 performance, you have built pay-to-win-by-luck.
 
-## Roll 3 — SEED (gear & cosmetics) — *the pattern analog*
+## Roll 3 — SEED (cosmetics, incl. pickaxe/armor skins) — *the pattern analog*
 
 An integer **1–1000**, assigned at creation, **permanent, never
 re-rollable.**
 
-### The critical rule — only some skins are seed-sensitive
+### The critical rule — only some skins are Pattern-sensitive
 
 In CS2, the pattern index decides where a texture lands on the model. For
 a uniform texture, shifting it changes nothing noticeable — which is why
@@ -202,9 +202,9 @@ Hardened maybe a dozen produce a truly blue result — making a top-seed
 copy genuinely scarcer than a low float, which any number of copies can
 share.
 
-**Also critical: float and seed are rolled independently and neither
-constrains the other.** A Pristine item can have a dull seed; a Scarred
-one can be a legendary seed.
+**Also critical: Condition and Pattern are rolled independently and neither
+constrains the other.** A Pristine item can have a dull Pattern; a Scarred
+one can be a legendary Pattern.
 
 ### Implementation in Vault Raiderz `[LOCKED]`
 
@@ -215,11 +215,11 @@ one can be a legendary seed.
 ### Launch count: 2–3 Unstable Finishes `[LOCKED — D47 (Q16)]`
 **Only 2–3 Unstable Finishes ship at launch**, not a broader set. This
 maximizes focus — a legible, intensely-discussed meta around a small
-number of finishes beats a diluted one where no single seed becomes
-legendary. Of the ~1,000 seeds on each finish, maybe 8–15 [PH] produce
+number of finishes beats a diluted one where no single Pattern becomes
+legendary. Of the ~1,000 Patterns on each finish, maybe 8–15 [PH] produce
 something spectacular.
 
-**Say nothing about which finishes, or which seeds, are special.** Let
+**Say nothing about which finishes, or which Patterns, are special.** Let
 the community discover and name them.
 
 **Why this is the best single idea in the design:** value hierarchy in CS
@@ -233,7 +233,7 @@ You ship 2–3 skins; the community generates thousands of conversations.
 
 ### Roblox feasibility `[UPDATED — prototype first, D63]`
 
-**Decision (D63):** prototype the pre-baked seed-variant model in Studio
+**Decision (D63):** prototype the pre-baked Pattern-variant model in Studio
 **before** locking it — how many discrete variants are achievable at
 acceptable art cost decides whether Pattern feels like a ~1,000-value space
 or a flat 5–10 option system.
@@ -250,7 +250,7 @@ live-tinted (`09-research.md § No Custom Shaders`).
 | **Ambitious** | Runtime image manipulation for genuine procedural patterns, via `EditableImage` or similar | **Unshipped/CPU-based as of 2026 — verify current API capability and mobile performance before committing.** |
 
 Either way **the psychology transfers intact**, which is the part that
-matters. The practical build is: bucket the 1,000 seed values into a
+matters. The practical build is: bucket the 1,000 Pattern values into a
 handful of discrete texture variants, apply live color tint on top for
 finer-grained variation within each bucket.
 
@@ -302,9 +302,12 @@ on the market), Robux-bought ones are swap-only (D65), and none are ever
 stealable (R1). A crafter's product is now the look, not the tool.
 
 ## Loss rules
-- **Gear is never stolen or traded** (R1, D111); see the Taxonomy table above
-- Pickaxe **skins** roll Condition + Pattern for looks only (cosmetics;
-  out of the vertical slice)
+- **Pickaxes are never stolen or traded** (R1, D111). **Armor:** the worn
+  piece is never stolen; spare pieces are stealable; armor never trades
+  (D112). See the Taxonomy table above
+- Pickaxe **skins** are cosmetics. In the slice they exist (the Scav
+  Captain's Signature drop) but carry no Condition/Pattern roll and trade
+  via the direct trade window only (D111); rolls arrive with v1.0
 
 ---
 
@@ -313,8 +316,8 @@ stealable (R1). A crafter's product is now the look, not the tool.
 **Never lootable under any circumstance. This line does not move.**
 
 ## Pattern (formerly "Seed") `[LOCKED — D93, resolves Q70]`
-**Renamed from "Seed" to "Pattern."** The 1–1000 collector roll on gear
-and cosmetics (`§ Roll 3` — link name unchanged, only the displayed term
+**Renamed from "Seed" to "Pattern."** The 1–1000 collector roll on
+cosmetics (including pickaxe and armor skins) (`§ Roll 3` — link name unchanged, only the displayed term
 changes) is now **Pattern #**, freeing "Seed" to mean crop seeds only
 (`04-world-content.md § Seed sources`, D73). Every other doc reference
 to the roll ("Seed," "Seed Showcase," "best-seed items") should read
@@ -417,7 +420,8 @@ system in favor of long-term collector value.
 same as Rust, where you never know exactly what a base holds before you
 breach it.** Players read *inferred* value instead, off the same visual
 signals that already drive raid targeting: base size and tier, the
-gear worn by the base's owner, and defense investment. This keeps
+gear worn by the base's owner (armor and behaviour; pickaxe tier is hidden
+under skins), and defense investment. This keeps
 raid-targeting a genuine scouting skill rather than a menu lookup, and
 it means a case's real thrill is preserved for the opening moment, not
 spoiled beforehand.
@@ -522,7 +526,7 @@ taxonomy purposes:
 - Advanced — tradeable until learned, then bound, **wears out and must
   be relearned**
 - Prototype — tradeable, **capped at 1 per player, never crew-shared**,
-  **wears out and must be relearned**
+  **resets every 3 weeks; no wear-out (D77)**
 
 Unlearned blueprints sit in Exposed storage and **are stealable.**
 Learned ones are not. Advanced/Prototype blueprint drops are **visible on

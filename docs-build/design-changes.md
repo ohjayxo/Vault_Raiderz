@@ -125,10 +125,8 @@ Josh's calls while building Bank/Exposed. Applied with double confirmation:
 3. **Waves every 8–12 min [PH] while online, once you have a Vault Core;**
    the Captain leads ~1 in 4 [PH].
 4. **Captain Rare and Signature buckets use stand-ins** until blueprints
-   exist and a signature item is named: Rare = 40 Research Scrap, Signature =
-   Iron chest armor. **Design question:** what is the Scav Captain's
-   signature item? (04 § PvE ladder lists "Common blueprints, gadgets,
-   Standard Cases" for the Homestead, and Cases are out of the slice.)
+   exist: Rare = 40 Research Scrap (until step 10's blueprints). Signature
+   = the Captain pickaxe skin (v5.8; built with the skin system, 2026-09-22).
 5. Interpretations, not asked: defenses are base pieces counting against
    the build budget plus a defense-slot cap per tier (2–5 [PH]); charges are
    public on the piece; Scavs go to a charged Decoy Vault first; Guard Drone
@@ -150,7 +148,7 @@ needs the same edits.**
 2. **Scav Captain Signature drop = a Captain pickaxe skin** (name [PH], e.g.
    "Captain's Cleaver"; `04-world-content.md § Loot table structure`). Pure
    cosmetic (R1/R3), tradeable like other earned skins (D111). Needs a minimal
-   skin system; Iron armor stays the stand-in until then.
+   skin system. **Built** with the pickaxe skin system (2026-09-22).
 3. **Vaultborn beam = a faint, fading, blinking beam** (Josh's own answer to
    review M2): easy to miss if you're scanning quickly, but a hypervigilant
    player can spot it. Replaces the steady instant beam (`05-items.md § Roll 1`
@@ -211,8 +209,8 @@ and docs-build renamed too. Not yet renamed: the local folder
    of the 90 s window"); tiers 5–7 sabotage = one defense offline 15 min,
    back by itself for free; a failed raid (knocked loose, died, left, time
    out) ends the raid.
-7. **Engineering rule with a gameplay effect (needs your OK / design
-   project):** an offline base can be raided **at most once per absence**:
+7. **Engineering rule with a gameplay effect — APPROVED by Josh
+   2026-09-23 (consistency report #13):** an offline base can be raided **at most once per absence**:
    after an offline theft the victim is "theft pending" until their next
    login. Needed so two raids can't take the same loot twice (review H2).
    Fits "offline raids capped low" (02 § Theft math).
@@ -246,10 +244,27 @@ Build calls made while implementing (small, within the decisions):
 - Homestead nodes: the FTUE Stone at (0, −18) in front of the spawn, 7 more
   Stone and 4 Ore at x = ±24 along the street, away from the bridge mouths.
 
+## Consistency check decisions (2026-09-23) — doc text pending Josh's confirmation
+
+From `docs-build/consistency-report.md` Part B:
+1. **#13 Offline raids:** keep one offline theft per absence; the 30-min
+   post-raid shield (D75) starts at the victim's next login. (Already built.)
+2. **#37 Spare armor theft (D112):** one grab takes the victim's **best
+   spare** armor piece, whole (no in-transit destruction for a single
+   item); the worn piece never (R1). **Not built yet** (missed in step 7).
+3. **#40 Lockpicks and gadgets:** Workshop I crafts **basic** lockpicks and
+   gadgets for everyone; Tech Path **Breaching** nodes unlock **better**
+   versions. Step 10.
+4. **#30 Q42** is missing from `08-questions.md`: check the design project.
+
+The Part A doc fixes (38 + D93/label follow-ups) were applied to `docs/`
+with Josh's double confirmation, 2026-09-23. **The design project needs
+the same edits** (list: `docs-build/consistency-report.md` Part A).
+
 ## Flagged for redesign (step 2 review, 2026-09-20) — ANSWERED 2026-09-21 (see above)
 
-Not decided yet. Take these to the design project; the build keeps the
-current behavior until then.
+Answered in v5.8 (see the v5.8 section above); kept for history. The text
+below is the original flag.
 
 1. **Vaultborn beam vs "zone-level, not coordinates" (review M2).** The
    beam appears at the exact node, instantly, for every player, while the

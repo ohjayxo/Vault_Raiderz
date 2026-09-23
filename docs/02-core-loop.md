@@ -217,7 +217,9 @@ Only Prismatic and Vaultborn skip the trip (§ Special cases).
   Riftsalt the most price-volatile good on the market.
 - Target must be within the raider's matchmaking band — the **highest of
   current vault tier, lifetime peak vault tier, or gear score** (R6,
-  `07-decisions.md § D66`). Gear score formula: `05-items.md § Gear score`.
+  `07-decisions.md § D66`). Gear score formula: `05-items.md § Gear score`;
+  it is converted to tier units, floor(gear score / 10) [PH], before taking
+  the highest.
 
 ## The raid sequence
 1. Scout — bases are visually tiered, so target selection is visual
@@ -266,8 +268,8 @@ When a raider grabs loot:
 2. **Gadgets disabled** while carrying
 3. **Owner alerted instantly** — including offline, via raid log
 4. **Raider visibly marked server-wide** with a loot trail
-5. **Any player who lands a hit** knocks the loot loose; it returns to
-   the owner's vault
+5. **Any player who lands a hit** (except the raider's own escort, D101)
+   knocks the loot loose; it returns to the owner's vault
 
 **Point 5 is the key design choice.** Third parties can intervene. A raid
 is not victim-vs-thief, it is a **server-wide event anyone can profit
@@ -275,9 +277,9 @@ from or crash**. That is the clip that ends up on TikTok, and it is free
 marketing.
 
 ## Escape and carrier death `[LOCKED — D114]`
-The Chase ends in escape when the carrier leaves the escape radius
-(`§ The raid sequence` step 5); the same distance on every plot, in any
-layout. A carrier who **dies for any reason — including falling off an
+The Chase ends in escape when the carrier is outside the escape radius
+(`§ The raid sequence` step 5) while standing on solid ground (not
+mid-jump or falling); the same distance on every plot, in any layout. A carrier who **dies for any reason — including falling off an
 island — drops the loot back to the owner**, exactly as if hit (point 5
 above). Otherwise respawning at your own plot would carry the loot home.
 
@@ -287,7 +289,8 @@ during the Chase** — they can't carry or grab loot themselves, only
 physically get in the way of anyone trying to land the hit that knocks
 loot loose (point 5 above). This gives early friend play something to
 do together without touching D4's crew-raid tier gate: it's a bystander
-role during someone else's solo raid, not joint raiding.
+role during someone else's solo raid, not joint raiding. The escort's own
+hits never knock the loot loose.
 
 ## Raid log path map `[LOCKED — D105]`
 The raid log (point 3 above) includes a **path-line map** of the

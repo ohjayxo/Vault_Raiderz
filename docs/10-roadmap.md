@@ -44,7 +44,7 @@ D53`.
 | **Three resources** (Stone, Ore, Riftsalt) | Enough for decisions, not overwhelming; Riftsalt is required for raiding, which is already in the minimal slice |
 | **One zone** (Homestead) + a small Reaches | Minimum viable world |
 | **Scavs + Scav Captain** | Teaches combat and defense safely |
-| **NPC flat-price selling** | Economy without full market infrastructure |
+| **NPC selling** (price diminishes per sale, resets daily — D94) | Economy without full market infrastructure |
 | **Workshop I** (single tier) | Cheap relative to payoff; unlocks real progression identity early |
 | **Tier 1 Tech Path** (one branch set) — **permanent, never resets (D72)** | Lets playtesting validate the "your tech path is your class" bet early |
 | **Research Bench** | Reuses the Bank/Exposed and looting systems already in scope |
@@ -161,7 +161,7 @@ since v4. Protected only by R4.
 invisible in the first 10 minutes?" If not, it doesn't ship.
 
 ## 3. Mobile performance budget — target now known, not yet tested `[UPDATED]`
-Persistent plots + visible bases + Grade particles + procedural seeds is
+Persistent plots + visible bases + Grade particles + procedural Patterns is
 a lot of draw calls on a phone. **The target is no longer unknown:**
 Roblox's own guidance is ~1,000 draw calls and ~1,000,000 triangles
 scene-wide for a baseline device (`09-research.md § Rendering & Mobile
@@ -221,7 +221,7 @@ script at runtime at all, except for live color tinting
 **Consequence:** the "reliable" Pattern fallback needs revision — hue/tint
 variation is confirmed runtime-doable, but UV-offset and overlay-layer
 swapping likely aren't achievable live. The practical path is discrete
-pre-baked texture variants selected by seed bucket, with tint layered on
+pre-baked texture variants selected by Pattern bucket, with tint layered on
 top.
 
 **Action:** prototype this specific approach before promising the
@@ -304,11 +304,10 @@ viable for base/architectural geometry).
 
 ## Next actions
 
-The design is ready to build the slice. Remaining items, none of which
-block starting step 0:
+The slice is being built (steps 0–7 done). Remaining items:
 
-1. **Start the build** — `§ Build Order`, step 0, in Claude Code
-2. Rescore v5.5 against the rubric (`01-pillars.md § Design rubric`) —
+1. **Continue the build** from the current step (see `docs-build/`)
+2. Rescore the current version (v5.10) against the rubric (`01-pillars.md § Design rubric`) —
    last scored at v4; useful, not blocking
 3. Resolve Q33/Q34 (boss loot distribution) before building Reaches-tier
    bosses (v1.0) — parked, does not affect the slice

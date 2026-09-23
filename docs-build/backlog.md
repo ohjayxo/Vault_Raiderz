@@ -164,6 +164,8 @@ rules + layout) and 1 skeptic that tried to refute each finding.
   raid "pending" after the theft message was sent, the raid lock expires in
   150 s and a second offline raid could read the old save. Needs a
   MemoryStore write failure right after a DataStore success.
+- **Step 10:** Workshop I becomes a tier 5-7 **sabotage target** (D23;
+  `RaidService.sabotage` only targets defenses today). Consistency report #46.
 - **Step 10:** Workshop I crafts **lockpicks** from Ore
   (`Config.Raiding.Lockpick.ItemId`, item "Lockpick"); Studio key 9 grants
   them until then.

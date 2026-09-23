@@ -3,7 +3,7 @@
 **Current version:** v5.10
 **Last updated:** 2026-09-22
 **Platform:** Roblox (Luau, Roblox Studio)
-**Status:** Pre-production. Nothing built yet. Vertical slice design locked (v5.5); ready to begin the build (`13-build-guide.md`).
+**Status:** Vertical slice in build (docs v5.10). Build steps 0–7 are done; progress and build notes in `docs-build/` (`13-build-guide.md`).
 
 ---
 
@@ -132,15 +132,13 @@ update it after. Q-numbers are never reused.
 | **Voltstone** | Scarce resource; trickles from Ore nodes, rich in the Reaches. Elite gear and Workshop III. |
 | **Riftsalt** | Contested-zone-only resource. Used only for Breach Charges. |
 | **Grade** | Rarity roll on harvested resources. Drives value multiplier. |
-| **Condition** | Cosmetic wear roll on gear/cosmetics (0.00–1.00). The CS "float" analog. |
-| **Pattern** | Roll (1–1000) on gear/cosmetics, formerly called "Seed" (D93). The CS "paint seed" analog. |
+| **Condition** | Cosmetic wear roll on cosmetics, incl. pickaxe skins (0.00–1.00). The CS "float" analog. |
+| **Pattern** | Roll (1–1000) on cosmetics, incl. pickaxe skins, formerly called "Seed" (D93). The CS "paint seed" analog. |
 | **Unstable Finish** | A cosmetic where Pattern dramatically changes appearance. Where the collector meta lives. |
 | **Credits** | Gameplay currency for market, vendors, Cases, Keys. Never Robux-purchasable. |
 | **Research Scrap** | Progression-only currency. Cannot be bought. Feeds the Tech Path. Converts to a cosmetic currency at season end. |
-| **Marks** | Working name (proposed) for the cosmetic-only currency Scrap converts into each season. |
 | **Rarity tier** | Cosmetic tier, Common → Mythic. Separate from Grade (resources) and Condition/Pattern. |
 | **Robux pool** | Robux-bought cosmetics; swap-only for same-tier Robux cosmetics, never for Credits. |
-| **Level** | Proposed permanent account level; gates system reveals (e.g. trading). |
 | **Workshop** | Physical tiered structure in a player's base. Gates research and crafting. |
 | **Tech Path** | The scrap-purchased branching unlock tree. Replaces a class system. |
 | **Research Bench** | Consumes a looted item + scrap to permanently learn its blueprint. |
@@ -148,11 +146,10 @@ update it after. Q-numbers are never reused.
 | **Component** | Loot-only crafting input with no recipe. |
 | **Riftshard** | Riftfall-only Component. Input for Fabrication-branch cosmetic recipes. |
 | **Seed pack** | Crop-seed item, foraged from wild plants or found in caches. |
-| **Pattern** | Formerly "Seed" — the 1–1000 collector roll on gear/cosmetics (D93). |
 | **Reputation tracks** | Miner/Trader/Raider XP tracks; cosmetic-and-title rewards only (D81). |
 | **Level** | Permanent account level fed by Reputation; gates trading at Level 10 (D82). |
 | **Marks** | Cosmetic-only currency Research Scrap converts to at season end (D68, D84). Account-bound. |
-| **Gear score** | Pickaxe tier + upgrade-node count; used only for raid matchmaking band (D66, D92). |
+| **Gear score** | Pickaxe tier + upgrade-node count + highest armor tier owned; used only for the raid matchmaking band and Homestead sharding (D66, D79, D92, D112). |
 | **Breach Charge** | Consumable required to raid. Crafted from Riftsalt. |
 | **Riftfall** | Broadcast world event. Contested loot drop at a visible location. |
 | **Case** | Sealed container with random contents. Tradeable, stealable while sealed. |

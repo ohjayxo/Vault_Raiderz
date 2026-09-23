@@ -6,7 +6,7 @@ bottom with a pointer into `07-decisions.md`.
 **Status:** Q1–Q13 answered in v4 · Q14–Q58 answered in v5,
 except Q33, Q34 (explicitly left open). Q59–Q69 (platform/technical limitations)
 answered — see D54–D64. Q70 answered — see D93. Q23 and Q48 answered
-in v5.5 — see D107, D108. Rule-leak fixes and follow-ups → D65–D110
+in v5.5 — see D107, D108. Rule-leak fixes, follow-ups and build-phase calls → D65–D114
 (not Q-numbered; decided directly). **Only Q33/Q34 remain open, both
 parked and neither blocks the slice.**
 
@@ -73,7 +73,7 @@ incentive (moot — D86).
 | Q10 | Trading gate? | Progress-gated | `06-economy.md` |
 | Q11 | Vaultborn announcement? | Zone radius, decaying signal | `05-items.md` |
 | Q12 | Crew size? | Min 2, max 4 | `01-pillars.md` |
-| Q13 | First Robux prompt? | At global trading unlock | D15, `06-economy.md` |
+| Q13 | First Robux prompt? | At global trading unlock | `06-economy.md § First Robux prompt`, D82 |
 | — | Cases/Keys model? | Option A — gameplay currency only | D15 |
 | — | Hunger? | Cut | D17 |
 | — | Teas? | Deferred to Season 2 | D17 |
@@ -95,10 +95,10 @@ incentive (moot — D86).
 | Q24 | One key type or tiered? | Tiered — Standard/Rift/Event | D30 |
 | Q25 | Do Cases expire? | No — permanent | D31 |
 | Q26 | Case tier visible before opening? | No — total mystery, read the base instead | D32 |
-| Q28 | Blueprints permanent or consumable? | Tiered: low-tier permanent, high-tier wears out | D33 |
+| Q28 | Blueprints permanent or consumable? | Tiered: Common permanent, Advanced wears out (Prototype exempt — D77) | D33 → D77 |
 | Q30 | Prototype recipes server-unique or shared? | Not server-unique; capped 1-per-player, never crew-shared | D34 |
 | Q31 | Blueprint drops visible before pickup? | Yes, for Advanced+ | D52 |
-| Q32 | Does learning a blueprint announce publicly? | Yes | D35 |
+| Q32 | Does learning a blueprint announce publicly? | Yes — Prototype only (narrowed) | D35 → D78 |
 | Q35 | A world boss above Rift tier? | Yes | D28 |
 | Q36 | Can mobs raid bases beyond Scavs? | Yes, higher-tier mobs at high-tier bases | D29 |
 | Q37 | Do bosses scale with group size? | Soft curve; ~95% solo-impossible at top tier, improvable with gear/skill | D26 |
@@ -136,7 +136,7 @@ incentive (moot — D86).
 | Q68 | Lock seed variants or prototype first? | Prototype first | D63 |
 | Q69 | HUD stacking during a raid? | Unified threat-priority strip | D64 |
 | Q70 | Crop "seeds" vs. the "Seed" pattern roll? | Renamed the roll to "Pattern" | D93 |
-| Q23 | Vertical slice scope — final line? | Locked as listed in `10-roadmap`, plus raid escort and a minimal Level gate; Workshop II/Fragments stay out | D53 → D107 |
+| Q23 | Vertical slice scope — final line? | Locked as listed in `10-roadmap`, plus raid escort and a minimal Level gate; Workshop II/Fragments stay out; armor added later | D53 → D107 → D112 |
 | Q48 | Is the full Tech Path tree visible before affordable? | Yes | D108 |
 
 ## Already-proposed items confirmed by implication (not directly re-asked)

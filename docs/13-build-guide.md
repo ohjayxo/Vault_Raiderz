@@ -182,8 +182,11 @@ commit. This is why you commit after every passing step.
 
 **If Claude Code hits a design gap** (the docs don't say what should
 happen), it's instructed to stop and ask rather than invent. Bring the
-question back to this Claude.ai project, decide it, update the docs, and
-copy the updated file into `docs/`.
+question back to this Claude.ai project and decide it. Then have Claude
+Code make the same edit in `docs/` (double confirmation, see CLAUDE.md), or
+copy the file in, but only after the design project has every repo-side
+change logged in `docs-build/design-changes.md`; otherwise the copy
+overwrites them.
 
 ---
 
@@ -198,7 +201,7 @@ vaultbreakers/
 ├─ CLAUDE.md
 ├─ default.project.json      (Rojo map: folders → Studio locations)
 ├─ rokit.toml                (pins Rojo version)
-├─ docs/                     (design files — read-only for Claude Code)
+├─ docs/                     (design files — Claude Code edits only with double confirmation)
 └─ src/
    ├─ server/                → ServerScriptService   (all game logic, all authority)
    │  ├─ Services/           (one module per system: Nodes, Vault, Raid…)
@@ -227,7 +230,8 @@ labeled `-- [PH] invented` value there, and lists it in its step summary.
   and its **session locking** prevents two servers editing the same
   player at once — the main cause of item duplication in trading games.
 - The plot, resources (Banked/Exposed), Scrap, Credits, Tech Path,
-  blueprints, crew membership, Level/Reputation all live in the profile.
+  blueprints, crew membership, Reputation XP (Level is derived from it,
+  D80) all live in the profile.
 - Small flags are bitpacked (D80); inactive plots archive (D55). Full
   compression of large fields waits for real data (D54).
 - Crew Vaults are **separate** stores (a crew isn't one player), with
@@ -329,7 +333,7 @@ Mobile Performance Budget`.
 ### Step 3 — Vault Core + Bank/Exposed
 **Docs:** `02-core-loop.md § Bank vs Exposed` (including special cases).
 - [ ] Banked vs Exposed meter visible
-- [ ] Overflow goes to Exposed; Prismatic/Vaultborn auto-bank if room
+- [ ] Mined resources land in Exposed; using the Vault Core banks best-first up to the cap; Prismatic/Vaultborn auto-bank if room
 - [ ] Scrap has its own small bank cap
 
 ### Step 4 — Base building + build budget
@@ -365,7 +369,7 @@ math`, `§ The Chase`, `§ Raid escort` (D101), `§ Raid log path map`
 `§ Part D — The hard part` above.
 - [ ] Online raid: breach → lockpick → grab Exposed → escape in the window
 - [ ] Carrier is slowed, gadgets disabled, marked server-wide
-- [ ] Any player's hit knocks loot loose back to the owner
+- [ ] Any player's hit (not the escort's) knocks loot loose back to the owner
 - [ ] Escort can body-block but can't grab
 - [ ] ~20% of stolen goods destroyed in transit
 - [ ] **Offline raid** on a player who left: works, and when they rejoin

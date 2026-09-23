@@ -27,7 +27,7 @@ Every system must serve at least one. Anything serving none gets cut.
 
 **All three can reach the top of the ranked ladder solo.** A pure miner,
 a pure trader, and a pure raider are each viable. Hybrid play is more
-efficient, not required. (`07-decisions.md § Q9`)
+efficient, not required. (`07-decisions.md § D8`)
 
 ---
 
@@ -91,7 +91,8 @@ later hardening pass.
 
 ### R6 — New players cannot be farmed `[LOCKED]`
 Raid matchmaking is banded by the **highest of current vault tier,
-lifetime peak vault tier, or gear score** (D66) — so rebirthing or buying
+lifetime peak vault tier, or gear score** (D66; gear score in tier units,
+D92) — so rebirthing or buying
 top gear never drops a strong player into the beginner band. A max-tier
 player is not offered a beginner as a target. 48-hour new-account shield
 and the 30-minute post-raid shield, neither of which **any event

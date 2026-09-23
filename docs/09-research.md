@@ -65,7 +65,7 @@ popularity. Relevance: **time-limited items attract bots.**
 |---|---|
 | **Pay-to-win** — best items only for cash, including purchasable server-admin abilities (Polygon) | R3 + D15 |
 | **Cheaters** — automation scripts for cash collection and stealing (GameRant) | R5, server authority from day one |
-| **Shallow long-term** — buy, wait, steal, rebirth | Economy depth, Tech Path, seeds |
+| **Shallow long-term** — buy, wait, steal, rebirth | Economy depth, Tech Path, Patterns |
 | **Emotional intensity** — documented distress in young players when items are stolen | R1, R2, R6, auto-bank protection |
 
 ---
@@ -172,13 +172,13 @@ protection.
 players being able to actually talk to each other — crew coordination
 when splitting the Tech Path (`03-progression.md § Crews`), the
 deliberately "manual, trust-based" Workshop III rental interaction
-(`03-progression.md § D24`), and general market negotiation. None of
+(`03-progression.md § Workshop access as a service`), and general market negotiation. None of
 these mechanics *require* chat to function — trading, crew invites, and
 raiding all resolve through game systems, not conversation — but the
 social texture the design leans on for feel (trust, negotiation,
 coordination) may be quieter than intended for a meaningful share of the
-target audience, particularly the under-9 segment `01-pillars.md`
-explicitly names as a meaningful share of players.
+target audience, particularly under-9 players within the under-13 share
+`01-pillars.md` names.
 
 **Action:** design crew and trade interactions to work entirely without
 chat — icon-based requests, preset trade offers, a simple non-verbal
@@ -307,7 +307,7 @@ There's now a real target to design against.
 visually scouting neighboring bases from a distance as a core mechanic
 (`02-core-loop.md § World Structure`). That means the rendering budget
 has to simultaneously cover your own base, every visible neighboring
-base, active Grade particle effects, and any procedural Seed cosmetics —
+base, active Grade particle effects, and any procedural Pattern cosmetics —
 all inside the same ~1,000 draw call / ~1,000,000 triangle ceiling, on a
 phone. LOD (level-of-detail) and occlusion culling on neighboring bases
 are not optional polish here; they're load-bearing for the core loop to
@@ -319,12 +319,12 @@ test on a genuinely low-end device rather than in Studio on a desktop.
 
 ---
 
-# NO CUSTOM SHADERS — confirmed, with a sharper caveat for the Seed system `[UPDATED]`
+# NO CUSTOM SHADERS — confirmed, with a sharper caveat for the Pattern system `[UPDATED]`
 
 Roblox still has no custom shader pipeline (confirmed current as of
 2026; a CPU-based primitive shader path via `EditableImage` is in
 development but not shipped). This was already known and drove the
-"reliable fallback" recommendation in `05-items.md § Seed`.
+"reliable fallback" recommendation in `05-items.md § Roblox feasibility`.
 
 **The sharper finding:** `SurfaceAppearance` properties — the actual PBR
 texture maps that would drive UV-offset or overlay-layer swapping —
@@ -332,14 +332,14 @@ texture maps that would drive UV-offset or overlay-layer swapping —
 engine requires pre-processing to display them. **The one confirmed
 exception is `SurfaceAppearance.Color`, a live-tintable property.**
 
-**Consequence for the Seed implementation:** hue/tint-driven seed
+**Consequence for the Pattern implementation:** hue/tint-driven Pattern
 variation is confirmed technically doable at runtime. UV-offset and
 overlay-layer selection — the other two levers proposed in the reliable
 fallback — likely are **not** achievable through live script changes to
 SurfaceAppearance. The practical alternative is a **pre-baked set of
-discrete texture variants selected by seed bucket** (e.g., seed 1–200
+discrete texture variants selected by Pattern bucket** (e.g., Pattern 1–200
 uses texture variant A, 201–400 uses variant B, with tint layered on
-top) rather than continuous per-seed procedural manipulation. This
+top) rather than continuous per-Pattern procedural manipulation. This
 sharpens, but does not remove, the existing "needs a Studio prototype
 before promising the ambitious version" flag.
 
@@ -350,9 +350,9 @@ before promising the ambitious version" flag.
 Things not yet investigated that should be before building:
 
 1. **Roblox runtime image manipulation** — capability and mobile
-   performance, for the ambitious Seed implementation (`05-items.md`)
+   performance, for the ambitious Pattern implementation (`05-items.md`)
 2. **Mobile draw-call budget** — persistent plots + visible bases +
-   Grade particle effects + procedural seeds
+   Grade particle effects + procedural Patterns
 3. **Social safety tooling** — moderation approach for a young audience
    with trading and crews
 4. **Market manipulation defenses** — wash trading, alt farming

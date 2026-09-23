@@ -179,9 +179,10 @@ themselves. Five mechanisms enforce that:
    *within* the crew, via crew-shared nodes (`03-progression.md § Crews`)
    — the interdependence between separate crews and solo players stays
    fully intact.
-2. **Blueprint tiered durability.** Common blueprints are permanent, but
-   Advanced and Prototype blueprints **wear out and must be relearned**
-   (`03-progression.md § D33`) — so even a blueprint holder needs
+2. **Blueprint tiered durability.** Common blueprints are permanent,
+   Advanced blueprints **wear out and must be relearned**, and
+   Advanced/Prototype reset on the D72 clock
+   (`03-progression.md § Tiered durability`) — so even a blueprint holder needs
    continued access to the item or the world content behind it, not just
    a one-time unlock.
 3. **Components are loot-only.** No recipe exists. Blueprint holders need
@@ -200,7 +201,7 @@ buy their way into faster Workshop tiers without personally grinding for
 them. (Gear itself does not trade — D111; pickaxe skins do, as cosmetics.) This is an accepted tradeoff: it deepens
 the market and strengthens the pacifist-viability path, at the cost of
 some of the "you must touch world content yourself" pressure. The
-remaining four mechanisms above still keep genuine scarcity in the
+five mechanisms above still keep genuine scarcity in the
 system.
 
 ## The Case/Key triangle `[LOCKED, amended D30]`

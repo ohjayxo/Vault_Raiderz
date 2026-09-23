@@ -104,7 +104,8 @@ rank. Hybrid is more efficient, never required.
 **Why:** maximizes addressable audience and lowers churn for
 conflict-averse players.
 
-**Implementation:** three Mastery tracks; ranked points weighted across
+**Implementation:** three Reputation tracks (Miner/Trader/Raider — D81,
+which replaced the original Mastery tracks); ranked points weighted across
 all three.
 
 ---
@@ -421,7 +422,7 @@ Rust's "you never know exactly what a base holds until you breach it."
 targeting more calculated, but flattens the mystery that makes opening a
 case exciting).
 
-## D33 — Blueprint durability is tiered by rarity, inverted from the naive default `[LOCKED]`
+## D33 — Blueprint durability is tiered by rarity, inverted from the naive default `[LOCKED — Prototype exempted from wear-out by D77]`
 **Decision:** **Common blueprints are permanent once learned.** **Advanced
 and Prototype blueprints wear out with use and must be relearned or
 replaced.**
@@ -453,7 +454,7 @@ monopolies, but likely too harsh and creates first-mover lock-out);
 crew-shared Prototypes (would undercut the "personally earned" identity
 of elite recipes entirely).
 
-## D35 — Learning a rare blueprint announces publicly `[LOCKED]`
+## D35 — Learning a rare blueprint announces publicly `[LOCKED — narrowed to Prototype only by D78]`
 **Decision:** learning an Advanced or Prototype blueprint triggers a
 server-visible announcement, similar to the Vaultborn Grade
 announcement.
@@ -649,8 +650,7 @@ emergent moment than any single-player raid.
 owned (simpler, but removes a meaningful reason to deepen crew
 cohesion).
 
-**Still undesigned:** exact deposit/withdraw permission tiers and the
-disband-split rule. Flagged for a follow-up pass.
+**Resolved by D90 (permissions) and D91 (disband split).**
 
 ## D50 — Crew raid loot splits by contribution, with a gift option `[LOCKED]`
 **Decision:** default split is contribution-weighted; any member can
@@ -746,7 +746,7 @@ storage cap real headroom.
 **Rejected:** never touching plots (honors D6 literally, but leaves
 storage growth unbounded).
 
-## D56 — The Homestead is sharded into vault-tier-matched neighborhoods `[LOCKED]`
+## D56 — The Homestead is sharded into vault-tier-matched neighborhoods `[LOCKED — metric switched to the D66 band by D79]`
 **Decision:** each server hosts a bounded, tier-matched set of plots;
 cross-neighborhood scouting uses a lighter map view
 (`02-core-loop.md § Server sharding`).
@@ -853,10 +853,9 @@ now earn its gear, but the rule stands.)
 rebirthed veteran who parks their gear); higher of tier or gear score
 (misses lifetime peak).
 
-**Open:** the gear score formula. **Consistency note `[PROPOSED]`:**
-neighborhood sharding (D56) is keyed on vault tier — it should likely use
-the same band metric, or a rebirthed veteran is placed among neighbors
-they can't raid. Not changed without confirmation.
+**Resolved:** gear score formula — D92; sharding uses this same band —
+D79. Gear score is converted to tier units, floor(gear score / 10) [PH],
+before taking the highest (build-phase call, step 4).
 
 **Amends:** R6.
 
@@ -866,13 +865,13 @@ breaks R6.
 
 **Rejected:** Blackout dropping every shield (the original event text).
 
-**Open:** whether the 30-minute post-offline-raid shield is also exempt.
+**Open:** whether the 30-minute post-offline-raid shield is also exempt. — **Resolved: yes, D75.**
 
 ## D68 — Research Scrap converts to a cosmetic-only currency at season end `[LOCKED]`
 **Decision:** at each season boundary, all Scrap converts at a rate [PH]
-into a cosmetic-only currency (working name **Marks** `[PROPOSED]`,
+into a cosmetic-only currency (**Marks**, locked by D84,
 spent in a seasonal cosmetic shop). Marks and Marks-bought items are
-account-bound `[PROPOSED]` so they never become a Credits source.
+account-bound (locked by D84) so they never become a Credits source.
 
 **Why:** with Scrap persisting (original D48), veterans entered every
 season with a stockpile and instantly rebought their tree — the reset was
@@ -915,7 +914,7 @@ can take teas cost charges.
 
 **Rejected:** requiring Breach Charges for every Greenhouse raid.
 
-**Guardrails `[PROPOSED]`:** band + 48-hour shield apply; per-target
+**Guardrails (locked by D88):** band + 48-hour shield apply; per-target
 cooldown; daily cap. **Amends:** D42.
 
 ## D72 — Staggered tier resets for the Tech Path and learned blueprints `[LOCKED]`
@@ -931,8 +930,8 @@ contested.
 **Rejected:** full wipe every season (D19); no reset at all.
 
 **Risk:** a player reaching Workshop III in week 2 gets one week before
-the Tier 3 reset. **Proposed mitigation:** Tier 3 re-buys cost a Rift
-Fragment (`03-progression.md § Staggered tier reset`).
+the Tier 3 reset. **Mitigation (locked by D76):** Tier 3 re-buys cost a Rift
+Fragment (`03-progression.md § Tier 3 re-buy cost`).
 
 **Supersedes:** D19. **Amends:** D48.
 
@@ -946,13 +945,13 @@ Credits-faucet vendor loop.
 **Rejected:** a vendor seed shop as the primary source (the Grow a
 Garden model).
 
-**Guardrail `[PROPOSED]`:** every crop obtainable in the Homestead
+**Guardrail:** every crop obtainable in the Homestead
 (D43). **Accepted cost:** loses what would have been the largest Credits
-sink — partly restored by the proposed rare-seed vendor.
+sink — partly restored by the rare-seed vendor (locked by D95).
 
 ## D74 — Cosmetics get rarity tiers `[LOCKED]`
 **Decision:** six tiers, Common → Mythic (`05-items.md § Rarity tiers`).
-Names/colors and "Mythic is earned-only" are `[PROPOSED]`.
+Names/colors and "Mythic is earned-only" are locked by D85.
 
 **Why:** case pools, D65's same-tier swap rule, and any future trade-up
 all need a tier key. Grade covers resources only.
@@ -1020,7 +1019,7 @@ Level, Reputation values) are bitpacked from the start.
 Full payload compression for larger fields (Tech Path state, raid logs)
 still waits on real usage data, per D54.
 
-**Build note (D111 round):** Level is not stored — it is
+**Build note (v5.7 build round):** Level is not stored — it is
 derived from the three packed Reputation XP values (D82: Level is the sum
 of the tracks; curve in `03-progression.md § Level`), so it
 can't drift from them. Only the XP values are packed.
@@ -1149,7 +1148,7 @@ what; the leader keeping the remainder.
 **Decision:** `pickaxe tier index × 10, plus 1 point per purchased
 pickaxe upgrade node across all three branches (Extraction / Combat /
 Mobility — 02-core-loop.md § Pickaxe upgrade tree)` [PH — coefficients to
-be tuned]. Tech Path nodes don't count (wording fixed in the D111 round:
+be tuned]. Tech Path nodes don't count (wording fixed in the v5.7 build round:
 Tech Path Tier 1 has four branches, the pickaxe tree has three). **Plus
 the highest armor tier owned × 10** [PH] (D112) — owned, not worn, so
 unequipping can't lower the band. Used only for the D66 matchmaking band, never exposed to
@@ -1159,7 +1158,7 @@ players as a number, never affecting actual combat power.
 needed to compute it.
 
 ## D93 — The pattern roll renamed "Pattern" (resolves Q70) `[LOCKED]`
-**Decision:** the 1–1000 collector roll on gear and cosmetics
+**Decision:** the 1–1000 collector roll on cosmetics (incl. pickaxe skins; gear itself isn't rolled since D111)
 (formerly "Seed," D10) is renamed **Pattern**. "Seed" now refers only
 to crop seeds (D73).
 

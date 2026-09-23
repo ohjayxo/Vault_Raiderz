@@ -130,7 +130,7 @@ Build the server-authoritative data layer:
   profile template covering every slice field (resources Banked/Exposed,
   Research Scrap with its separate cap, Credits, plot, base pieces, gear,
   pickaxe upgrades, Tech Path T1, learned Common blueprints, crew id,
-  Reputation tracks + Level, lifetime peak vault tier, shields,
+  Reputation track XP (Level derived, not stored), lifetime peak vault tier, shields,
   lastActive), a version number and a migration hook.
 - Bitpack the small flags (D80). Plot archiving (D55): store lastActive
   and a stub archive/restore path; no real archiving job yet.
@@ -155,7 +155,7 @@ docs/06-economy.md § Broadcast priority queue (D58).
 
 Slice resources are Stone, Ore and Riftsalt only (Riftsalt only in the
 small Reaches area). Build:
-- A greybox Homestead island and a small Reaches island (placeholder
+- The greybox Homestead (the Main Street layout, 02 § Slice layout, D113) and a small Reaches island (placeholder
   parts), with tagged ResourceNode models (Hitbox + Visual).
 - NodeService: server-validated mining (distance, cooldown, rate
   limit), depletion and respawn per the docs, server-side Grade rolls
@@ -171,7 +171,7 @@ Plan first, then build. Tell me how to test the rate limit.
 Read docs/02-core-loop.md § Bank vs Exposed (all of it) and
 § Buildable elements (Vault Core).
 
-Build VaultService: Vault Core capacity, overflow to Exposed, the
+Build VaultService: Vault Core capacity, manual best-first banking from Exposed, the
 separate smaller Research Scrap cap, Prismatic/Vaultborn auto-bank if
 room. Add a Banked/Exposed HUD meter (hidden until the FTUE reveals it
 later — make its visibility controllable). Plan first, then build.
@@ -238,11 +238,12 @@ queue; docs/01-pillars.md R1, R2, R5, R6; 13-build-guide.md Part D
 Build RaidService end to end:
 - Breach (charges will come in step 8 — gate it behind a function that
   step 8 fills in), Skyrim-style lockpick (3 stages) scaled by vault tier
-  (speed-based, never fail-locked), grab from Exposed only, 90s escape
-  window.
+  (speed-based, never fail-locked), grab from Exposed only, a 90s raid
+  window from breach (the Decoy wastes part of it).
 - The Chase: carrier slowed, gadgets disabled, owner alerted (including
   offline via raid log), server-wide marker + trail, any player's hit
-  knocks loot back to the owner, ~20% destroyed in transit.
+  (except the raider's escort) knocks loot back to the owner, ~20%
+  destroyed in transit.
 - Raid escort: a friend can body-block but can't carry or grab.
 - Raid log with a path-line map.
 - Offline raids using EXACTLY the presence + raid-lock + ProfileStore
