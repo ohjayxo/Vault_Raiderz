@@ -78,7 +78,18 @@ and list them in your step summary.
 ## Working style
 1. Read the docs the prompt names.
 2. Post a plan (files to create/change, how it works, risks, anything
-   undefined). Wait for approval.
+   undefined). Put a **Setup** box at the top, with one line of reasoning
+   for each item:
+   - **Model + effort**: what Josh should set (`/model`, `/effort`) and
+     whether his current setting is fine. Follow
+     `docs/11-claude-usage-guide.md` and `docs/13-build-guide.md` →
+     Model choice. Map "Extended thinking" to `/effort high`.
+   - **Workflow**: solo, one subagent, or a workflow. For a workflow,
+     give its shape (e.g. finders → verifiers), roughly how many agents,
+     the model/effort per stage, and a rough cost. Only run it if Josh
+     says "use a workflow".
+   - Keep it short. If the current setup is fine, say so in one line.
+   Wait for approval.
 3. Build.
 4. Tell Josh exactly how to test it (Play vs Clients and Servers, how
    many players, what to click, what he should see).
