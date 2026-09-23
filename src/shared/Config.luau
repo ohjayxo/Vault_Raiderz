@@ -89,6 +89,9 @@ local Config = {
 			RefreshSeconds = 20, -- [PH] invented: 3 writes/min/player, well inside quota
 		},
 
+		-- Login after an offline raid: how long to wait for the save that
+		-- pulls the theft in before loading anyway (review 2026-09-22 #1).
+		MessagePullTimeoutSeconds = 10, -- [PH] invented
 		-- Studio-only debug commands.
 		DebugCooldownSeconds = 0.5, -- [PH] invented
 		DebugCreditGrant = 10, -- [PH] invented
@@ -883,6 +886,8 @@ local Config = {
 		DestroyedInTransit = 0.2, -- ~20%: the raider gets the other 80%
 		CapByTier = { 250, 500, 900, 1_400, 2_000, 2_800, 3_800 }, -- [PH] invented
 		BreachRange = 10, -- [PH] invented: studs from the victim's plot edge
+		-- After an offline breach's waits, the raider must still be this close.
+		BreachRecheckRange = 20, -- [PH] invented
 		CoreRange = 10, -- [PH] invented: studs from the Vault Core Hitbox (pick / grab)
 		-- 02 § Lockpick skill model: speed, never fail-locked. Skyrim-style
 		-- (Josh's calls, 2026-09-22; tuned from his LOCKPICKING GUIDE, see
@@ -947,6 +952,11 @@ local Config = {
 			-- Studio only: the dial tints the sweet spot and partial zones
 			-- (guide §7). Live servers never send them.
 			StudioOverlay = true,
+			-- What the raider's client is told is rounded to these steps:
+			-- fine for the dial and shake, too coarse for a script to work the
+			-- exact sweet spot back out (review 2026-09-22 #10).
+			FeelAngleStep = 2, -- [PH] invented: degrees
+			FeelClosenessStep = 0.1, -- [PH] invented
 			-- The dial (client look only).
 			Ui = {
 				ShakeNear = 0.8, -- degrees of shake when stalled close to the spot
@@ -965,6 +975,8 @@ local Config = {
 					Open = { "rbxasset://sounds/action_get_up.mp3" },
 				},
 				ScrapeSeconds = 0.07, -- at most one scrape this often while moving the pick
+				StageFlashSeconds = 0.6, -- "Pin set!"
+				SoundCleanupSeconds = 5, -- a clip that never loads is removed after this
 			},
 		},
 		-- The Chase (02 § The Chase).
@@ -998,7 +1010,8 @@ local Config = {
 			LoginPollSeconds = 2,
 			-- While a theft is being saved, the lock is renewed this often so
 			-- a slow DataStore can't let it expire mid-save (review M1).
-			KeepAliveSeconds = 30, -- [PH] invented, < TtlSeconds
+			KeepAliveSeconds = 30, -- [PH] invented, < TtlSeconds; renewed for the whole raid
+			ReleasedTtlSeconds = 5, -- [PH] invented: how long a "released" marker lingers
 			-- A login waits at most this many lock lifetimes (review M2).
 			LoginWaitLifetimes = 3,
 		},
@@ -1014,14 +1027,39 @@ local Config = {
 		RequestCooldownSeconds = 0.25, -- [PH] invented: per player, raid remotes
 		-- 13-build-guide.md § Anti-exploit baseline / backlog M1: raid
 		-- participants who move impossibly fast are logged and snapped back.
+		-- Review 2026-09-22 (#6/#8): raid participants are held to their
+		-- REAL server WalkSpeed (the carry slow included) with a distance
+		-- budget: time earns WalkSpeed x EnforcedSpeedTolerance, movement
+		-- spends it, unspent allowance carries over up to BurstStuds +
+		-- LagAllowanceSeconds of walking (laggy updates pass; a speed hack
+		-- runs dry). A carrier's position is checked before every escape
+		-- check.
 		Movement = {
-			CheckSeconds = 0.25,
-			SpeedTolerance = 1.6, -- x current WalkSpeed
+			CheckSeconds = 0.25, -- everyone else: log-only sampling
+			SpeedTolerance = 1.6, -- x WalkSpeed, log-only players
+			EnforcedSpeedTolerance = 1.2, -- [PH] invented: x current WalkSpeed, raid participants
 			BurstStuds = 8, -- knockback, jumps, lag spikes
+			LagAllowanceSeconds = 0.5, -- [PH] invented: walking a raid participant may "catch up" at once
+			PushDecayPerSecond = 30, -- [PH] invented: unused knockback allowance drains this fast
 		},
 		Ui = {
 			RaidLogVisibleAttribute = "HudRaidLog",
 			ShowBeforeFtue = true, -- TEMPORARY until step 14
+			MessageSeconds = 2, -- [PH] invented: raid UI toasts
+			MapStudsScale = 1.8, -- [PH] invented: raid log map shows this x the plot size
+		},
+		-- The carrier's server-wide marker (02 § The Chase 4). Look only.
+		-- [PH] invented. (Backlog: draw it on the client from the
+		-- CarryingLoot attribute instead.)
+		CarrierMark = {
+			Color = Color3.fromRGB(255, 200, 40),
+			OutlineColor = Color3.fromRGB(255, 220, 80),
+			FillTransparency = 0.5,
+			LabelColor = Color3.fromRGB(150, 110, 20),
+			LabelSize = Vector2.new(90, 30), -- px
+			LabelHeight = 4, -- studs above the root
+			MaxDistance = 2000, -- studs: seen from across the map
+			TrailSeconds = 3,
 		},
 	},
 	-- 02-core-loop.md § Raid escort (D101).

@@ -32,6 +32,7 @@ export type State = {
 	lockAngle: number,
 	damage: number, -- 0..1 on the current pick; kept when the turn is released
 	tension: boolean, -- turn input held
+	releasedSinceStep: boolean, -- Turn was let go since the last step (even if held again)
 	needsRelease: boolean, -- after a break or a solved stage, ignore the held turn until released
 	stalled: boolean,
 	closeness: number, -- 0 (outside) .. 1 (sweet spot): feeds the shake
@@ -48,6 +49,7 @@ function LockpickModel.newState(): State
 		lockAngle = 0,
 		damage = 0,
 		tension = false,
+		releasedSinceStep = false,
 		needsRelease = false,
 		stalled = false,
 		closeness = 0,
@@ -72,10 +74,15 @@ function LockpickModel.stagesFor(difficultySteps: number): { StageConfig }
 end
 
 -- The raider's input. The pick can't move while Turn is held (guide §2 #3):
--- both hands are on the lock.
+-- both hands are on the lock. A release counts even if Turn is pressed
+-- again before the next step, so "let go, move, press" in one frame still
+-- springs the lock back (review 2026-09-22 #9).
 function LockpickModel.setInput(s: State, pickAngle: number, tension: boolean)
 	if not (s.tension and tension) then
 		s.pickAngle = math.clamp(pickAngle, -cfg.PickLimit, cfg.PickLimit)
+	end
+	if not tension then
+		s.releasedSinceStep = true
 	end
 	s.tension = tension
 end
@@ -102,8 +109,10 @@ function LockpickModel.step(s: State, dt: number, center: number, stage: StageCo
 	if s.lockout > 0 then
 		s.lockout = math.max(0, s.lockout - dt)
 	end
-	local applying = s.tension and not s.needsRelease and s.lockout <= 0
-	if not s.tension then
+	local released = s.releasedSinceStep or not s.tension
+	s.releasedSinceStep = false
+	local applying = s.tension and not released and not s.needsRelease and s.lockout <= 0
+	if released then
 		s.needsRelease = false
 	end
 

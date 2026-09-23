@@ -237,7 +237,7 @@ local function playSound(ids: { string }, volume: number, pitch: number)
 		sound:Destroy()
 	end)
 	sound:Play()
-	task.delay(5, function() -- in case a clip never loads
+	task.delay(pickUi.SoundCleanupSeconds, function() -- in case a clip never loads
 		if sound.Parent then
 			sound:Destroy()
 		end
@@ -297,7 +297,7 @@ local function showMessage(text: string)
 	local token = messageToken
 	message.Text = text
 	message.Visible = true
-	task.delay(2, function()
+	task.delay(raidCfg.Ui.MessageSeconds, function()
 		if messageToken == token then
 			message.Visible = false
 		end
@@ -697,7 +697,7 @@ Remotes.getEvent("LockpickFeel").OnClientEvent:Connect(function(update: Types.Lo
 	if update.Event == "broke" then
 		playSound(pickUi.Sounds.Snap, 0.8, 1.8)
 	elseif update.Event == "solved" then
-		stageFlashUntil = os.clock() + 0.6
+		stageFlashUntil = os.clock() + pickUi.StageFlashSeconds
 		playSound(pickUi.Sounds.Stage, 0.8, 0.6)
 	elseif update.Event == "open" then
 		playSound(pickUi.Sounds.Open, 0.9, 1)
@@ -745,7 +745,7 @@ end)
 -- ── Raid log + path map (D105) ───────────────────────────────────────────
 
 -- The map shows this many studs across, centred on the victim's plot.
-local MAP_STUDS = Config.Plots.SizeStuds * 1.8
+local MAP_STUDS = Config.Plots.SizeStuds * raidCfg.Ui.MapStudsScale
 
 local function dot(x: number, z: number, color: Color3, size: number, text: string?)
 	local scale = map.AbsoluteSize.X / MAP_STUDS

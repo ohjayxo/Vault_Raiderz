@@ -106,6 +106,52 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
 - **Step 14:** the FTUE's free cosmetic can be a skin via
   `CosmeticService.grantSkin`.
 
+## From the raid review workflow (2026-09-22)
+
+Prompt R as a workflow: 3 parallel reviewers (duplication, client trust,
+rules + layout) and 1 skeptic that tried to refute each finding.
+
+**Fixed (uncommitted until Josh's Studio test):**
+- **#6/#8 Chase skipped by teleport/speed hacks.** Raid participants now
+  have a distance budget at their real server WalkSpeed (carry slow
+  included), and a carrier's position is checked (`MovementService.checkNow`)
+  right before every escape check. Knockback grants allowance
+  (`expectPush`). Simulated: honest carriers with 0.6 s lag bursts or a
+  finisher hit are never snapped back; 14 and 50 studs/s hacks are pinned.
+- **#7 escort + breach overlap.** JoinEscort is refused while your own
+  breach is starting; breach re-checks `raidOf` after its waits;
+  `releaseParticipant` only clears a player still in THAT raid.
+- **#1 login during an offline raid.** The raid wait now runs BEFORE the
+  save loads, and again after; if a raid slipped in during the load, the
+  profile saves once (pulling the theft message) before the message
+  handler, so the theft applies before the player can act.
+- **#2 raid lock lapsing mid-raid.** Lock renewed right before the raid
+  starts and for the whole raid (`keepLockAlive`); escape re-checks it
+  before sending the theft and fails the raid if it's gone.
+- **#12** lock acquire is safe to retry. **#9** a same-frame release still
+  springs the lock back. **#10** lockpick feel values are rounded
+  (`FeelAngleStep`, `FeelClosenessStep`). **#13** flagged numbers moved to
+  Config (`CarrierMark`, `BreachRecheckRange`, `Lock.ReleasedTtlSeconds`,
+  raid UI timings).
+
+**Deferred:**
+- **#4 (Medium): server shutdown mid-Chase loses a leaving victim's loot.**
+  `victimLeft` debits their save, and the RaidReturn message can't be sent
+  once ProfileStore is closing. Fix idea: keep the taken loot as a "held"
+  record in the victim's own save (same write as the debit), cleared by
+  escape, refunded on their next login otherwise.
+- **#3 (Low): a raider who quits during the 1-2 s offline payout loses their
+  80%.** Fix idea: send the credit as a `RaidPayout` message (deduped by
+  raid id) when they aren't loaded.
+- **#5 (Low): a server up 7+ days can raid a stale save once "pending"
+  expires.** Fix idea: stop showing an offline base when its RecentlyOffline
+  entry expires, or re-check the pending key's age.
+- **Carrier marker on the client:** draw the Highlight/label/trail from the
+  CarryingLoot attribute in a client script (CLAUDE.md: visuals are
+  client-side); the server keeps only the attribute.
+- **Vertical movement isn't checked** (flying). Escape already needs solid
+  ground; a rise check would also stop flying over walls.
+
 ## From step 7 (2026-09-22)
 
 - **M1 movement check: done** (MovementService). Logs impossible moves for

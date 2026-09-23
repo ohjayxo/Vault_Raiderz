@@ -259,24 +259,25 @@ local function markCarrier(player: Player)
 	if not character or not root then
 		return
 	end
+	local look = raidCfg.CarrierMark
 	local mark = Instance.new("Folder")
 	mark.Name = MARK_NAME
 	local highlight = Instance.new("Highlight")
-	highlight.FillColor = Color3.fromRGB(255, 200, 40)
-	highlight.FillTransparency = 0.5
-	highlight.OutlineColor = Color3.fromRGB(255, 220, 80)
+	highlight.FillColor = look.Color
+	highlight.FillTransparency = look.FillTransparency
+	highlight.OutlineColor = look.OutlineColor
 	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	highlight.Adornee = character
 	highlight.Parent = mark
 	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.fromOffset(90, 30)
-	billboard.StudsOffset = Vector3.new(0, 4, 0)
+	billboard.Size = UDim2.fromOffset(look.LabelSize.X, look.LabelSize.Y)
+	billboard.StudsOffset = Vector3.new(0, look.LabelHeight, 0)
 	billboard.AlwaysOnTop = true
-	billboard.MaxDistance = 2000
+	billboard.MaxDistance = look.MaxDistance
 	billboard.Adornee = root
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
-	label.BackgroundColor3 = Color3.fromRGB(150, 110, 20)
+	label.BackgroundColor3 = look.LabelColor
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.Font = Enum.Font.GothamBold
 	label.TextScaled = true
@@ -292,8 +293,8 @@ local function markCarrier(player: Player)
 	local trail = Instance.new("Trail")
 	trail.Attachment0 = top
 	trail.Attachment1 = bottom
-	trail.Lifetime = 3
-	trail.Color = ColorSequence.new(Color3.fromRGB(255, 200, 40))
+	trail.Lifetime = look.TrailSeconds
+	trail.Color = ColorSequence.new(look.Color)
 	trail.LightEmission = 1
 	trail.Parent = mark
 	mark:SetAttribute("TopAttachment", true)
@@ -317,8 +318,11 @@ end
 
 -- ── Ending a raid ────────────────────────────────────────────────────────
 
-local function releaseParticipant(player: Player?)
-	if not player then
+-- Only if `player` is still in THIS raid: ending one raid must never strip
+-- the carry rules from someone who has since started another (review
+-- 2026-09-22 #7).
+local function releaseParticipant(player: Player?, raid: Raid)
+	if not player or raidOf[player] ~= raid then
 		return
 	end
 	raidOf[player] = nil
@@ -338,8 +342,8 @@ end
 local function cleanup(raid: Raid)
 	raid.phase = "Over"
 	sendState(raid)
-	releaseParticipant(raid.raider)
-	releaseParticipant(raid.escort)
+	releaseParticipant(raid.raider, raid)
+	releaseParticipant(raid.escort, raid)
 	raids[raid.id] = nil
 	if raidOnVictim[raid.victimId] == raid then
 		raidOnVictim[raid.victimId] = nil
@@ -396,6 +400,29 @@ local function failRaid(raid: Raid, outcome: string, text: string)
 	end
 end
 
+-- Offline raids: renew the raid lock for the WHOLE raid, not just while the
+-- theft saves; it only lives Lock.TtlSeconds (review 2026-09-22 #2). If it
+-- can't be renewed before settlement starts, another server may read the
+-- same save, so the raid fails and nothing moves.
+local function keepLockAlive(raid: Raid)
+	task.spawn(function()
+		while raid.phase ~= "Over" do
+			task.wait(raidCfg.Lock.KeepAliveSeconds)
+			local phase = raid.phase
+			if phase == "Over" then
+				break
+			elseif phase == "Settling" then
+				-- The theft is saving: keep it ours. Once it's "pending" this
+				-- quietly does nothing.
+				RaidLock.extend(raid.victimId, raid.id)
+			elseif not RaidLock.extend(raid.victimId, raid.id) then
+				failRaid(raid, "Failed", "the raid lock was lost")
+				return
+			end
+		end
+	end)
+end
+
 -- 02 § The raid sequence step 5 (D114): the carrier has escaped once they
 -- stand EscapeRadiusStuds (horizontal) from the victim plot's centre. The
 -- same distance on every plot, whatever the layout. Only while standing on
@@ -435,24 +462,22 @@ local function escape(raid: Raid)
 		-- Offline: send while still holding the raid lock, THEN mark pending.
 		taken = loot
 		local entry = logEntry(raid, "Stolen", loot)
-		-- Keep the lock alive while the save is in flight (review M1).
-		local saving = true
-		task.spawn(function()
-			while saving do
-				task.wait(raidCfg.Lock.KeepAliveSeconds)
-				if saving then
-					RaidLock.extend(raid.victimId, raid.id)
-				end
-			end
-		end)
+		-- Still ours? (keepLockAlive renews it for the whole raid.) If it
+		-- lapsed, someone else may be reading the same save: don't steal.
+		if not RaidLock.extend(raid.victimId, raid.id) then
+			raid.phase = "Carrying"
+			failRaid(raid, "Failed", "the raid lock was lost")
+			return
+		end
 		local sent = PlayerDataService.messageAsync(raid.victimId, { Kind = "RaidTheft", RaidId = raid.id, Loot = loot, Entry = entry })
-		saving = false
 		if not sent then
 			raid.phase = "Carrying" -- back out of Settling so failRaid can run
 			failRaid(raid, "Failed", "the theft couldn't be saved")
 			return
 		end
-		RaidLock.finish(raid.victimId, raid.id, true) -- "pending" until their login (H2)
+		if not RaidLock.finish(raid.victimId, raid.id, true) then -- "pending" until their login (H2)
+			warn(`[Raid] {raid.id}: theft sent but the lock couldn't be marked pending`)
+		end
 	else
 		raid.phase = "Carrying"
 		failRaid(raid, "Cancelled", "the victim's save wasn't reachable")
@@ -636,12 +661,27 @@ breachInner = function(player: Player): (boolean, string?)
 		view = data
 		-- The raider may have moved or died while we waited.
 		local stillRoot = rootOf(player)
-		if not stillRoot or not player.Parent or NodeMath.distanceToHitbox(base.hitbox, stillRoot.Position) > raidCfg.BreachRange * 2 then
+		if not stillRoot or not player.Parent or NodeMath.distanceToHitbox(base.hitbox, stillRoot.Position) > raidCfg.BreachRecheckRange then
 			return giveUp("TooFar")
+		end
+		-- The waits above can take a while: start the raid on a fresh lock
+		-- lifetime, or not at all (review 2026-09-22 #2).
+		if not RaidLock.extend(base.ownerId, raidId) then
+			return giveUp("Busy")
 		end
 	elseif not victim then
 		raidOnVictim[base.ownerId] = nil
 		return false, "NoBase"
+	end
+
+	-- They may have joined someone's raid as escort while this breach was
+	-- waiting (review 2026-09-22 #7).
+	if raidOf[player] then
+		if lockHeld then
+			task.spawn(RaidLock.finish, base.ownerId, raidId, false)
+		end
+		raidOnVictim[base.ownerId] = nil
+		return false, "InRaid"
 	end
 
 	RaidService.consumeBreach(player, base)
@@ -689,6 +729,9 @@ breachInner = function(player: Player): (boolean, string?)
 	BroadcastQueue.push("RaidAlert", `{player.Name} is raiding {base.ownerName}'s base!`)
 	offerEscort(raid)
 	startPathSampler(raid)
+	if raid.lockHeld then
+		keepLockAlive(raid)
+	end
 	sendState(raid)
 	task.delay(raidCfg.WindowSeconds, function()
 		if raid.phase ~= "Over" and raid.phase ~= "Settling" then
@@ -710,6 +753,10 @@ local function nearCore(player: Player, raid: Raid): boolean
 	return root ~= nil and core ~= nil and NodeMath.distanceToHitbox(core, root.Position) <= raidCfg.CoreRange
 end
 
+local function roundTo(value: number, step: number): number
+	return math.floor(value / step + 0.5) * step
+end
+
 local function sendFeel(raid: Raid, event: string?)
 	raid.feelAt = now()
 	if not raid.raider.Parent then
@@ -720,11 +767,14 @@ local function sendFeel(raid: Raid, event: string?)
 	local feel: Types.LockpickFeel = {
 		Stage = raid.stage,
 		Stages = #raid.stages,
-		LockAngle = s.lockAngle,
+		-- Rounded: enough for the dial and the shake, too coarse for a script
+		-- to work the exact distance to the sweet spot back out (review
+		-- 2026-09-22 #10).
+		LockAngle = roundTo(s.lockAngle, pickCfg.FeelAngleStep),
 		Stalled = s.stalled,
 		-- Only while stalled: otherwise sweeping the pick without turning
 		-- would read out the sweet spot for free.
-		Closeness = if s.stalled then s.closeness else 0,
+		Closeness = if s.stalled then roundTo(s.closeness, pickCfg.FeelClosenessStep) else 0,
 		Damage = s.damage,
 		Lockout = s.lockout,
 		Picks = InventoryService.count(raid.raider, pickCfg.ItemId),
@@ -951,6 +1001,9 @@ local function joinEscort(player: Player, raidArg: unknown): (boolean, string?)
 	if not raid or raid.phase == "Over" or raid.phase == "Settling" or now() > raid.offerUntil then
 		return false, "Expired"
 	end
+	if breaching[player] then
+		return false, "Busy" -- their own breach is still starting (review 2026-09-22 #7)
+	end
 	if not raid.offered[player] or raid.escort or raidOf[player] or player.UserId == raid.victimId then
 		return false, "NotOffered"
 	end
@@ -1107,7 +1160,9 @@ function RaidService.start()
 				local root, humanoid = rootOf(raid.raider)
 				if not root or not humanoid then
 					task.spawn(failRaid, raid, "Died", `{raid.raider.Name} went down`)
-				elseif hasEscaped(raid, root, humanoid) then
+				elseif MovementService.checkNow(raid.raider) and hasEscaped(raid, root, humanoid) then
+					-- Checked first: an escape is never judged on a teleport
+					-- the movement check would undo (review 2026-09-22 #6).
 					task.spawn(escape, raid)
 				end
 			elseif raid.phase ~= "Over" and raid.phase ~= "Settling" and not rootOf(raid.raider) then

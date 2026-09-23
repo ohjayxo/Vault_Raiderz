@@ -125,14 +125,17 @@ end
 -- server samples every player's position; a horizontal jump bigger than
 -- their WalkSpeed allows (plus a burst for knockback/lag) is logged.
 -- Players in a raid (`enforce`) are also snapped back to their last good
--- spot: that's where a teleport would steal. Everyone else is only logged,
--- so a lag spike never punishes normal play.
+-- spot: that's where a teleport would steal. They're held to their real
+-- server WalkSpeed (the carry slow included), and the burst is an allowance
+-- that refills slowly rather than slack on every sample (review 2026-09-22
+-- #6/#8). Everyone else is only logged, so a lag spike never punishes
+-- normal play.
 
 local AnomalyLog = require(game:GetService("ServerScriptService").Util.AnomalyLog)
 local logMovement = AnomalyLog.new("Movement")
 local moveCfg = Config.Raiding.Movement
 
-type Track = { root: BasePart, lastGood: CFrame, lastPosition: Vector3 }
+type Track = { root: BasePart, lastGood: CFrame, lastPosition: Vector3, lastAt: number, burst: number }
 local tracks: { [Player]: Track } = {}
 local enforced: { [Player]: boolean? } = {}
 
@@ -146,35 +149,78 @@ function MovementService.expectTeleport(player: Player)
 	tracks[player] = nil
 end
 
-local function checkMovement(dt: number)
-	for _, player in Players:GetPlayers() do
-		local character = player.Character
-		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		if not root or not humanoid or humanoid.Health <= 0 then
-			tracks[player] = nil
-			continue
+-- Checks one player's move since their last check. Returns false if it
+-- was impossible (and, for enforced players, they were snapped back).
+local function checkPlayer(player: Player, now: number): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not character or not root or not humanoid or humanoid.Health <= 0 then
+		tracks[player] = nil
+		return true
+	end
+	local track = tracks[player]
+	if not track or track.root ~= root then
+		tracks[player] = { root = root, lastGood = root.CFrame, lastPosition = root.Position, lastAt = now, burst = moveCfg.BurstStuds }
+		return true
+	end
+	local dt = now - track.lastAt
+	track.lastAt = now
+	local delta = root.Position - track.lastPosition
+	local moved = Vector3.new(delta.X, 0, delta.Z).Magnitude
+	local ok: boolean
+	if enforced[player] then
+		-- A distance budget: time earns WalkSpeed x tolerance, movement
+		-- spends it. Unspent allowance carries over (up to a burst plus
+		-- LagAllowanceSeconds of walking), so positions that arrive in
+		-- laggy bursts pass, while any sustained speed above the real
+		-- WalkSpeed runs it dry.
+		local rate = humanoid.WalkSpeed * moveCfg.EnforcedSpeedTolerance
+		local cap = moveCfg.BurstStuds + rate * moveCfg.LagAllowanceSeconds
+		if track.burst > cap then
+			-- Left over from a knockback (expectPush): gone within a second.
+			track.burst = math.max(cap, track.burst - moveCfg.PushDecayPerSecond * dt)
+		else
+			track.burst = math.min(cap, track.burst + rate * dt)
 		end
-		local track = tracks[player]
-		if not track or track.root ~= root then
-			tracks[player] = { root = root, lastGood = root.CFrame, lastPosition = root.Position }
-			continue
+		track.burst -= moved
+		ok = track.burst >= 0
+		if not ok then
+			track.burst = 0
 		end
-		local delta = root.Position - track.lastPosition
-		local moved = Vector3.new(delta.X, 0, delta.Z).Magnitude
+	else
 		local allowed = math.max(humanoid.WalkSpeed, Config.Movement.BaseWalkSpeed) * moveCfg.SpeedTolerance * dt
 			+ moveCfg.BurstStuds
-		if moved > allowed then
-			logMovement(player, "moved faster than possible", `{math.floor(moved)} studs in {math.floor(dt * 100) / 100} s`)
-			if enforced[player] then
-				character:PivotTo(track.lastGood)
-				track.lastPosition = track.lastGood.Position
-				continue
-			end
-		end
-		track.lastGood = root.CFrame
-		track.lastPosition = root.Position
+		ok = moved <= allowed
 	end
+	if not ok then
+		logMovement(player, "moved faster than possible", `{math.floor(moved)} studs in {math.floor(dt * 100) / 100} s`)
+		if enforced[player] then
+			character:PivotTo(track.lastGood)
+			track.lastPosition = track.lastGood.Position
+			return false
+		end
+	end
+	track.lastGood = root.CFrame
+	track.lastPosition = root.Position
+	return ok
+end
+
+-- The server is about to push this player `studs` (knockback): add it to
+-- their burst allowance so the push isn't read as a speed hack.
+function MovementService.expectPush(player: Player, studs: number)
+	local track = tracks[player]
+	if track then
+		track.burst = math.max(track.burst, 0) + studs
+	end
+end
+
+-- Checks this player's position right now. RaidService calls it before
+-- deciding a carrier has escaped, so an escape is only ever judged on a
+-- position the server accepted (review 2026-09-22 #6). False = the move
+-- was impossible and (if enforced) undone.
+function MovementService.checkNow(player: Player): boolean
+	return checkPlayer(player, os.clock())
 end
 
 function MovementService.start()
@@ -182,8 +228,11 @@ function MovementService.start()
 	game:GetService("RunService").Heartbeat:Connect(function(dt)
 		elapsed += dt
 		if elapsed >= moveCfg.CheckSeconds then
-			checkMovement(elapsed)
 			elapsed = 0
+			local now = os.clock()
+			for _, player in Players:GetPlayers() do
+				checkPlayer(player, now)
+			end
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)

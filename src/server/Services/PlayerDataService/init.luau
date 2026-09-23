@@ -179,12 +179,29 @@ local beforeRelease: ((player: Player) -> ())? = nil
 function PlayerDataService.setBeforeRelease(fn: (player: Player) -> ())
 	beforeRelease = fn
 end
-local loadGate: ((userId: number) -> ())? = nil
+local loadGate: ((userId: number) -> boolean)? = nil
 
--- Called on every login before the profile counts as loaded; may yield.
--- RaidService uses it to wait out a raid in progress.
-function PlayerDataService.setLoadGate(fn: (userId: number) -> ())
+-- Called on every login, before the save is loaded and again after; may
+-- yield. RaidService uses it to wait out a raid in progress. Returns true
+-- if a theft may be waiting in the player's messages.
+function PlayerDataService.setLoadGate(fn: (userId: number) -> boolean)
 	loadGate = fn
+end
+
+-- Saves now and waits (up to a timeout) for the save to finish. A save
+-- pulls in messages sent to this live session since it started.
+local function saveAndWait(profile: any): boolean
+	local done = false
+	local connection = profile.OnAfterSave:Connect(function()
+		done = true
+	end)
+	profile:Save()
+	local deadline = os.clock() + dataCfg.MessagePullTimeoutSeconds
+	while not done and os.clock() < deadline and profile:IsActive() do
+		task.wait(0.1)
+	end
+	connection:Disconnect()
+	return done
 end
 
 -- Handles profile messages whose Kind is `kind`. The handler gets an
@@ -384,6 +401,16 @@ end
 
 local function onPlayerAdded(player: Player)
 	local key = dataCfg.KeyPrefix .. player.UserId
+	-- Offline raids (13 § Part D, step 4): wait out a raid in progress
+	-- BEFORE loading, so the save we load already holds its theft message
+	-- (review 2026-09-22 #1: loading first meant a theft sent during the
+	-- wait only arrived minutes later, after the player could spend it).
+	if loadGate then
+		loadGate(player.UserId)
+	end
+	if player.Parent ~= Players then
+		return
+	end
 	-- Cancel stops ProfileStore retrying if the player leaves while we wait
 	-- for another server's session lock to clear. (Its type omits Cancel.)
 	local params: any = {
@@ -446,10 +473,15 @@ local function onPlayerAdded(player: Player)
 		end
 	end)
 
-	-- Offline raids (13 § Part D, step 4): wait out a raid in progress, then
-	-- apply pending messages (thefts) BEFORE anything can act on this profile.
-	if loadGate then
-		loadGate(player.UserId)
+	-- A raid may have started while the save was loading (before our
+	-- presence reached other servers). If the lock isn't simply free, wait
+	-- it out and save once so its theft message is pulled into this session;
+	-- the handler below then applies it BEFORE anything can act on this
+	-- profile.
+	if loadGate and loadGate(player.UserId) and profile:IsActive() then
+		if not saveAndWait(profile) then
+			warn(`[PlayerData] {player.Name}: couldn't pull raid messages before loading; they'll apply on the next save`)
+		end
 	end
 	if player.Parent ~= Players or not profile:IsActive() then
 		if profile:IsActive() then

@@ -259,6 +259,11 @@ local function knockback(target: Target, from: Vector3, speed: number)
 	velocity.VectorVelocity = direction * speed + Vector3.new(0, kb.UpSpeed, 0)
 	velocity.Parent = attachment
 	Debris:AddItem(attachment, kb.Seconds)
+	local pushed = Players:GetPlayerFromCharacter(target.root.Parent)
+	if pushed then
+		-- Twice the push distance: the character keeps sliding a little.
+		MovementService.expectPush(pushed, speed * kb.Seconds * 2)
+	end
 end
 
 local function hit(attacker: Player, root: BasePart, target: Target, step: number)

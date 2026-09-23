@@ -23,7 +23,6 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Backoff = require(ServerScriptService.Util.Backoff)
 
 local cfg = Config.Raiding.Lock
-local RELEASED_TTL = 5 -- seconds a "released" marker lingers (then the key is gone)
 
 local map = MemoryStoreService:GetHashMap(if RunService:IsStudio() then cfg.StudioMapName else cfg.MapName)
 
@@ -59,6 +58,11 @@ end
 function RaidLock.acquire(userId: number, raidId: string): boolean
 	local ok, result = Backoff.retry(`raid lock acquire {userId}`, function()
 		return map:UpdateAsync(keyFor(userId), function(current: any): any
+			if type(current) == "table" and current.Kind == "raid" and current.RaidId == raidId then
+				-- Already ours: a retry after an UpdateAsync that saved and
+				-- then errored (review 2026-09-22 #12).
+				return current
+			end
 			if stateOf(current) ~= "free" then
 				return nil -- someone else's raid, or a theft still pending: don't touch it
 			end
@@ -78,7 +82,7 @@ function RaidLock.finish(userId: number, raidId: string, stolen: boolean): boole
 				return nil
 			end
 			return { Kind = if stolen then "pending" else "released", RaidId = raidId }
-		end, if stolen then cfg.PendingSeconds else RELEASED_TTL)
+		end, if stolen then cfg.PendingSeconds else cfg.ReleasedTtlSeconds)
 	end)
 	return ok and result ~= nil
 end
@@ -97,16 +101,23 @@ function RaidLock.extend(userId: number, raidId: string): boolean
 end
 
 -- Login gate: wait while a raid runs on this player (a few lock lifetimes
--- at most, since a lock being renewed means a theft is mid-save). Yields.
-function RaidLock.waitUntilNoRaid(userId: number)
+-- at most, since a lock being renewed means a theft is mid-save). Returns
+-- true if the lock wasn't simply free: a theft may be waiting in their
+-- messages. Yields.
+function RaidLock.waitUntilNoRaid(userId: number): boolean
 	local deadline = os.clock() + cfg.TtlSeconds * cfg.LoginWaitLifetimes
+	local sawRaid = false
 	while os.clock() < deadline do
 		local state = RaidLock.read(userId)
-		if state == "free" or state == "pending" then
-			return
+		if state == "free" then
+			return sawRaid
+		elseif state == "pending" then
+			return true
 		end
+		sawRaid = true
 		task.wait(cfg.LoginPollSeconds)
 	end
+	return true
 end
 
 -- The victim logged in and their pending theft messages are applied: they
@@ -118,7 +129,7 @@ function RaidLock.clearPending(userId: number)
 				return nil
 			end
 			return { Kind = "released" }
-		end, RELEASED_TTL)
+		end, cfg.ReleasedTtlSeconds)
 	end)
 end
 
