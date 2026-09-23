@@ -708,6 +708,7 @@ local Config = {
 		-- Gear menu + attack button. Hidden until the server shows them (R4:
 		-- the upgrade tree is depth the FTUE hides). Look values [PH], REVISIT.
 		Ui = {
+			GearMinScale = 0.5, -- [PH] the Gear menu shrinks to fit small screens, never below this
 			GearVisibleAttribute = "HudGearMenu",
 			ShowBeforeFtue = true, -- TEMPORARY until step 14
 			ButtonSize = 72,
@@ -729,7 +730,8 @@ local Config = {
 		ButtonLabel = "Bag",
 		PanelMaxSize = Vector2.new(640, 340), -- px; the panel also shrinks to 90% of small screens
 		RowHeight = 30,
-		DisplayOrder = 11, -- above the Gear menu (10) and the raid UI (8)
+		DisplayOrder = 11, -- the open Bag: above the Gear menu (10) and the raid UI (8)
+		ButtonDisplayOrder = 8, -- the Bag BUTTON: HUD level with Raids, under open menus
 		-- Counted items on the Items tab, in this order. Gadgets use
 		-- Config.Gadgets.Names; others are named here.
 		ItemOrder = { "Lockpick", "SmokeBomb", "SprintSerum", "ShockTrap", "Disruptor" },

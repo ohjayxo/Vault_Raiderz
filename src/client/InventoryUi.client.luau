@@ -83,8 +83,14 @@ local function makeButton(parent: Instance, text: string, width: number, height:
 	return b
 end
 
--- Next to the Raids button (RaidUi: 12, 170, SIZE*1.2 x SIZE*0.5).
-local bagButton = makeButton(gui, bagCfg.ButtonLabel, SIZE * 1.2, SIZE * 0.5)
+-- Next to the Raids button (RaidUi: 12, 170, SIZE*1.2 x SIZE*0.5). Its own
+-- HUD-level ScreenGui, so open menus (Gear) draw over it; the open Bag
+-- itself is above them (bagCfg.DisplayOrder).
+local buttonGui = Instance.new("ScreenGui")
+buttonGui.Name = "InventoryButton"
+buttonGui.ResetOnSpawn = false
+buttonGui.DisplayOrder = bagCfg.ButtonDisplayOrder
+local bagButton = makeButton(buttonGui, bagCfg.ButtonLabel, SIZE * 1.2, SIZE * 0.5)
 bagButton.Position = UDim2.fromOffset(12 + SIZE * 1.2 + 8, 170)
 bagButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
 bagButton.Visible = false
@@ -153,6 +159,7 @@ message.ZIndex = 5
 message.Parent = panel
 
 gui.Parent = player:WaitForChild("PlayerGui")
+buttonGui.Parent = player:WaitForChild("PlayerGui")
 
 -- ── Row builders ─────────────────────────────────────────────────────────
 

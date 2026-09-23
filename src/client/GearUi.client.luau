@@ -298,16 +298,28 @@ local function openBagGear()
 end
 armorButton.Activated:Connect(openBagGear)
 skinButton.Activated:Connect(openBagGear)
+-- Shrink the menu to fit the screen when it opens or the screen changes.
+-- Early on Roblox can report a tiny viewport: ignore that, and never go
+-- below MinScale (a bad reading must never hide the menu).
 local function fitPanel()
 	local camera = Workspace.CurrentCamera
-	local size = panel.AbsoluteSize / math.max(panelScale.Scale, 0.01)
-	if not camera or size.X <= 0 or size.Y <= 0 then
+	if not camera or not panel.Visible then
 		return
 	end
 	local view = camera.ViewportSize
-	panelScale.Scale = math.min(1, (view.X - 24) / size.X, (view.Y - 24) / size.Y)
+	local size = panel.AbsoluteSize / panelScale.Scale -- unscaled
+	if view.X < 200 or view.Y < 200 or size.X <= 0 or size.Y <= 0 then
+		return
+	end
+	panelScale.Scale = math.clamp(math.min((view.X - 24) / size.X, (view.Y - 24) / size.Y), combatCfg.Ui.GearMinScale, 1)
 end
-panel:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitPanel)
+panel:GetPropertyChangedSignal("Visible"):Connect(function()
+	task.defer(fitPanel) -- after the layout has sized it
+end)
+Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(fitPanel)
+if Workspace.CurrentCamera then
+	Workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitPanel)
+end
 closeButton.Activated:Connect(function()
 	panel.Visible = false
 end)
