@@ -1427,6 +1427,47 @@ call), D92.
 
 ---
 
+## D113 — Slice world layout: Main Street `[LOCKED — all sizes PH]`
+**Decision:** the slice Homestead is a street with two facing rows of
+four plots, equal-length bridges, plots rotated to face their bridge,
+the Reaches off the north end, and a south plaza holding the NPC buyer
+and the FTUE derelict vault (`02-core-loop.md § Slice layout`).
+
+**Why:** the old ring gave bridges of 33–70 studs, so some plots were
+easier to raid or defend. Saved gates faced different directions on
+different plots. The Reaches trip averaged ~36 s through empty space.
+Main Street makes plots identical, cuts the average plot-to-Reaches walk
+to ~25 s [PH], routes every Reaches trip past every base (visual
+scouting), and puts every Chase in the busiest strip of the map.
+
+**Amends:** `02 § World Structure` wording — "concentric" becomes "risk
+increasing with distance from the Exchange."
+
+**Rejected:** square ring (fair, but no scouting or travel gain); sunken
+ring with height (drop-in exploit risk, sloped bridges untested); twin
+coves of four (worst travel; solves more-than-8-plot scaling the slice
+doesn't need — revisit if plots per server grow past 8); keeping the
+current circular ring.
+
+## D114 — Chase escape is a radius around the victim's plot `[LOCKED — radius PH]`
+**Decision:** a carrier escapes by getting ~140 studs [PH] from the
+victim plot's centre within the raid window. A carrier who dies for any
+reason, falling included, drops the loot home (`02 § Escape and carrier
+death`).
+
+**Why:** Chase length becomes the same (~15 s at carrier speed [PH]) on
+every plot and independent of bridge length, so bridges can stay short
+for everyday walking. The finish line sits out in shared space, where
+third parties can crash it (`02 § The Chase` point 5). The death rule
+closes a fall-to-respawn teleport.
+
+**Rejected:** "off the plot and its bridge" (the build's first version:
+6–10 s, length tied to geometry); the literal "zone boundary" (unclear
+inside one Homestead zone, unequal per plot); carry the loot to your own
+plot (distance depends on which two plots, rewards raiding neighbours).
+
+---
+
 # NON-NEGOTIABLES — rationale
 
 ## R1 — Identity is never lootable

@@ -71,7 +71,8 @@ again.
 
 # WORLD STRUCTURE `[LOCKED]`
 
-Floating archipelago. Four concentric zones, risk increasing outward.
+Floating archipelago. Four zones, risk increasing with distance from
+the Exchange (D113 — the zones need not be literal concentric rings).
 
 | Zone | Contents | PvP | Raiding |
 |---|---|---|---|
@@ -87,6 +88,27 @@ Floating archipelago. Four concentric zones, risk increasing outward.
   boring part.
 - One new resource is introduced per zone (`05-items.md § Resources`),
   so the economy teaches itself geographically.
+
+## Slice layout `[LOCKED — D113; all sizes PH]`
+"Main Street": the slice Homestead is a straight street with plots in
+two facing rows of four. The Reaches sits off the north end; a south
+plaza holds the NPC buyer (build step 9) and the FTUE derelict NPC vault
+(`§ FTUE spec`, 4:00–6:00). Space beyond the plaza is reserved for the
+Exchange; beyond the Reaches, for the Rift.
+
+Layout rules:
+- **Every plot bridge is the same length**, so every plot gets the same
+  Scav lane and the same approach.
+- **Every plot is rotated so its gate side faces its bridge**, so a saved
+  base reads the same on whichever plot a player is given.
+- **Spawn faces a glowing node** mid-street (`§ FTUE spec` 0:00).
+- **Drop-in clearance:** any walkable surface higher than a plot keeps
+  at least ~25 studs [PH] of horizontal gap from it, so nobody can jump
+  down into a base and skip the bridge.
+
+Starting sizes [PH]: street 96 × 320; plaza 176 × 96; plots 48 × 48,
+76 apart; plot bridges 64 × 8; Reaches 150 × 150 on a 75-stud bridge.
+After build, Config holds the live values (`12-nexus § Known drift risks`).
 
 ## Server sharding `[LOCKED — D56, metric switched to D66 by D79]`
 The Homestead Ring does **not** hold every player's plot in one shared
@@ -202,7 +224,8 @@ Only Prismatic and Vaultborn skip the trip (§ Special cases).
 2. Breach — consume charges, enter
 3. **Lockpick** — Skyrim-style: find the hidden sweet spot, 3 stages, difficulty scales with vault tier
 4. Grab — take from Exposed only
-5. **Escape** to the zone boundary within a 90-second window [PH]
+5. **Escape** — get ~140 studs [PH] (horizontal) from the victim plot's
+   centre within the 90-second window [PH] (D114)
 
 ## Lockpick skill model `[LOCKED]`
 **High skill ceiling, expressed as speed — not success/failure.**
@@ -250,6 +273,13 @@ When a raider grabs loot:
 is not victim-vs-thief, it is a **server-wide event anyone can profit
 from or crash**. That is the clip that ends up on TikTok, and it is free
 marketing.
+
+## Escape and carrier death `[LOCKED — D114]`
+The Chase ends in escape when the carrier leaves the escape radius
+(`§ The raid sequence` step 5); the same distance on every plot, in any
+layout. A carrier who **dies for any reason — including falling off an
+island — drops the loot back to the owner**, exactly as if hit (point 5
+above). Otherwise respawning at your own plot would carry the loot home.
 
 ## Raid escort `[LOCKED — D101; in the vertical slice]`
 A friend can accompany a solo raider and **body-block interceptors

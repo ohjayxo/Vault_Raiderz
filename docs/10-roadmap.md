@@ -300,6 +300,7 @@ viable for base/architectural geometry).
 | v5.7 | 2026-09-20 | Build-phase decisions: D111 — pickaxes are not tradeable, pickaxe skins are (supersedes D21; 05/06/07 updated). D92 wording fixed — gear score counts pickaxe upgrade nodes, not Tech Path nodes. Placeholder XP→level curve added to `03-progression.md § Vaultbreaker Level`; Level is derived from XP (D80 note). D112 — armor added to the slice: craftable pieces, one chest slot, pickaxe tier names, knockback resistance + small damage reduction, spares stealable / worn never (R1), not tradeable (skins are); gear score adds highest owned armor tier. |
 | v5.8 | 2026-09-21 | Build-phase answers: Mobility "sprint recovery" → "stun recovery" (the docs had no sprint); Scav Captain Signature drop = a Captain pickaxe skin; Vaultborn beam made faint/blinking/fading so it doesn't give away the strike spot; "contested" is a zone flag (Reaches, later the Rift; never the Homestead). |
 | v5.9 | 2026-09-22 | Game renamed Vaultbreakers → Vault Raiderz; "Vaultbreaker Level" is now just "Level" (no title). |
+| v5.10 | 2026-09-22 | D113: slice world layout "Main Street" (equal bridges, rotated plots, south plaza for NPC buyer + derelict FTUE vault; "concentric" wording loosened). D114: Chase escape = ~140-stud radius from the victim plot; a carrier who dies (incl. falling) drops loot home. |
 
 ## Next actions
 

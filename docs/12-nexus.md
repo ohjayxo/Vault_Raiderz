@@ -128,7 +128,7 @@ insurance against a collision.
 | Series | Home file | Currently in use | Next available |
 |---|---|---|---|
 | **R (non-negotiable rules)** | `01-pillars.md` | R1–R8 | **R9** |
-| **D (locked decisions)** | `07-decisions.md` | D1–D112 | **D113** |
+| **D (locked decisions)** | `07-decisions.md` | D1–D114 | **D115** |
 | **Q (open questions)** | `08-questions.md` | up to Q70 | **Q71** |
 
 ---
@@ -186,6 +186,11 @@ creep in on a future edit.
   "Fully specified in `03-progression.md § Blueprints`. Summary for
   taxonomy purposes.") — flagged here as the *model* to copy when
   resolving future duplication, not a problem.
+- **Slice layout numbers.** `02 § Slice layout` holds the shape, rules
+  and starting sizes; after build, `Config`/`gen_world.py` holds the live
+  values. Tuning changes go in Config — don't re-sync the doc every tweak,
+  but do update it if a *rule* (equal bridges, rotation, drop-in
+  clearance, escape radius) changes.
 
 ---
 
@@ -202,3 +207,4 @@ creep in on a future edit.
 | v1.6 | 2026-09-19 | Registry: D1–D110 (next D111). D110 resolves the offline-production slice gap. |
 | v1.7 | 2026-09-20 | Registry: D1–D111 (next D112). D111 (pickaxes untradeable, skins tradeable) supersedes D21; made during the build phase. |
 | v1.8 | 2026-09-20 | Registry: D1–D112 (next D113). D112 adds armor to the slice (amends D107, D92). |
+| v1.9 | 2026-09-22 | Registry: D1–D114 (next D115). D113 slice layout (Main Street), D114 escape radius + carrier-death rule. Drift risk added: slice layout numbers. |
