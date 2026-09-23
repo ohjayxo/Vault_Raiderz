@@ -301,3 +301,25 @@ below is the original flag.
    first: which zones count as "contested" (Reaches only? Rift later?) and
    should zones carry that as data? Then a start-up check can refuse a
    Riftsalt spawn anywhere else.
+
+## Wider Main Street (2026-09-23) — NOT yet in `docs/` (sizes are [PH])
+
+Josh: the street felt like a runway, so the grass on each side of the road
+was tripled. `02-core-loop.md § Slice layout` "Starting sizes [PH]" is now
+out of date; live values are in `docs-build/worldgen/gen_world.py`.
+- Street 96 × 320 → **240 × 320** (24 road + 108 grass each side).
+- Plaza 176 × 96 → **240 × 96** (matches the street width).
+- Plot rows moved out (row centre x 136 → 208) so **bridges stay 64**; plots,
+  escape radius (D114) and Scav lanes unchanged.
+- Costs: crossing to the opposite plot ~15 s (was ~6 s); facing plots
+  368 studs apart (was 224); average plot → Reaches walk ~+2–3 s against
+  D113's ~25 s [PH] target.
+- Mock scenery added at the same time: 22 more trees + 36 walk-through
+  bushes, seeded (`street_scenery()` in `gen_world.py`). Placeholder art.
+
+**To go back** (edit `docs-build/worldgen/gen_world.py`, then run
+`python3 docs-build/worldgen/gen_world.py` and restart `rojo serve`):
+- Double the grass: `STREET_SIZE = (168, 320)`, `PLAZA_SIZE = (176, 96)`.
+- Original: `STREET_SIZE = (96, 320)`, `PLAZA_SIZE = (176, 96)`.
+- Nothing else: plot rows follow the street width, so bridges stay 64, and
+  the scenery re-scatters to fit.

@@ -171,8 +171,11 @@ def folder(name, children):
 # Each island: Hitbox = the walkable slab (code + physics), Visual = ground
 # look + decor. SpawnLocation, NodeSpawns and slots are gameplay, beside them.
 
-STREET_SIZE = (96, 320)        # X by Z. Zone "Homestead", not contested
-PLAZA_SIZE = (176, 96)
+STREET_SIZE = (240, 320)       # X by Z. Zone "Homestead", not contested. 24 road + 108 grass
+                               # each side (Josh 2026-09-23: 3x the grass, "open space, not a runway")
+                               # Back to double: (168, 320) + PLAZA_SIZE (176, 96); original: (96, 320).
+                               # See docs-build/design-changes.md § Wider Main Street.
+PLAZA_SIZE = (240, 96)         # as wide as the street, so it doesn't read as a notch
 PLAZA_C = (0, STREET_SIZE[1] / 2 + PLAZA_SIZE[1] / 2)  # (0, 208): touches the street's south edge
 REACHES_SIZE = 150
 REACHES_BRIDGE = (12, 75)      # width, length: street north edge -> Reaches south edge
@@ -186,7 +189,7 @@ DROP_IN_CLEARANCE = 25
 # Player plots (step 4). PLOT_COUNT and PLOT_SIZE must match Config.Plots
 # (checked below against Config.luau).
 PLOT_SIZE = 48                 # 12 x 12 cells of 4 studs
-PLOT_ROW_X = 136               # west row at -X, east row at +X
+PLOT_ROW_X = STREET_SIZE[0] / 2 + 64 + PLOT_SIZE / 2  # 208: street edge + 64-stud bridge + half a plot
 PLOT_ROW_Z = (-114, -38, 38, 114)  # 76 apart
 PLOT_BRIDGE_WIDTH = 8
 PLOT_COUNT = 2 * len(PLOT_ROW_Z)
@@ -198,6 +201,59 @@ for i, (x, z) in enumerate([(-24, -76), (24, -76), (-24, 0), (24, 0), (-24, 76),
     homestead_spawns.append(spawn_point(f"Stone{i + 2}", x, z, "Stone"))
 for i, (x, z) in enumerate([(-24, -138), (24, -138), (-24, 145), (24, 145)]):
     homestead_spawns.append(spawn_point(f"Ore{i + 1}", x, z, "Ore"))
+
+# Mock scenery on the street's grass (Josh 2026-09-23: "get a feel for the
+# environment"). Placeholder only: the artist replaces the Visual. Seeded, so
+# every run writes the same layout. Kept clear of the road + node spawns
+# (|x| < 36), each bridge's lane to the road (|z - row z| < 14), the street's
+# edges and each other. Trees are solid like real ones; bushes walk-through.
+def street_scenery():
+    import random
+    rng = random.Random(113)  # D113 street; any fixed seed works
+    placed = [(-80, 150), (-70, -100), (75, 60)]  # Tree1, Rock1, Rock2 above
+    out = []
+    edge_x, edge_z = sx / 2 - 8, sz / 2 - 10
+
+    def free(x, z, gap):
+        if abs(x) < 36 or abs(x) > edge_x or abs(z) > edge_z:
+            return False
+        if any(abs(z - rz_) < 14 for rz_ in PLOT_ROW_Z) and abs(x) > sx / 2 - 30:
+            return False
+        return all(math.hypot(x - px_, z - pz_) >= gap for px_, pz_ in placed)
+
+    def scatter(count, gap, make):
+        n, tries = 0, 0
+        while n < count and tries < 5000:
+            tries += 1
+            x = rng.uniform(-edge_x, edge_x)
+            z = rng.uniform(-edge_z, edge_z)
+            if free(x, z, gap):
+                placed.append((x, z))
+                n += 1
+                out.extend(make(n, x, z))
+
+    def tree(n, x, z):
+        h = rng.uniform(10, 16)
+        w = rng.uniform(8, 12)
+        green = rgb(*rng.choice([(75, 151, 75), (62, 128, 62), (88, 160, 80)]))
+        return [
+            decor_part(f"Tree{n + 1}Trunk", (2, h, 2), (x, GROUND_TOP + h / 2, z), rgb(105, 64, 40), "Wood"),
+            decor_part(f"Tree{n + 1}Top", (w, w * 0.8, w), (x, GROUND_TOP + h + w * 0.3, z), green, "Grass",
+                       yaw=rng.uniform(0, 90)),
+        ]
+
+    def bush(n, x, z):
+        w = rng.uniform(3, 5.5)
+        green = rgb(*rng.choice([(70, 140, 60), (58, 120, 55), (95, 150, 70)]))
+        return [
+            part(f"Bush{n}", (w, w * 0.7, w * 0.9), (x, GROUND_TOP + w * 0.35, z), green, "Grass",
+                 yaw=rng.uniform(0, 90), CanCollide=False, CanQuery=False, CanTouch=False),
+        ]
+
+    scatter(22, 16, tree)
+    scatter(36, 7, bush)
+    return out
+
 
 template(WORLD_DIR, "Homestead", attributes={"Zone": "Homestead"},
          children=[
@@ -211,10 +267,11 @@ template(WORLD_DIR, "Homestead", attributes={"Zone": "Homestead"},
              visual_part("Ground", (sx, 10, sz), (0, GROUND_TOP - 5.02, 0), rgb(106, 127, 63), "Grass"),
              visual_part("Underside", (sx - 20, 30, sz - 40), (0, GROUND_TOP - 25, 0), rgb(99, 95, 98), "Slate"),
              visual_part("Road", (24, 0.2, sz), (0, GROUND_TOP + 0.1, 0), rgb(150, 135, 110), "Cobblestone"),
-             decor_part("Rock1", (8, 6, 7), (-40, GROUND_TOP + 3, -100), rgb(120, 118, 115), "Slate", yaw=20),
-             decor_part("Rock2", (7, 5, 8), (40, GROUND_TOP + 2.5, 60), rgb(120, 118, 115), "Slate", yaw=-35),
-             decor_part("Tree1Trunk", (2, 12, 2), (-40, GROUND_TOP + 6, 150), rgb(105, 64, 40), "Wood"),
-             decor_part("Tree1Top", (10, 8, 10), (-40, GROUND_TOP + 15, 150), rgb(75, 151, 75), "Grass"),
+             decor_part("Rock1", (8, 6, 7), (-70, GROUND_TOP + 3, -100), rgb(120, 118, 115), "Slate", yaw=20),
+             decor_part("Rock2", (7, 5, 8), (75, GROUND_TOP + 2.5, 60), rgb(120, 118, 115), "Slate", yaw=-35),
+             decor_part("Tree1Trunk", (2, 12, 2), (-80, GROUND_TOP + 6, 150), rgb(105, 64, 40), "Wood"),
+             decor_part("Tree1Top", (10, 8, 10), (-80, GROUND_TOP + 15, 150), rgb(75, 151, 75), "Grass"),
+             *street_scenery(),
          ])
 
 

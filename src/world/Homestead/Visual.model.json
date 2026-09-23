@@ -7,7 +7,7 @@
       "properties": {
         "Anchored": true,
         "Size": [
-          96,
+          240,
           10,
           320
         ],
@@ -57,7 +57,7 @@
       "properties": {
         "Anchored": true,
         "Size": [
-          76,
+          220,
           30,
           280
         ],
@@ -164,7 +164,7 @@
         "CFrame": {
           "CFrame": {
             "position": [
-              -40,
+              -70,
               53,
               -100
             ],
@@ -210,7 +210,7 @@
         "CFrame": {
           "CFrame": {
             "position": [
-              40,
+              75,
               52.5,
               60
             ],
@@ -256,7 +256,7 @@
         "CFrame": {
           "CFrame": {
             "position": [
-              -40,
+              -80,
               56,
               150
             ],
@@ -302,7 +302,7 @@
         "CFrame": {
           "CFrame": {
             "position": [
-              -40,
+              -80,
               65,
               150
             ],
@@ -333,6 +333,3794 @@
         "Material": "Grass",
         "TopSurface": "Smooth",
         "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree2Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          13.299618095808498,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              49.74502585471757,
+              56.64980904790425,
+              -144.63782948617578
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree2Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          8.954706532849897,
+          7.163765226279918,
+          8.954706532849897
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              49.74502585471757,
+              65.98603005566346,
+              -144.63782948617578
+            ],
+            "orientation": [
+              [
+                0.228021,
+                0,
+                0.973656
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.973656,
+                0,
+                0.228021
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2941,
+          0.5922,
+          0.2941
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree3Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          12.969562915806865,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -44.430357483912644,
+              56.48478145790343,
+              29.55628104066642
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree3Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          9.125890413007895,
+          7.300712330406316,
+          9.125890413007895
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -44.430357483912644,
+              65.70733003970923,
+              29.55628104066642
+            ],
+            "orientation": [
+              [
+                0.861717,
+                0,
+                0.50739
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.50739,
+                0,
+                0.861717
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2431,
+          0.502,
+          0.2431
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree4Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          11.874652597192785,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -68.59891741940513,
+              55.93732629859639,
+              -34.73145525441464
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree4Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          11.40946614856399,
+          9.127572918851191,
+          11.40946614856399
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -68.59891741940513,
+              65.29749244176199,
+              -34.73145525441464
+            ],
+            "orientation": [
+              [
+                0.85068,
+                0,
+                0.525685
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.525685,
+                0,
+                0.85068
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3451,
+          0.6275,
+          0.3137
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree5Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          13.638185334253265,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              104.82661088053564,
+              56.81909266712663,
+              78.259879096861
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree5Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          10.586064025579201,
+          8.468851220463362,
+          10.586064025579201
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              104.82661088053564,
+              66.81400454192702,
+              78.259879096861
+            ],
+            "orientation": [
+              [
+                0.747276,
+                0,
+                0.664513
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.664513,
+                0,
+                0.747276
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3451,
+          0.6275,
+          0.3137
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree6Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          14.091402703163688,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -50.07984713396469,
+              57.04570135158184,
+              50.56040274585237
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree6Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          8.773260464944691,
+          7.018608371955754,
+          8.773260464944691
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -50.07984713396469,
+              66.72338084264709,
+              50.56040274585237
+            ],
+            "orientation": [
+              [
+                0.998439,
+                0,
+                0.055849
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.055849,
+                0,
+                0.998439
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2941,
+          0.5922,
+          0.2941
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree7Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          15.364142242750706,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -71.91919106496874,
+              57.68207112137535,
+              62.99584635352568
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree7Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          9.21181054502526,
+          7.369448436020209,
+          9.21181054502526
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -71.91919106496874,
+              68.12768540625828,
+              62.99584635352568
+            ],
+            "orientation": [
+              [
+                0.259902,
+                0,
+                0.965635
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.965635,
+                0,
+                0.259902
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3451,
+          0.6275,
+          0.3137
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree8Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          11.006500933624563,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -77.59381027191654,
+              55.50325046681228,
+              124.45707062105907
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree8Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          9.886759811475141,
+          7.909407849180113,
+          9.886759811475141
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -77.59381027191654,
+              63.972528877067106,
+              124.45707062105907
+            ],
+            "orientation": [
+              [
+                0.688616,
+                0,
+                0.725126
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.725126,
+                0,
+                0.688616
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2941,
+          0.5922,
+          0.2941
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree9Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          13.256414694087514,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              63.61226219788114,
+              56.628207347043755,
+              -85.60632319609466
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree9Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          11.488508152783126,
+          9.1908065222265,
+          11.488508152783126
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              63.61226219788114,
+              66.70296713992245,
+              -85.60632319609466
+            ],
+            "orientation": [
+              [
+                0.976129,
+                0,
+                0.217193
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.217193,
+                0,
+                0.976129
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2431,
+          0.502,
+          0.2431
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree10Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          15.598865714818421,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              43.47567373965268,
+              57.79943285740921,
+              -118.40701619624824
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree10Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          10.667572247782102,
+          8.534057798225682,
+          10.667572247782102
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              43.47567373965268,
+              68.79913738915305,
+              -118.40701619624824
+            ],
+            "orientation": [
+              [
+                0.931811,
+                0,
+                0.362945
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.362945,
+                0,
+                0.931811
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3451,
+          0.6275,
+          0.3137
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree11Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          14.501974370983174,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -88.12292542828357,
+              57.25098718549159,
+              93.46835440611503
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree11Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          8.61814000591579,
+          6.894512004732633,
+          8.61814000591579
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -88.12292542828357,
+              67.08741637275791,
+              93.46835440611503
+            ],
+            "orientation": [
+              [
+                0.585033,
+                0,
+                0.811009
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.811009,
+                0,
+                0.585033
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2431,
+          0.502,
+          0.2431
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree12Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          13.881638955975717,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              57.25632421443035,
+              56.94081947798786,
+              -2.7657661796224318
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree12Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          8.813564190588334,
+          7.0508513524706675,
+          8.813564190588334
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              57.25632421443035,
+              66.52570821315221,
+              -2.7657661796224318
+            ],
+            "orientation": [
+              [
+                0.839946,
+                0,
+                0.542669
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.542669,
+                0,
+                0.839946
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2431,
+          0.502,
+          0.2431
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree13Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          12.458289408909552,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -56.047134414856785,
+              56.229144704454775,
+              -145.37341290476823
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree13Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          10.352597815380035,
+          8.282078252304029,
+          10.352597815380035
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -56.047134414856785,
+              65.56406875352356,
+              -145.37341290476823
+            ],
+            "orientation": [
+              [
+                0.623501,
+                0,
+                0.781822
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.781822,
+                0,
+                0.623501
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2431,
+          0.502,
+          0.2431
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree14Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          11.006789919103785,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -38.89613795777775,
+              55.50339495955189,
+              8.404676108842466
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree14Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          11.397370888690038,
+          9.11789671095203,
+          11.397370888690038
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -38.89613795777775,
+              64.42600118571079,
+              8.404676108842466
+            ],
+            "orientation": [
+              [
+                0.968168,
+                0,
+                0.250302
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.250302,
+                0,
+                0.968168
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2941,
+          0.5922,
+          0.2941
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree15Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          11.211010329214846,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -66.53010041995282,
+              55.60550516460742,
+              -5.4439414194913525
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree15Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          8.718016334940732,
+          6.974413067952586,
+          8.718016334940732
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -66.53010041995282,
+              63.82641522969706,
+              -5.4439414194913525
+            ],
+            "orientation": [
+              [
+                0.045528,
+                0,
+                0.998963
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.998963,
+                0,
+                0.045528
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2431,
+          0.502,
+          0.2431
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree16Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          12.721039684844555,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              104.27014229883494,
+              56.36051984242228,
+              -62.50212203427681
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree16Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          11.626775415305822,
+          9.301420332244659,
+          11.626775415305822
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              104.27014229883494,
+              66.20907230943631,
+              -62.50212203427681
+            ],
+            "orientation": [
+              [
+                0.101093,
+                0,
+                0.994877
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.994877,
+                0,
+                0.101093
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2431,
+          0.502,
+          0.2431
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree17Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          15.993227623782452,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              85.86790884578107,
+              57.99661381189122,
+              -119.3794095518101
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree17Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          11.673591038274598,
+          9.338872830619678,
+          11.673591038274598
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              85.86790884578107,
+              69.49530493526483,
+              -119.3794095518101
+            ],
+            "orientation": [
+              [
+                0.54039,
+                0,
+                0.841414
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.841414,
+                0,
+                0.54039
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2941,
+          0.5922,
+          0.2941
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree18Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          14.054954766687857,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -104.11552628968504,
+              57.02747738334393,
+              -73.03410140265778
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree18Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          9.946604326844573,
+          7.957283461475659,
+          9.946604326844573
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -104.11552628968504,
+              67.03893606474122,
+              -73.03410140265778
+            ],
+            "orientation": [
+              [
+                0.435,
+                0,
+                0.90043
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.90043,
+                0,
+                0.435
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2431,
+          0.502,
+          0.2431
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree19Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          14.996314209887394,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              83.49507529757301,
+              57.4981571049437,
+              -43.88176759826595
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree19Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          11.551648120710333,
+          9.241318496568267,
+          11.551648120710333
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              83.49507529757301,
+              68.46180864610051,
+              -43.88176759826595
+            ],
+            "orientation": [
+              [
+                0.970364,
+                0,
+                0.241648
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.241648,
+                0,
+                0.970364
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2431,
+          0.502,
+          0.2431
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree20Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          11.987845061603341,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              41.77008861317242,
+              55.99392253080167,
+              31.614262540061446
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree20Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          8.987041734689543,
+          7.189633387751634,
+          8.987041734689543
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              41.77008861317242,
+              64.6839575820102,
+              31.614262540061446
+            ],
+            "orientation": [
+              [
+                0.60851,
+                0,
+                0.793546
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.793546,
+                0,
+                0.60851
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2941,
+          0.5922,
+          0.2941
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree21Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          15.961401676271404,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -55.963197192722625,
+              57.980700838135704,
+              18.034114738318095
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree21Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          11.224418279812006,
+          8.979534623849606,
+          11.224418279812006
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -55.963197192722625,
+              69.32872716021501,
+              18.034114738318095
+            ],
+            "orientation": [
+              [
+                0.964552,
+                0,
+                0.263893
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.263893,
+                0,
+                0.964552
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2941,
+          0.5922,
+          0.2941
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree22Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          11.626616284362912,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -80.46360315966864,
+              55.813308142181455,
+              -23.819166129778864
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree22Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          9.113979608249611,
+          7.291183686599689,
+          9.113979608249611
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -80.46360315966864,
+              64.3608101668378,
+              -23.819166129778864
+            ],
+            "orientation": [
+              [
+                0.953826,
+                0,
+                0.300361
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.300361,
+                0,
+                0.953826
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2941,
+          0.5922,
+          0.2941
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree23Trunk",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          2,
+          13.059995813835847,
+          2
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              79.81678944503565,
+              56.52999790691793,
+              107.7839823734235
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.4118,
+          0.251,
+          0.1569
+        ],
+        "Material": "Wood",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Tree23Top",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          8.7088655935443,
+          6.9670924748354395,
+          8.7088655935443
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              79.81678944503565,
+              65.67265549189914,
+              107.7839823734235
+            ],
+            "orientation": [
+              [
+                0.961948,
+                0,
+                0.273233
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.273233,
+                0,
+                0.961948
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3451,
+          0.6275,
+          0.3137
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth"
+      }
+    },
+    {
+      "name": "Bush1",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.9294468477928826,
+          2.7506127934550175,
+          3.536502163013594
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -57.5366199427897,
+              51.37530639672751,
+              -13.861487317521977
+            ],
+            "orientation": [
+              [
+                0.835242,
+                0,
+                0.549882
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.549882,
+                0,
+                0.835242
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush2",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.988164775897843,
+          3.49171534312849,
+          4.489348298308059
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -81.78968732046471,
+              51.745857671564245,
+              -141.86051738650536
+            ],
+            "orientation": [
+              [
+                0.704967,
+                0,
+                0.70924
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.70924,
+                0,
+                0.704967
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush3",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.298557635407209,
+          3.008990344785046,
+          3.8687018718664885
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              43.78237941422657,
+              51.504495172392524,
+              -18.574246752509936
+            ],
+            "orientation": [
+              [
+                0.98516,
+                0,
+                0.171641
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.171641,
+                0,
+                0.98516
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush4",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.484532015846035,
+          2.4391724110922244,
+          3.1360788142614315
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              38.626061278731555,
+              51.219586205546115,
+              -26.083567510178028
+            ],
+            "orientation": [
+              [
+                0.907057,
+                0,
+                0.421007
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.421007,
+                0,
+                0.907057
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush5",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.460209384652916,
+          3.122146569257041,
+          4.0141884461876245
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              48.3447571054038,
+              51.56107328462852,
+              -79.20093766250051
+            ],
+            "orientation": [
+              [
+                0.914969,
+                0,
+                0.403523
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.403523,
+                0,
+                0.914969
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush6",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.912774747883233,
+          3.4389423235182632,
+          4.42149727309491
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              89.91226914111894,
+              51.71947116175913,
+              81.66480292926227
+            ],
+            "orientation": [
+              [
+                0.609336,
+                0,
+                0.792912
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.792912,
+                0,
+                0.609336
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush7",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.544261148030627,
+          2.4809828036214387,
+          3.1898350332275642
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -108.28038938697017,
+              51.24049140181072,
+              136.23376549168586
+            ],
+            "orientation": [
+              [
+                0.766044,
+                0,
+                0.642788
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.642788,
+                0,
+                0.766044
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush8",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.2291338276249237,
+          2.2603936793374464,
+          2.9062204448624316
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -86.22750907257516,
+              51.13019683966872,
+              -36.833689051322565
+            ],
+            "orientation": [
+              [
+                0.70057,
+                0,
+                0.713584
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.713584,
+                0,
+                0.70057
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush9",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.362334168005889,
+          3.053633917604122,
+          3.9261007512053
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              36.92490432708203,
+              51.52681695880206,
+              -128.88583441299087
+            ],
+            "orientation": [
+              [
+                0.421928,
+                0,
+                0.906629
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.906629,
+                0,
+                0.421928
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush10",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.844502331200937,
+          3.391151631840656,
+          4.3600520980808435
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -62.00984068980695,
+              51.69557581592033,
+              -69.13396197430718
+            ],
+            "orientation": [
+              [
+                0.973088,
+                0,
+                0.230435
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.230435,
+                0,
+                0.973088
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush11",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.445945540787639,
+          3.1121618785513467,
+          4.001350986708875
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              74.29167246884631,
+              51.556080939275674,
+              -10.894668175791082
+            ],
+            "orientation": [
+              [
+                0.106919,
+                0,
+                0.994268
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.994268,
+                0,
+                0.106919
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush12",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.649781740444563,
+          3.2548472183111943,
+          4.184803566400107
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              111.16027420177659,
+              51.6274236091556,
+              67.11146865537017
+            ],
+            "orientation": [
+              [
+                0.987395,
+                0,
+                0.158276
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.158276,
+                0,
+                0.987395
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush13",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.162121052580848,
+          2.2134847368065933,
+          2.8459089473227634
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -74.79464910742442,
+              51.106742368403296,
+              4.450731734892457
+            ],
+            "orientation": [
+              [
+                0.840314,
+                0,
+                0.5421
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.5421,
+                0,
+                0.840314
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush14",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.005380921269512,
+          2.803766644888658,
+          3.604842829142561
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -96.83539877395997,
+              51.40188332244433,
+              81.62516910375442
+            ],
+            "orientation": [
+              [
+                0.988542,
+                0,
+                0.150945
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.150945,
+                0,
+                0.988542
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush15",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.274140205253363,
+          2.291898143677354,
+          2.9467261847280266
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              72.96728407396998,
+              51.14594907183868,
+              69.94890246546296
+            ],
+            "orientation": [
+              [
+                0.792594,
+                0,
+                0.60975
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.60975,
+                0,
+                0.792594
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush16",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.0692749942073094,
+          2.1484924959451166,
+          2.7623474947865785
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              111.82303627390519,
+              51.07424624797256,
+              80.53501488517759
+            ],
+            "orientation": [
+              [
+                0.902006,
+                0,
+                0.431723
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.431723,
+                0,
+                0.902006
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush17",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.783143146816652,
+          2.6482002027716565,
+          3.404828832134987
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -73.09566377756538,
+              51.32410010138583,
+              135.87343686240422
+            ],
+            "orientation": [
+              [
+                0.342329,
+                0,
+                0.93958
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.93958,
+                0,
+                0.342329
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush18",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.9559377558929953,
+          2.7691564291250965,
+          3.560343980303696
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              50.09474577443336,
+              51.384578214562545,
+              -122.90458771208624
+            ],
+            "orientation": [
+              [
+                0.725874,
+                0,
+                0.687827
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.687827,
+                0,
+                0.725874
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush19",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.570270313514277,
+          3.1991892194599933,
+          4.113243282162849
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -56.10908645938245,
+              51.59959460973,
+              44.65854955124945
+            ],
+            "orientation": [
+              [
+                0.740102,
+                0,
+                0.672494
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.672494,
+                0,
+                0.740102
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush20",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.882850173418387,
+          3.4179951213928703,
+          4.394565156076548
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              40.614765132694856,
+              51.70899756069643,
+              121.25487498376322
+            ],
+            "orientation": [
+              [
+                0.321007,
+                0,
+                0.947077
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.947077,
+                0,
+                0.321007
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush21",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.038317103656297,
+          2.826821972559408,
+          3.6344853932906673
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              60.678183579978196,
+              51.4134109862797,
+              61.11501416007792
+            ],
+            "orientation": [
+              [
+                0.670333,
+                0,
+                0.74206
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.74206,
+                0,
+                0.670333
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush22",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.785282669104838,
+          2.6496978683733863,
+          3.406754402194354
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -98.2039409287431,
+              51.32484893418669,
+              -59.794871173264994
+            ],
+            "orientation": [
+              [
+                0.063088,
+                0,
+                0.998008
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.998008,
+                0,
+                0.063088
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush23",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.898067826637715,
+          2.7286474786464003,
+          3.5082610439739437
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -88.97196605311362,
+              51.3643237393232,
+              -71.24829628979363
+            ],
+            "orientation": [
+              [
+                0.654174,
+                0,
+                0.756344
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.756344,
+                0,
+                0.654174
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush24",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.642492877296642,
+          2.549745014107649,
+          3.2782435895669777
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -56.24879199930906,
+              51.27487250705382,
+              -107.96177142416282
+            ],
+            "orientation": [
+              [
+                0.102047,
+                0,
+                0.99478
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.99478,
+                0,
+                0.102047
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush25",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          5.401035925769964,
+          3.7807251480389747,
+          4.8609323331929675
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -63.244686534327535,
+              51.890362574019484,
+              -131.7272407485695
+            ],
+            "orientation": [
+              [
+                0.22273,
+                0,
+                0.97488
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.97488,
+                0,
+                0.22273
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush26",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.492078621966915,
+          2.4444550353768406,
+          3.1428707597702235
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -40.65889546531628,
+              51.222227517688424,
+              -95.37385626222164
+            ],
+            "orientation": [
+              [
+                0.43724,
+                0,
+                0.899345
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.899345,
+                0,
+                0.43724
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush27",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          5.060174018461263,
+          3.5421218129228835,
+          4.554156616615137
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              40.11381669855024,
+              51.77106090646144,
+              94.4439639390855
+            ],
+            "orientation": [
+              [
+                0.996684,
+                0,
+                0.081366
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.081366,
+                0,
+                0.996684
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush28",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          5.2936736448837785,
+          3.7055715514186445,
+          4.764306280395401
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -108.47875709873966,
+              51.85278577570932,
+              -83.15362909079471
+            ],
+            "orientation": [
+              [
+                0.952208,
+                0,
+                0.305449
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.305449,
+                0,
+                0.952208
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.3725,
+          0.5882,
+          0.2745
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush29",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.255663830070957,
+          2.97896468104967,
+          3.8300974470638613
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              77.19510523745686,
+              51.48948234052484,
+              136.0329792310589
+            ],
+            "orientation": [
+              [
+                0.741812,
+                0,
+                0.670607
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.670607,
+                0,
+                0.741812
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush30",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.5428870671550663,
+          2.4800209470085464,
+          3.18859836043956
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              36.26574249228375,
+              51.24001047350427,
+              -57.80051243070123
+            ],
+            "orientation": [
+              [
+                0.347361,
+                0,
+                0.937731
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.937731,
+                0,
+                0.347361
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush31",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.564278798947411,
+          2.494995159263188,
+          3.20785091905267
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -109.71570156750647,
+              51.24749757963159,
+              73.63151822536847
+            ],
+            "orientation": [
+              [
+                0.328208,
+                0,
+                0.944606
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.944606,
+                0,
+                0.328208
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush32",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.9548418952506204,
+          2.7683893266754342,
+          3.5593577057255583
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              89.82423253190908,
+              51.384194663337716,
+              -10.023838946001405
+            ],
+            "orientation": [
+              [
+                0.775862,
+                0,
+                0.630903
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.630903,
+                0,
+                0.775862
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush33",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.7779093091464886,
+          2.644536516402542,
+          3.4001183782318396
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              55.21224934835928,
+              51.32226825820127,
+              95.44129884821612
+            ],
+            "orientation": [
+              [
+                0.294175,
+                0,
+                0.955752
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.955752,
+                0,
+                0.294175
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush34",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.6315934296323595,
+          2.5421154007426514,
+          3.2684340866691235
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -40.73085850623983,
+              51.27105770037132,
+              -55.87843756807604
+            ],
+            "orientation": [
+              [
+                0.259357,
+                0,
+                0.965781
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.965781,
+                0,
+                0.259357
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2745,
+          0.549,
+          0.2353
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush35",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          3.3816252276398884,
+          2.3671376593479216,
+          3.0434627048758998
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -83.06542543067135,
+              51.18356882967396,
+              35.835353260833244
+            ],
+            "orientation": [
+              [
+                0.724028,
+                0,
+                0.68977
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.68977,
+                0,
+                0.724028
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
+      }
+    },
+    {
+      "name": "Bush36",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          4.708619759670225,
+          3.2960338317691575,
+          4.237757783703203
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              -55.11718078014522,
+              51.648016915884575,
+              83.04624622753576
+            ],
+            "orientation": [
+              [
+                0.807801,
+                0,
+                0.589456
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.589456,
+                0,
+                0.807801
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.2275,
+          0.4706,
+          0.2157
+        ],
+        "Material": "Grass",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false
       }
     }
   ]
