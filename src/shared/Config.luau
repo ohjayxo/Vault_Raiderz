@@ -572,6 +572,23 @@ local Config = {
 			GhostColor = Color3.fromRGB(80, 220, 120),
 			SelectColor = Color3.fromRGB(255, 210, 60),
 			MessageSeconds = 2,
+			-- "Your plot" marker (Josh, 2026-09-23): plots are given, not
+			-- picked (02 § Slice layout, D113), and you spawn mid-street, so a
+			-- light beam + bouncing arrow only you can see shows which plot is
+			-- yours while you're off it. No words (FTUE hard rule 1: arrows and
+			-- glows only). Shown with the Build UI, so step 14 controls it too.
+			-- Look only. [PH] invented, REVISIT with real effects.
+			PlotMarker = {
+				BeamHeight = 80, -- studs above the plot surface
+				BeamWidth = 3,
+				BeamColor = Color3.fromRGB(80, 220, 120),
+				BeamTransparency = { 0.35, 0.75 }, -- pulses between these
+				PulseSeconds = 1.2,
+				ArrowHeight = 14, -- studs above the plot surface
+				ArrowBounceStuds = 3,
+				ArrowPixels = 64, -- same size on screen at any distance
+				CheckSeconds = 0.25, -- how often to re-check "am I on my plot?"
+			},
 		},
 	},
 

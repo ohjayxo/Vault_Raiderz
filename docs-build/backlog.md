@@ -176,5 +176,9 @@ rules + layout) and 1 skeptic that tried to refute each finding.
 - **Offline bases** are any recent leaver for now; step 8 adds band
   matching to `OfflineBaseService.refill`.
 - The raid log map shows path dots + defense trigger markers; greybox.
+- **Step 14:** the "your plot" marker (`PlotMarker.client`) follows the
+  Build UI attribute; the FTUE's 0:45 BUILD VAULT beat should turn both on.
+  Its beam/arrow are code-made look stand-ins: include them in the effects
+  pass (Config.Base.BuildUi.PlotMarker, REVISIT).
 - **Launch:** credit the CC-BY pickaxe model in the game description or a
   credits screen (`docs-build/credits.md`).

@@ -283,6 +283,19 @@ negative; profiles reject negatives), so they're now stored shifted by
 `Config.Raiding.LogCoordOffset`. This also restores the "applied" raid ids
 that guard offline theft messages against being applied twice.
 
+## "Your plot" marker (2026-09-23) — NOT yet in `docs/`
+
+Found on the first phone test: plots are given automatically (D113), you
+spawn mid-street, and the Build button only shows on your own plot, so a
+new player couldn't tell which plot was theirs and never saw Build.
+Josh's call (chosen over "Build button anywhere", "spawn on your plot" and
+"pick a plot"): **keep plots given; a pulsing light beam + bouncing arrow
+over your own plot, seen only by you, while you're off it.** No words (FTUE
+hard rule 1). Shown with the Build UI, so step 14's FTUE controls it
+(0:45 "BUILD VAULT"). Plots are per server, so a returning player may be on
+a different plot each visit; the marker covers that too.
+`src/client/PlotMarker.client.luau`, `Config.Base.BuildUi.PlotMarker`.
+
 ## Flagged for redesign (step 2 review, 2026-09-20) — ANSWERED 2026-09-21 (see above)
 
 Answered in v5.8 (see the v5.8 section above); kept for history. The text
