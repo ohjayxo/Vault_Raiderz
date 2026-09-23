@@ -1405,7 +1405,7 @@ need Voltstone). A piece never upgrades — you craft a better one. Each tier
 gives **knockback resistance plus a small damage reduction** [PH], kept small
 so fights still resolve in 5–10 s (`02-core-loop.md § Combat feel`). The
 **worn piece is never stealable** (R1); **spare pieces are stealable** in
-raids like other loot (how many a raid takes is step-7 theft math, [PH]).
+raids: one grab takes the victim's best spare piece, whole (no in-transit destruction for a single item) [PH].
 Armor pieces **don't trade** (same reason as D111); **armor skins trade** as
 cosmetics. Gear score adds the highest armor tier **owned** × 10 [PH], so
 taking armor off can't lower a raid band (R6).

@@ -146,7 +146,7 @@ can plan a path.
 |---|---|---|
 | **Extraction** | Mining speed, Grade odds, node scanners, drill rigs, auto-harvesters | Miners |
 | **Defense** | Wall plating, traps, shock fences, decoy vaults, alarm networks | Homebodies |
-| **Breaching** | Breach charges, lockpick tools, gadgets, carry-speed gear | Raiders |
+| **Breaching** | Breach charges, better lockpick tools and gadgets (basic ones are Workshop I crafts for everyone), carry-speed gear | Raiders |
 | **Commerce** | Lower fees, bulk listing, price history depth, market alerts, storage | Traders |
 | **Fabrication** (T2+) | Case crafting, cosmetic recipes, component synthesis | Crafters |
 

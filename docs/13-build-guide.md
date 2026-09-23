@@ -371,6 +371,7 @@ math`, `§ The Chase`, `§ Raid escort` (D101), `§ Raid log path map`
 - [ ] Carrier is slowed, gadgets disabled, marked server-wide
 - [ ] Any player's hit (not the escort's) knocks loot loose back to the owner
 - [ ] Escort can body-block but can't grab
+- [ ] Spare (unworn) armor: one grab takes the victim's best spare piece; the worn piece never (D112, R1)
 - [ ] ~20% of stolen goods destroyed in transit
 - [ ] **Offline raid** on a player who left: works, and when they rejoin
       their Exposed is correctly reduced and the raid log shows the path
@@ -405,6 +406,7 @@ visibility`, `§ Research Bench`, `§ Blueprints` (Common only).
 - [ ] Nodes cost Scrap; prerequisites enforced; full tree visible (D108)
 - [ ] Research Bench consumes an item + Scrap and teaches its blueprint
 - [ ] Respec refunds 50% [PH]
+- [ ] Workshop I crafts the Iron pickaxe, chest armor, basic gadgets and lockpicks (costs [PH])
 
 ### Step 11 — Crews
 **Docs:** `03-progression.md § Crews` (all subsections), `06-economy.md §

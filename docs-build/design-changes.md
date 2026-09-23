@@ -244,7 +244,7 @@ Build calls made while implementing (small, within the decisions):
 - Homestead nodes: the FTUE Stone at (0, −18) in front of the spawn, 7 more
   Stone and 4 Ore at x = ±24 along the street, away from the bridge mouths.
 
-## Consistency check decisions (2026-09-23) — doc text pending Josh's confirmation
+## Consistency check decisions (2026-09-23) — applied to `docs/` with Josh's double confirmation
 
 From `docs-build/consistency-report.md` Part B:
 1. **#13 Offline raids:** keep one offline theft per absence; the 30-min

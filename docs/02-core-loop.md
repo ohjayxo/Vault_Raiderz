@@ -240,7 +240,7 @@ players while genuinely rewarding mastery.
 | Situation | Taken from Exposed | Notes |
 |---|---|---|
 | Online raid | 25% [PH] | Tier-scaled ceiling |
-| Offline raid | **8% [PH]** | 30-min shield triggers after |
+| Offline raid | **8% [PH]** | No further offline raid until the owner's next login; the 30-min shield [PH] starts then |
 | Destroyed in transit | ~20% [PH] of stolen | **Currency sink — critical** |
 
 **Loss is not 1:1.** The raider receives ~80% of what the victim loses.
