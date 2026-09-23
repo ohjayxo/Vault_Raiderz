@@ -7,9 +7,9 @@
       "properties": {
         "Anchored": true,
         "Size": [
-          220,
+          96,
           10,
-          220
+          320
         ],
         "CFrame": {
           "CFrame": {
@@ -57,9 +57,9 @@
       "properties": {
         "Anchored": true,
         "Size": [
-          180,
+          76,
           30,
-          180
+          280
         ],
         "CFrame": {
           "CFrame": {
@@ -102,21 +102,71 @@
       }
     },
     {
+      "name": "Road",
+      "className": "Part",
+      "properties": {
+        "Anchored": true,
+        "Size": [
+          24,
+          0.2,
+          320
+        ],
+        "CFrame": {
+          "CFrame": {
+            "position": [
+              0,
+              50.1,
+              0
+            ],
+            "orientation": [
+              [
+                1.0,
+                0,
+                0.0
+              ],
+              [
+                0,
+                1,
+                0
+              ],
+              [
+                -0.0,
+                0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "Color": [
+          0.5882,
+          0.5294,
+          0.4314
+        ],
+        "Material": "Cobblestone",
+        "TopSurface": "Smooth",
+        "BottomSurface": "Smooth",
+        "CanCollide": false,
+        "CanQuery": false,
+        "CanTouch": false,
+        "CastShadow": true
+      }
+    },
+    {
       "name": "Rock1",
       "className": "Part",
       "properties": {
         "Anchored": true,
         "Size": [
-          10,
-          7,
-          9
+          8,
+          6,
+          7
         ],
         "CFrame": {
           "CFrame": {
             "position": [
-              -30,
-              53.5,
-              25
+              -40,
+              53,
+              -100
             ],
             "orientation": [
               [
@@ -160,9 +210,9 @@
         "CFrame": {
           "CFrame": {
             "position": [
-              35,
+              40,
               52.5,
-              -15
+              60
             ],
             "orientation": [
               [
@@ -206,9 +256,9 @@
         "CFrame": {
           "CFrame": {
             "position": [
-              -80,
+              -40,
               56,
-              70
+              150
             ],
             "orientation": [
               [
@@ -252,9 +302,9 @@
         "CFrame": {
           "CFrame": {
             "position": [
-              -80,
+              -40,
               65,
-              70
+              150
             ],
             "orientation": [
               [

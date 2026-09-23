@@ -150,36 +150,94 @@ def folder(name, children):
     return {"name": name, "className": "Folder", "children": children}
 
 
-# ── Islands ─────────────────────────────────────────────────────────────────
+# ── Slice layout: "Main Street" (02-core-loop.md § Slice layout, D113) ──────
+# A straight street (the Homestead) with plots in two facing rows of four,
+# the Reaches off the north end, a south plaza for the step-9 NPC buyer and
+# the step-14 FTUE derelict vault. Space south of the plaza is reserved for
+# the Exchange, north of the Reaches for the Rift (nothing built there).
+# All sizes [PH]. 12-nexus § Known drift risks: after this build, THIS file
+# and Config hold the live values; the doc keeps the rules.
+#
+# Rules this layout must keep (checked at the bottom of this section):
+#   * every plot bridge is the same length (same Scav lane, same approach);
+#   * every plot is rotated so its FRONT (local -Z edge = build-grid row
+#     z = 0, PlotGrid.front) faces its bridge, so a saved base reads the
+#     same on any plot;
+#   * spawn faces a node mid-street (FTUE 0:00);
+#   * no walkable surface above a plot sits within DROP_IN_CLEARANCE of it
+#     (all ground is one height here, so this holds trivially);
+#   * a carrier on the victim's plot or bridge is inside the Chase escape
+#     radius (D114), and Scavs have bridge ground at SpawnDistance.
 # Each island: Hitbox = the walkable slab (code + physics), Visual = ground
-# look + decor. SpawnLocation and NodeSpawns are gameplay, beside them.
+# look + decor. SpawnLocation, NodeSpawns and slots are gameplay, beside them.
 
-HOMESTEAD_C = (0, 0)
-HOMESTEAD_SIZE = 220
-REACHES_C = (0, -430)
+STREET_SIZE = (96, 320)        # X by Z. Zone "Homestead", not contested
+PLAZA_SIZE = (176, 96)
+PLAZA_C = (0, STREET_SIZE[1] / 2 + PLAZA_SIZE[1] / 2)  # (0, 208): touches the street's south edge
 REACHES_SIZE = 150
+REACHES_BRIDGE = (12, 75)      # width, length: street north edge -> Reaches south edge
+REACHES_C = (0, -(STREET_SIZE[1] / 2 + REACHES_BRIDGE[1] + REACHES_SIZE / 2))  # (0, -310)
+SPAWN = (0, 10)                # faces north (-Z) at FTUE_NODE
+FTUE_NODE = (0, -18)
+NPC_BUYER_SLOT = (-40, 215)    # step 9: position + tag only
+DERELICT_VAULT_SLOT = (40, 215)  # step 14: position + tag only
+DROP_IN_CLEARANCE = 25
 
-homestead_spawns = []
-for i, (x, z) in enumerate(ring(8, 60, *HOMESTEAD_C, start_deg=112.5)):
-    homestead_spawns.append(spawn_point(f"Stone{i + 1}", x, z, "Stone"))
-for i, (x, z) in enumerate(ring(4, 88, *HOMESTEAD_C, start_deg=225)):
+# Player plots (step 4). PLOT_COUNT and PLOT_SIZE must match Config.Plots
+# (checked below against Config.luau).
+PLOT_SIZE = 48                 # 12 x 12 cells of 4 studs
+PLOT_ROW_X = 136               # west row at -X, east row at +X
+PLOT_ROW_Z = (-114, -38, 38, 114)  # 76 apart
+PLOT_BRIDGE_WIDTH = 8
+PLOT_COUNT = 2 * len(PLOT_ROW_Z)
+
+sx, sz = STREET_SIZE
+homestead_spawns = [spawn_point("Stone1", *FTUE_NODE, "Stone")]  # the FTUE's first node
+# Along the street, clear of the spawn and of every bridge mouth.
+for i, (x, z) in enumerate([(-24, -76), (24, -76), (-24, 0), (24, 0), (-24, 76), (24, 76), (0, 120)]):
+    homestead_spawns.append(spawn_point(f"Stone{i + 2}", x, z, "Stone"))
+for i, (x, z) in enumerate([(-24, -138), (24, -138), (-24, 145), (24, 145)]):
     homestead_spawns.append(spawn_point(f"Ore{i + 1}", x, z, "Ore"))
 
-remove_old(os.path.join(WORLD_DIR, "Homestead.model.json"))
 template(WORLD_DIR, "Homestead", attributes={"Zone": "Homestead"},
          children=[
-             hitbox_part("Hitbox", (HOMESTEAD_SIZE, 10, HOMESTEAD_SIZE), (0, GROUND_TOP - 5, 0)),
-             part("SpawnLocation", (8, 1, 8), (0, GROUND_TOP + 0.5, 70), rgb(163, 162, 165), cls="SpawnLocation",
-                  Neutral=True, Duration=0),
+             hitbox_part("Hitbox", (sx, 10, sz), (0, GROUND_TOP - 5, 0)),
+             # Rotation 0 = facing north (-Z), straight at the FTUE node.
+             part("SpawnLocation", (8, 1, 8), (SPAWN[0], GROUND_TOP + 0.5, SPAWN[1]), rgb(163, 162, 165),
+                  cls="SpawnLocation", Neutral=True, Duration=0),
              folder("NodeSpawns", homestead_spawns),
          ],
          visuals=[
-             visual_part("Ground", (HOMESTEAD_SIZE, 10, HOMESTEAD_SIZE), (0, GROUND_TOP - 5.02, 0), rgb(106, 127, 63), "Grass"),
-             visual_part("Underside", (HOMESTEAD_SIZE - 40, 30, HOMESTEAD_SIZE - 40), (0, GROUND_TOP - 25, 0), rgb(99, 95, 98), "Slate"),
-             decor_part("Rock1", (10, 7, 9), (-30, GROUND_TOP + 3.5, 25), rgb(120, 118, 115), "Slate", yaw=20),
-             decor_part("Rock2", (7, 5, 8), (35, GROUND_TOP + 2.5, -15), rgb(120, 118, 115), "Slate", yaw=-35),
-             decor_part("Tree1Trunk", (2, 12, 2), (-80, GROUND_TOP + 6, 70), rgb(105, 64, 40), "Wood"),
-             decor_part("Tree1Top", (10, 8, 10), (-80, GROUND_TOP + 15, 70), rgb(75, 151, 75), "Grass"),
+             visual_part("Ground", (sx, 10, sz), (0, GROUND_TOP - 5.02, 0), rgb(106, 127, 63), "Grass"),
+             visual_part("Underside", (sx - 20, 30, sz - 40), (0, GROUND_TOP - 25, 0), rgb(99, 95, 98), "Slate"),
+             visual_part("Road", (24, 0.2, sz), (0, GROUND_TOP + 0.1, 0), rgb(150, 135, 110), "Cobblestone"),
+             decor_part("Rock1", (8, 6, 7), (-40, GROUND_TOP + 3, -100), rgb(120, 118, 115), "Slate", yaw=20),
+             decor_part("Rock2", (7, 5, 8), (40, GROUND_TOP + 2.5, 60), rgb(120, 118, 115), "Slate", yaw=-35),
+             decor_part("Tree1Trunk", (2, 12, 2), (-40, GROUND_TOP + 6, 150), rgb(105, 64, 40), "Wood"),
+             decor_part("Tree1Top", (10, 8, 10), (-40, GROUND_TOP + 15, 150), rgb(75, 151, 75), "Grass"),
+         ])
+
+
+def slot_part(name, pos, tag):
+    # Invisible marker for a later step: position + tag, no behaviour.
+    p = part(name, (4, 1, 4), (pos[0], GROUND_TOP + 0.5, pos[1]), rgb(0, 255, 255),
+             Transparency=1, CanCollide=False, CanQuery=False, CanTouch=False)
+    p["properties"]["Tags"] = [tag]
+    return p
+
+
+px, pz = PLAZA_SIZE
+pcx, pcz = PLAZA_C
+template(WORLD_DIR, "Plaza", attributes={"Zone": "Homestead"},
+         children=[
+             hitbox_part("Hitbox", (px, 10, pz), (pcx, GROUND_TOP - 5, pcz)),
+             # Tags must match Config.World.Slots.
+             slot_part("NpcBuyerSlot", NPC_BUYER_SLOT, "NpcBuyerSlot"),
+             slot_part("DerelictVaultSlot", DERELICT_VAULT_SLOT, "DerelictVaultSlot"),
+         ],
+         visuals=[
+             visual_part("Ground", (px, 10, pz), (pcx, GROUND_TOP - 5.02, pcz), rgb(140, 132, 110), "Cobblestone"),
+             visual_part("Underside", (px - 30, 30, pz - 20), (pcx, GROUND_TOP - 25, pcz), rgb(99, 95, 98), "Slate"),
          ])
 
 rx, rz = REACHES_C
@@ -201,62 +259,77 @@ template(WORLD_DIR, "Reaches", attributes={"Zone": "Reaches"},
              decor_part("Spire2", (5, 18, 5), (rx + 64, GROUND_TOP + 9, rz - 55), rgb(70, 60, 80), "Basalt", yaw=-20),
          ])
 
-# Walkable bridge from Homestead's north edge to the Reaches' south edge.
-z_start = -HOMESTEAD_SIZE / 2
-z_end = rz + REACHES_SIZE / 2
-length = z_start - z_end
-mid = (z_start + z_end) / 2
+# Walkable bridge from the street's north edge to the Reaches' south edge.
+bw, blen_r = REACHES_BRIDGE
+mid = -(sz / 2 + blen_r / 2)
 template(WORLD_DIR, "Bridge",
-         children=[hitbox_part("Hitbox", (12, 1, length), (0, GROUND_TOP - 0.5, mid))],
+         children=[hitbox_part("Hitbox", (bw, 1, blen_r), (0, GROUND_TOP - 0.5, mid))],
          visuals=[
-             visual_part("Deck", (12, 1, length), (0, GROUND_TOP - 0.52, mid), rgb(124, 92, 70), "WoodPlanks"),
-             decor_part("RailLeft", (1, 3, length), (-6.5, GROUND_TOP + 1.5, mid), rgb(91, 93, 105), "Metal"),
-             decor_part("RailRight", (1, 3, length), (6.5, GROUND_TOP + 1.5, mid), rgb(91, 93, 105), "Metal"),
+             visual_part("Deck", (bw, 1, blen_r), (0, GROUND_TOP - 0.52, mid), rgb(124, 92, 70), "WoodPlanks"),
+             decor_part("RailLeft", (1, 3, blen_r), (-bw / 2 - 0.5, GROUND_TOP + 1.5, mid), rgb(91, 93, 105), "Metal"),
+             decor_part("RailRight", (1, 3, blen_r), (bw / 2 + 0.5, GROUND_TOP + 1.5, mid), rgb(91, 93, 105), "Metal"),
          ])
 
 
-# ── Player plots (step 4) ───────────────────────────────────────────────────
-# 02-core-loop.md § World Structure: the Homestead Ring holds player plots.
-# One small floating island per plot, in an arc around the Homestead (the
-# north side is left free for the Reaches bridge), each with its own bridge.
-# PLOT_COUNT and PLOT_SIZE must match Config.Plots (Count, SizeStuds).
-PLOT_COUNT = 8        # [PH] invented
-PLOT_SIZE = 48        # [PH] invented: 12 x 12 cells of 4 studs
-PLOT_RING = 200       # [PH] invented: studs from the Homestead centre
-PLOT_ARC = (-30.0, 210.0)  # degrees; x = cos, z = sin, so north (-z) = 270 stays free
-
+# ── Player plots ────────────────────────────────────────────────────────────
 PLOTS_DIR = os.path.join(WORLD_DIR, "Plots")
-remove_old(os.path.join(WORLD_DIR, "Plots.model.json"))
 write(os.path.join(PLOTS_DIR, "init.meta.json"), {"className": "Model"})
 
-lo, hi = PLOT_ARC
-for i in range(PLOT_COUNT):
-    index = i + 1
-    angle = lo + (hi - lo) * i / (PLOT_COUNT - 1)
-    a = math.radians(angle)
-    cx, cz = round(PLOT_RING * math.cos(a), 2), round(PLOT_RING * math.sin(a), 2)
-    top = GROUND_TOP
-    template(PLOTS_DIR, f"Plot{index}", tags=["Plot"], attributes={"PlotIndex": index},
-             children=[hitbox_part("Hitbox", (PLOT_SIZE, 2, PLOT_SIZE), (cx, top - 1, cz))],
-             visuals=[
-                 visual_part("Ground", (PLOT_SIZE, 2, PLOT_SIZE), (cx, top - 1.02, cz), rgb(120, 140, 80), "Grass"),
-                 visual_part("Underside", (PLOT_SIZE - 10, 16, PLOT_SIZE - 10), (cx, top - 10, cz), rgb(99, 95, 98), "Slate"),
-                 visual_part("Marker", (4, 0.2, 4), (cx, top + 0.1, cz), rgb(200, 200, 90), "Neon"),
-             ])
+plot_bridges = []  # (index, plot centre, bridge length, far-end distance) for the checks below
+index = 0
+for side in (-1, 1):  # west row, then east row
+    for pz_ in PLOT_ROW_Z:
+        index += 1
+        cx, cz = side * PLOT_ROW_X, pz_
+        # Front (local -Z) faces the street: yaw -90 turns it to +X (west
+        # row), +90 to -X (east row). cframe()'s look vector = (-sin, 0, -cos).
+        yaw = -90 if side == -1 else 90
+        top = GROUND_TOP
+        template(PLOTS_DIR, f"Plot{index}", tags=["Plot"], attributes={"PlotIndex": index},
+                 children=[hitbox_part("Hitbox", (PLOT_SIZE, 2, PLOT_SIZE), (cx, top - 1, cz), yaw=yaw)],
+                 visuals=[
+                     visual_part("Ground", (PLOT_SIZE, 2, PLOT_SIZE), (cx, top - 1.02, cz), rgb(120, 140, 80), "Grass", yaw=yaw),
+                     visual_part("Underside", (PLOT_SIZE - 10, 16, PLOT_SIZE - 10), (cx, top - 10, cz), rgb(99, 95, 98), "Slate", yaw=yaw),
+                     visual_part("Marker", (4, 0.2, 4), (cx, top + 0.1, cz), rgb(200, 200, 90), "Neon"),
+                 ])
+        # Bridge: street edge to the plot's front edge, straight along X.
+        x_street = side * (sx / 2)
+        x_plot = side * (PLOT_ROW_X - PLOT_SIZE / 2)
+        blen = abs(x_plot - x_street)
+        bx = (x_street + x_plot) / 2
+        template(PLOTS_DIR, f"Bridge{index}",
+                 children=[hitbox_part("Hitbox", (blen, 1, PLOT_BRIDGE_WIDTH), (bx, GROUND_TOP - 0.5, cz))],
+                 visuals=[visual_part("Deck", (blen, 1, PLOT_BRIDGE_WIDTH), (bx, GROUND_TOP - 0.52, cz),
+                                      rgb(124, 92, 70), "WoodPlanks")])
+        far = abs(cx - x_street)
+        plot_bridges.append((index, (cx, cz), blen, math.hypot(far, PLOT_BRIDGE_WIDTH / 2)))
 
-    # Bridge: where the radial line leaves the square Homestead to where it
-    # meets the (axis-aligned) plot's near edge.
-    dx, dz = math.cos(a), math.sin(a)
-    start = (HOMESTEAD_SIZE / 2) / max(abs(dx), abs(dz)) - 2  # overlap so there's no gap
-    end = PLOT_RING - (PLOT_SIZE / 2) / max(abs(dx), abs(dz)) + 2
-    blen = end - start
-    bmid = (start + end) / 2
-    yaw = 90 - angle  # a part's length runs along local Z; yaw a points it at (sin a, cos a)
-    bpos = (round(dx * bmid, 2), GROUND_TOP - 0.5, round(dz * bmid, 2))
-    template(PLOTS_DIR, f"Bridge{index}",
-             children=[hitbox_part("Hitbox", (8, 1, round(blen, 2)), bpos, yaw=yaw)],
-             visuals=[visual_part("Deck", (8, 1, round(blen, 2)), (bpos[0], bpos[1] - 0.02, bpos[2]),
-                                  rgb(124, 92, 70), "WoodPlanks", yaw=yaw)])
+
+# ── Layout checks (02 § Slice layout rules, D114) ──────────────────────────
+def config_number(pattern):
+    import re
+    with open(os.path.join(ROOT, "src", "shared", "Config.luau")) as f:
+        m = re.search(pattern, f.read())
+    assert m, f"Config.luau: couldn't find {pattern}"
+    return float(m.group(1))
+
+
+lengths = {round(b[2], 3) for b in plot_bridges}
+assert len(lengths) == 1, f"plot bridges must all be the same length, got {sorted(lengths)}"
+assert PLOT_COUNT == config_number(r"Plots = \{[^}]*?Count = (\d+)"), "PLOT_COUNT != Config.Plots.Count"
+assert PLOT_SIZE == config_number(r"Plots = \{[^}]*?SizeStuds = (\d+)"), "PLOT_SIZE != Config.Plots.SizeStuds"
+escape = config_number(r"EscapeRadiusStuds = (\d+)")
+spawn_distance = config_number(r"SpawnDistance = (\d+)")
+blen_plot = lengths.pop()
+for idx, _, _, far in plot_bridges:
+    # Standing anywhere on your own plot or bridge never counts as escaped.
+    assert far < escape, f"Bridge{idx}'s street end is {far:.0f} studs from its plot centre: outside the {escape:.0f}-stud escape radius"
+# Scavs start on bridge ground (not the plot-edge fallback).
+assert PLOT_SIZE / 2 < spawn_distance < PLOT_SIZE / 2 + blen_plot, "Scav SpawnDistance must land on the plot bridge"
+# Neighbouring plots in a row are far enough apart that nobody jumps between them.
+row_gap = min(b - a for a, b in zip(PLOT_ROW_Z, PLOT_ROW_Z[1:])) - PLOT_SIZE
+assert row_gap >= DROP_IN_CLEARANCE, f"plots in a row are only {row_gap} studs apart"
+print(f"layout ok: {PLOT_COUNT} plots, bridges {blen_plot:.0f} long, escape radius {escape:.0f}, row gap {row_gap:.0f}")
 
 
 # ── Node templates ──────────────────────────────────────────────────────────

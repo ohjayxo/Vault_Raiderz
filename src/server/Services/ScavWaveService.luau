@@ -24,6 +24,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local PlotGrid = require(ReplicatedStorage.Shared.PlotGrid)
 local ServerConfig = require(ServerScriptService.ServerConfig)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 local VaultService = require(script.Parent.VaultService)
@@ -166,16 +167,15 @@ local function finish(wave: Wave, reason: string?)
 end
 
 -- Where a wave's Scavs appear and the plot edge they walk to first. They
--- come along the plot's bridge (the line from the Homestead centre to the
--- plot centre), SpawnDistance from the plot centre, so the owner sees them
--- coming. Falls back to the plot edge if there's no ground there.
+-- come along the plot's bridge (in front of the plot, PlotGrid.front),
+-- SpawnDistance from the plot centre, so the owner sees them coming. Falls
+-- back to the plot edge if there's no ground there.
 local groundParams = RaycastParams.new()
 groundParams.FilterType = Enum.RaycastFilterType.Include
 
 local function approach(hitbox: BasePart): (Vector3, Vector3)
 	local centre = hitbox.Position
-	local toHome = Vector3.new(-centre.X, 0, -centre.Z)
-	local inward = if toHome.Magnitude > 0 then toHome.Unit else -Vector3.xAxis
+	local inward = PlotGrid.front(hitbox)
 	local top = hitbox.Size.Y / 2
 	local half = math.min(hitbox.Size.X, hitbox.Size.Z) / 2
 	local entry = centre + inward * (half - 2) + Vector3.new(0, top, 0)

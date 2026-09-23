@@ -43,6 +43,16 @@ function PlotGrid.footprint(kind: string, rot: number): (number, number)
 	return cells[1], cells[2]
 end
 
+-- The plot's front: its local -Z edge (grid row z = 0), flattened. Every
+-- plot is rotated so its front faces its bridge (02 § Slice layout, D113),
+-- so a gate built on row 0 faces the bridge on whichever plot you get.
+-- Scavs arrive and players respawn on this side.
+function PlotGrid.front(plotHitbox: BasePart): Vector3
+	local look = plotHitbox.CFrame.LookVector
+	local flat = Vector3.new(look.X, 0, look.Z)
+	return if flat.Magnitude > 0 then flat.Unit else -Vector3.zAxis
+end
+
 -- Cells along the plot's X and Z.
 function PlotGrid.gridSize(plotHitbox: BasePart): (number, number)
 	return math.floor(plotHitbox.Size.X / GRID), math.floor(plotHitbox.Size.Z / GRID)

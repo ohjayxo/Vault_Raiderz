@@ -363,6 +363,12 @@ local Config = {
 		--   Contested: 05-items.md § The Riftsalt rule ("contested zones only").
 		--   Josh's call, 2026-09-21: a zone flag. The Homestead is never
 		--   contested, even though PvP is on there.
+		-- Placeholder spots in the south plaza (02 § Slice layout, D113):
+		-- invisible tagged parts, no behaviour yet.
+		Slots = {
+			NpcBuyer = "NpcBuyerSlot", -- step 9
+			DerelictVault = "DerelictVaultSlot", -- step 14 (FTUE 4:00-6:00)
+		},
 		Zones = {
 			Homestead = { DisplayName = "the Homestead Ring", Respawn = "Fixed", Contested = false },
 			Reaches = {
@@ -468,7 +474,8 @@ local Config = {
 
 	-- ── Step 4 ── Plots, base building + build budget ──────────────────
 	-- 02-core-loop.md § World Structure (Homestead Ring = player plots).
-	-- Count and SizeStuds must match docs-build/worldgen/gen_world.py.
+	-- Count and SizeStuds must match docs-build/worldgen/gen_world.py (it
+	-- checks). Layout: 02 § Slice layout (D113): two rows of four.
 	Plots = {
 		Tag = "Plot", -- greybox contract: Hitbox = build surface
 		-- One plot per player on a server, so set the place's Max Players to
@@ -812,10 +819,11 @@ local Config = {
 		-- "Never hard-block": a Scav that makes no progress this long hops
 		-- over whatever is in its way.
 		StuckSeconds = 3, -- [PH] invented
-		-- Scavs arrive along your plot's bridge, this far from the plot centre
-		-- (on the bridge or the Homestead edge for every plot in gen_world.py),
-		-- so a wave gives ~5-8 s of warning before reaching the core. If there's
-		-- no ground there (layout changed), they start at the plot edge instead.
+		-- Scavs arrive along your plot's bridge (in front of the plot,
+		-- PlotGrid.front), this far from the plot centre, so a wave gives
+		-- ~5-8 s of warning before reaching the core. gen_world.py checks
+		-- it lands on the bridge; with no ground there they start at the plot
+		-- edge instead.
 		SpawnDistance = 60, -- [PH] invented
 		HopStuds = 7, -- [PH] invented
 		-- Failing costs Exposed only (04 § Scav Waves). Josh's call, step 6:
@@ -961,6 +969,11 @@ local Config = {
 		},
 		-- The Chase (02 § The Chase).
 		CarrySpeedMultiplier = 0.6, -- [PH] invented: "movement speed drops sharply"
+		-- 02 § The raid sequence step 5 + § Escape and carrier death (D114):
+		-- the carrier escapes this far (horizontal) from the victim plot's
+		-- centre: ~15 s at carry speed on every plot. gen_world.py checks
+		-- a plot and its bridge sit inside it.
+		EscapeRadiusStuds = 140, -- [PH] per doc
 		-- 02 § Tiered raid interaction (D23), tiers 5-7: knock one defense
 		-- offline for 15 min [PH]; it comes back by itself, free.
 		SabotageMinTier = 5,
@@ -982,8 +995,6 @@ local Config = {
 			-- save and take the same loot twice (review H2). Cleared on login.
 			-- (D75's 30-min post-raid shield is step 8's RaidProtectionService.)
 			PendingSeconds = 7 * 24 * 3600, -- = Offline.TtlSeconds: bases aren't shown longer
-			-- Carrier counts as off the victim's plot/bridge once this far out.
-			EscapeMarginStuds = 2, -- [PH] invented
 			LoginPollSeconds = 2,
 			-- While a theft is being saved, the lock is renewed this often so
 			-- a slow DataStore can't let it expire mid-save (review M1).

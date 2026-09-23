@@ -1,5 +1,9 @@
 # Vault Raiderz: world layout brief (for a layout redesign)
 
+> **Historical (2026-09-22):** this brief led to D113 "Main Street", which
+> replaced the ring layout described below. Current layout:
+> `docs/02-core-loop.md § Slice layout` and `docs-build/worldgen/gen_world.py`.
+
 Written 2026-09-22 by Claude Code from the actual repo, for another Claude
 (in claude.ai chat) to recommend **alternative island / plot layouts**.
 Everything here is either **[Measured]** (from the code/world files or a

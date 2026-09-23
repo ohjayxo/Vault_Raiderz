@@ -420,7 +420,7 @@ RunService.RenderStepped:Connect(function(dt: number)
 		elseif current.Role == "Escort" then
 			banner.Text = `Escorting {current.RaiderName}: body-block anyone chasing them - {left}s`
 		elseif current.Phase == "Carrying" then
-			banner.Text = `Escape! Get off their plot and bridge - {left}s   ({lootText(current.Loot)})`
+			banner.Text = `Escape! Get {raidCfg.EscapeRadiusStuds} studs from their base - {left}s   ({lootText(current.Loot)})`
 		elseif current.Phase == "Unlocked" then
 			banner.Text = `Lock open: grab the loot - {left}s`
 		else

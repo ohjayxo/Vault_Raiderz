@@ -195,8 +195,8 @@ function PlotService.getSpawnCFrame(player: Player): CFrame?
 	end
 	local hitbox = slot.hitbox
 	local centre = hitbox.Position
-	local toHome = Vector3.new(-centre.X, 0, -centre.Z)
-	local direction = if toHome.Magnitude > 0 then toHome.Unit else Vector3.xAxis
+	-- The bridge side (PlotGrid.front), just inside the edge.
+	local direction = PlotGrid.front(hitbox)
 	local edge = centre + direction * (math.min(hitbox.Size.X, hitbox.Size.Z) / 2 - plotCfg.GridStuds)
 	local position = edge + Vector3.new(0, hitbox.Size.Y / 2 + 4, 0)
 	return CFrame.lookAt(position, position + direction * -1) -- face into the plot
@@ -383,22 +383,6 @@ function PlotService.baseOf(ownerId: number): BaseInfo?
 		end
 	end
 	return nil
-end
-
-local function insideFlat(box: BasePart, position: Vector3, margin: number): boolean
-	local localPoint = box.CFrame:PointToObjectSpace(position)
-	return math.abs(localPoint.X) <= box.Size.X / 2 + margin and math.abs(localPoint.Z) <= box.Size.Z / 2 + margin
-end
-
--- True while `position` is on this owner's plot or its bridge (a carrier
--- escapes by getting off both: Josh's call, step 7).
-function PlotService.isOnBase(ownerId: number, position: Vector3, margin: number): boolean
-	for _, slot in slots do
-		if (slot.owner and slot.owner.UserId == ownerId) or slot.offlineOwner == ownerId then
-			return insideFlat(slot.hitbox, position, margin) or (slot.bridge ~= nil and insideFlat(slot.bridge, position, margin))
-		end
-	end
-	return false
 end
 
 -- ── Plot assignment ──────────────────────────────────────────────────────
@@ -725,6 +709,16 @@ local function loadSlots()
 	table.sort(slots, function(a, b)
 		return a.index < b.index
 	end)
+	-- 02 § Slice layout (D113): each plot's front must face its bridge, or
+	-- saved gates, Scav lanes and respawns end up on the wrong side.
+	for _, slot in slots do
+		local bridge = slot.bridge
+		if not bridge then
+			warn(`[Plots] Plot{slot.index} has no Bridge{slot.index}`)
+		elseif (bridge.Position - slot.hitbox.Position):Dot(PlotGrid.front(slot.hitbox)) <= 0 then
+			warn(`[Plots] Plot{slot.index} doesn't face its bridge (re-run gen_world.py?)`)
+		end
+	end
 	if #slots ~= plotCfg.Count then
 		warn(`[Plots] found {#slots} plots in the world, Config.Plots.Count is {plotCfg.Count} (re-run gen_world.py?)`)
 	end

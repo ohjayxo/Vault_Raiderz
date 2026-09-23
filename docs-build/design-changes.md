@@ -180,8 +180,8 @@ and docs-build renamed too. Not yet renamed: the local folder
 
 1. **Offline bases appear on free plots** (recent leavers, shown for up to
    7 days [PH]), so scouting stays visual (02 § The raid sequence).
-2. **Escape = off the victim's plot and its bridge.** The bridge is the
-   Chase's chokepoint (02: "escape to the zone boundary").
+2. ~~Escape = off the victim's plot and its bridge.~~ **Superseded by D114**
+   (escape radius, see "Main Street" below).
 3. **Escort = one Roblox friend of the raider who opts in** when offered at
    breach (D101). Their hits don't knock the loot loose; defenses treat them
    as an intruder.
@@ -216,6 +216,35 @@ and docs-build renamed too. Not yet renamed: the local folder
    after an offline theft the victim is "theft pending" until their next
    login. Needed so two raids can't take the same loot twice (review H2).
    Fits "offline raids capped low" (02 § Theft math).
+
+## Main Street layout + escape radius (2026-09-22) — applied to `docs/` as D113/D114
+
+From the claude.ai handoff `handoff-D110-D111-main-street.md`, applied with
+Josh's double confirmation. **Renumbered:** the handoff called them D110 and
+D111, but those numbers were already taken in the repo (D110 Harvester
+Drone, D111 pickaxes untradeable, D112 armor), because the design project
+hadn't received the earlier build-phase decisions. Repo: **D113** = Main
+Street layout, **D114** = escape radius + carrier death; README **v5.10**,
+nexus **v1.9**. **The design project needs:** D110–D112 copied in from the
+repo, and its "D110/D111" renamed to D113/D114.
+
+Build calls made while implementing (small, within the decisions):
+- **Escape needs solid ground:** the radius only counts while the carrier is
+  standing on something (`FloorMaterial` isn't Air). Without this, jumping
+  off an island near the line could "escape" mid-fall and then die, which
+  is the fall exploit D114 closes. Costs an honest carrier nothing
+  noticeable (a jump delays it by under half a second).
+- Config name is `Config.Raiding.EscapeRadiusStuds` (the handoff suggested
+  `Config.ChaseEscapeRadius`), kept in the Raiding section with the other
+  Chase numbers.
+- Folder names kept: `World.Homestead` is now the street, `World.Bridge` the
+  Reaches bridge; `World.Plaza` is new. So the art guide paths don't change.
+- A plot's "front" (gate side, the side facing its bridge) is its local −Z
+  edge = build-grid row z = 0 (`PlotGrid.front`). Scav lanes and death
+  respawns use it; the server warns at start-up if a plot doesn't face its
+  bridge.
+- Homestead nodes: the FTUE Stone at (0, −18) in front of the spawn, 7 more
+  Stone and 4 Ore at x = ±24 along the street, away from the bridge mouths.
 
 ## Flagged for redesign (step 2 review, 2026-09-20) — ANSWERED 2026-09-21 (see above)
 

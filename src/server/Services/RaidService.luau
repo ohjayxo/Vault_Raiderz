@@ -6,9 +6,9 @@
 -- skill model, theft math), § The Chase, § Raid escort (D101), § Raid log
 -- path map (D105), § Tiered raid interaction (tiers 1-7); 06 § Broadcast
 -- priority queue (D58); 01 R1 R2 R5 R6; 13-build-guide.md § Part D "The
--- hard part". Josh's calls (step 7): offline bases on free plots, escape =
--- off the victim's plot AND its bridge, escort = one Roblox friend who opts
--- in, one grab takes the whole share.
+-- hard part". Josh's calls (step 7): offline bases on free plots, escort =
+-- one Roblox friend who opts in, one grab takes the whole share. Escape =
+-- a radius around the victim's plot; any carrier death drops the loot (D114).
 --
 -- The raid: Breach (at the victim's plot; starts the 90 s window) ->
 -- Lockpick (server-run Skyrim-style lock, speed not failure) -> Grab (Exposed only) ->
@@ -394,6 +394,18 @@ local function failRaid(raid: Raid, outcome: string, text: string)
 			RaidLock.finish(raid.victimId, raid.id, false)
 		end)
 	end
+end
+
+-- 02 § The raid sequence step 5 (D114): the carrier has escaped once they
+-- stand EscapeRadiusStuds (horizontal) from the victim plot's centre. The
+-- same distance on every plot, whatever the layout. Only while standing on
+-- something: jumping off an island can't cross the line in mid-air and then
+-- fall to a respawn with the loot (the fall fails the raid, § Escape and
+-- carrier death).
+local function hasEscaped(raid: Raid, root: BasePart, humanoid: Humanoid): boolean
+	local offset = root.Position - raid.plotHitbox.Position
+	local horizontal = Vector3.new(offset.X, 0, offset.Z).Magnitude
+	return horizontal > raidCfg.EscapeRadiusStuds and humanoid.FloorMaterial ~= Enum.Material.Air
 end
 
 -- The carrier got away. Debit the victim (clamped), credit the raider 80%
@@ -1088,10 +1100,14 @@ function RaidService.start()
 	RunService.Heartbeat:Connect(function(dt: number)
 		for _, raid in raids do
 			if raid.phase == "Carrying" then
-				local root = rootOf(raid.raider)
-				if not root then
+				-- D114: a carrier who dies for any reason (hit, fall, reset)
+				-- drops the loot home, the same path as a knock-loose hit.
+				-- Leaving the game is PlayerRemoving below. The server checks
+				-- every frame; no client "I escaped" is ever trusted.
+				local root, humanoid = rootOf(raid.raider)
+				if not root or not humanoid then
 					task.spawn(failRaid, raid, "Died", `{raid.raider.Name} went down`)
-				elseif not PlotService.isOnBase(raid.victimId, root.Position, raidCfg.Lock.EscapeMarginStuds) then
+				elseif hasEscaped(raid, root, humanoid) then
 					task.spawn(escape, raid)
 				end
 			elseif raid.phase ~= "Over" and raid.phase ~= "Settling" and not rootOf(raid.raider) then
