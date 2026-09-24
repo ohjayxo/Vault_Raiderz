@@ -731,6 +731,13 @@ local Config = {
 			GearVisibleAttribute = "HudGearMenu",
 			ShowBeforeFtue = true, -- TEMPORARY until step 14
 			ButtonSize = 72,
+			-- The phone's big button is context-sensitive (Josh, 2026-09-24): Attack
+			-- when an enemy is in reach, else Mine on the nearest node in reach;
+			-- hold to repeat. Not in the docs yet (bring back to 02-core-loop.md).
+			ContextButton = {
+				CheckSeconds = 0.2, -- [PH] invented: how often the label re-checks what is near
+				FlipBackSeconds = 0.6, -- [PH] invented: an enemy that just left reach keeps the button on Attack this long
+			},
 		},
 	},
 
