@@ -136,13 +136,13 @@ local function gradeBlock(parent: Instance, order: number, resource: string, gra
 
 	local top = UiStyle.row(block, 22, 1)
 	local name = UiStyle.label(top, grade, style.TextSize.Body, UiStyle.gradeColor(grade), true)
-	name.Size = UDim2.new(0.42, 0, 1, 0)
+	name.Size = UDim2.new(0.3, 0, 1, 0)
 	name.AutomaticSize = Enum.AutomaticSize.None
-	local count = UiStyle.label(top, `x{money(have)}`, style.TextSize.Body, colors.Text, false)
-	count.Size = UDim2.new(0.25, 0, 1, 0)
+	local count = UiStyle.label(top, `You have {money(have)}`, style.TextSize.Body, colors.Text, true)
+	count.Size = UDim2.new(0.42, 0, 1, 0)
 	count.AutomaticSize = Enum.AutomaticSize.None
 	local each = UiStyle.label(top, `{price} each`, style.TextSize.Body, colors.Accent, true)
-	each.Size = UDim2.new(0.33, -12, 1, 0)
+	each.Size = UDim2.new(0.28, -12, 1, 0)
 	each.AutomaticSize = Enum.AutomaticSize.None
 	each.TextXAlignment = Enum.TextXAlignment.Right
 
@@ -152,7 +152,7 @@ local function gradeBlock(parent: Instance, order: number, resource: string, gra
 		table.insert(amounts, { text = "Sell 10", amount = 10 })
 	end
 	if have > 1 then
-		table.insert(amounts, { text = "All", amount = have })
+		table.insert(amounts, { text = `All ({money(have)})`, amount = have })
 	end
 	local chips = UiStyle.row(block, style.MinTap, 2)
 	for _, entry in amounts do
