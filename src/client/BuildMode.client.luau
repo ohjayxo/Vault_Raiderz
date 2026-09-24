@@ -25,9 +25,11 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local PlotGrid = require(Shared:WaitForChild("PlotGrid"))
 local NodeMath = require(Shared:WaitForChild("NodeMath"))
 local Types = require(Shared:WaitForChild("PlayerDataTypes"))
+local UiStyle = require(Shared:WaitForChild("UiStyle"))
 
 local player = Players.LocalPlayer
 local uiCfg = Config.Base.BuildUi
+local style = Config.UiStyle
 local GRID = Config.Plots.GridStuds
 local RAY_LENGTH = Config.Nodes.PickRangeStuds
 
@@ -71,7 +73,7 @@ local targetX: number?, targetZ: number? = nil, nil
 local baseState: Types.BaseState? = nil
 local busy = false
 
--- ── UI (greybox) ─────────────────────────────────────────────────────────
+-- ── UI ───────────────────────────────────────────────────────────────────
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "BuildUi"
@@ -80,107 +82,68 @@ gui.DisplayOrder = 10 -- menus draw above HUD
 gui.Enabled = false
 
 local SIZE = uiCfg.ButtonSize
+local BUTTON_SIZE = SIZE * 1.3
+-- [PH] invented look-only: the old layout's margins, kept so the Build button
+-- and panel sit where they did (above the jump button, clear of the right column).
+local BUTTON_MARGIN = 16 -- px: Build/Done from the screen edge
+local BOTTOM_GAP = 12 -- px: panel from the bottom edge
+local MESSAGE_Y = 0.3 -- screen fraction: result messages sit above the panel
 
-local function makeButton(parent: Instance, text: string, order: number, width: number?): TextButton
-	local button = Instance.new("TextButton")
-	button.LayoutOrder = order
-	button.Size = UDim2.fromOffset(width or SIZE, SIZE)
-	button.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-	button.BackgroundTransparency = 0.1
-	button.TextColor3 = Color3.new(1, 1, 1)
-	button.Font = Enum.Font.GothamBold
-	button.TextSize = 14
-	button.TextWrapped = true
-	button.Text = text
-	button.AutoButtonColor = true
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 10)
-	corner.Parent = button
-	button.Parent = parent
-	return button
-end
+local buildButton = UiStyle.hudButton(gui, "Build", "primary", BUTTON_SIZE, BUTTON_SIZE, true)
+buildButton.AnchorPoint = Vector2.new(1, 1)
+buildButton.Position = UDim2.new(1, -BUTTON_MARGIN, 1, -BUTTON_MARGIN - SIZE * 1.6) -- above the jump button
+buildButton.ZIndex = 10 -- Build/Done always stays tappable, above the panel
 
-local function makeRow(parent: Instance, order: number): Frame
+local panel = UiStyle.dockPanel(gui)
+panel.AutomaticSize = Enum.AutomaticSize.Y -- fixed width (set by layoutPanel) so rows can wrap on a phone
+panel.AnchorPoint = Vector2.new(0, 1)
+
+-- A centred row that wraps onto more lines when the panel is narrow.
+local function wrapRow(order: number): Frame
 	local row = Instance.new("Frame")
 	row.LayoutOrder = order
+	row.Size = UDim2.new(1, 0, 0, 0)
+	row.AutomaticSize = Enum.AutomaticSize.Y
 	row.BackgroundTransparency = 1
-	row.AutomaticSize = Enum.AutomaticSize.XY
-	row.Size = UDim2.fromOffset(0, 0)
-	local layout = Instance.new("UIListLayout")
-	layout.FillDirection = Enum.FillDirection.Horizontal
+	row.Parent = panel
+	local layout = UiStyle.list(row, true, style.Gap)
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Padding = UDim.new(0, 8)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = row
-	row.Parent = parent
+	layout.Wraps = true
 	return row
 end
 
-local buildButton = makeButton(gui, "Build", 0, SIZE * 1.3)
-buildButton.AnchorPoint = Vector2.new(1, 1)
-buildButton.Position = UDim2.new(1, -16, 1, -16 - SIZE * 1.6) -- above the jump button
-buildButton.Size = UDim2.fromOffset(SIZE * 1.3, SIZE * 1.3)
-buildButton.ZIndex = 10 -- Build/Done always stays tappable, above the panel
-
-local panel = Instance.new("Frame")
-panel.AnchorPoint = Vector2.new(0.5, 1)
--- Centred in the space left of the right-hand button column (Build/Done,
--- Attack, Jump), so the panel never covers them.
-panel.Position = UDim2.new(0.5, -(SIZE * 1.3 + 32) / 2, 1, -12)
-panel.AutomaticSize = Enum.AutomaticSize.XY
-panel.Size = UDim2.fromOffset(0, 0)
-panel.BackgroundColor3 = Color3.new(0, 0, 0)
-panel.BackgroundTransparency = 0.4
-panel.Visible = false
-panel.Parent = gui
-local panelPadding = Instance.new("UIPadding")
-panelPadding.PaddingLeft = UDim.new(0, 8)
-panelPadding.PaddingRight = UDim.new(0, 8)
-panelPadding.PaddingTop = UDim.new(0, 6)
-panelPadding.PaddingBottom = UDim.new(0, 8)
-panelPadding.Parent = panel
-local panelLayout = Instance.new("UIListLayout")
-panelLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-panelLayout.Padding = UDim.new(0, 6)
-panelLayout.SortOrder = Enum.SortOrder.LayoutOrder
-panelLayout.Parent = panel
-
-local infoLabel = Instance.new("TextLabel")
-infoLabel.LayoutOrder = 1
-infoLabel.Size = UDim2.fromOffset(SIZE * 5, 20)
-infoLabel.BackgroundTransparency = 1
-infoLabel.TextColor3 = Color3.new(1, 1, 1)
-infoLabel.Font = Enum.Font.GothamBold
-infoLabel.TextSize = 15
-infoLabel.Parent = panel
-
-local tabRow = makeRow(panel, 2)
--- Piece buttons in a grid (Config PiecesPerRow per row) instead of one
--- long row: six defenses side by side were wider than a phone.
-local pieceRow = Instance.new("Frame")
-pieceRow.LayoutOrder = 3
-pieceRow.BackgroundTransparency = 1
-pieceRow.AutomaticSize = Enum.AutomaticSize.XY
-pieceRow.Size = UDim2.fromOffset(0, 0)
-local pieceGrid = Instance.new("UIGridLayout")
-pieceGrid.CellSize = UDim2.fromOffset(SIZE * 1.4, SIZE)
-pieceGrid.CellPadding = UDim2.fromOffset(8, 8)
-pieceGrid.FillDirectionMaxCells = uiCfg.PiecesPerRow
-pieceGrid.HorizontalAlignment = Enum.HorizontalAlignment.Center
-pieceGrid.SortOrder = Enum.SortOrder.LayoutOrder
-pieceGrid.Parent = pieceRow
-pieceRow.Parent = panel
-local actionRow = makeRow(panel, 4)
+local infoRow = wrapRow(1)
+local tierPill = UiStyle.pill(infoRow, "...")
+tierPill.LayoutOrder = 1
+local budgetPill = UiStyle.pill(infoRow, "")
+budgetPill.LayoutOrder = 2
+local defensePill = UiStyle.pill(infoRow, "")
+defensePill.LayoutOrder = 3
 
 -- "TripwireAlarm" -> "Tripwire Alarm"
 local function displayName(pieceKind: string): string
 	return (pieceKind:gsub("(%l)(%u)", "%1 %2"))
 end
 
--- Build menu tabs (Config.Base.PieceGroups) so the row fits a phone.
+-- Build menu tabs (Config.Base.PieceGroups) so the grid fits a phone.
 local groupOf: { [string]: number } = {}
+local groupNames: { string } = {}
+for index, group in Config.Base.PieceGroups do
+	groupNames[index] = group.Name
+	for _, pieceKind in group.Kinds do
+		groupOf[pieceKind] = index
+	end
+end
 local currentGroup = 1
-local tabButtons: { TextButton } = {}
+local tabBar = UiStyle.tabBar(panel, groupNames, 2)
+do
+	local layout = tabBar.frame:FindFirstChildOfClass("UIListLayout")
+	if layout then
+		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		layout.Wraps = true -- a narrow phone drops the last tab to a second line
+	end
+	tabBar.frame.AutomaticSize = Enum.AutomaticSize.Y
+end
 
 local function costText(cost: { [string]: number }): string
 	local parts = {}
@@ -193,53 +156,90 @@ local function costText(cost: { [string]: number }): string
 	return table.concat(parts, ", ")
 end
 
-local pieceButtons: { [string]: TextButton } = {}
+-- Piece tiles in a grid (Config PiecesPerRow per row): six defenses side by
+-- side were wider than a phone.
+local pieceGrid = UiStyle.tileGrid(panel, 3)
+do
+	local layout = pieceGrid:FindFirstChildOfClass("UIGridLayout")
+	if layout then
+		layout.FillDirectionMaxCells = uiCfg.PiecesPerRow
+		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	end
+end
+local pieceTiles: { [string]: UiStyle.Tile } = {}
 for order, pieceKind in Config.Base.PieceOrder do
 	local cfg = PlotGrid.pieceConfig(pieceKind) :: any
-	pieceButtons[pieceKind] = makeButton(pieceRow, `{displayName(pieceKind)}\n{costText(cfg.Cost)}`, order, SIZE * 1.4)
+	pieceTiles[pieceKind] = UiStyle.tile(pieceGrid, displayName(pieceKind), costText(cfg.Cost), order)
 end
-for index, group in Config.Base.PieceGroups do
-	for _, pieceKind in group.Kinds do
-		groupOf[pieceKind] = index
+
+local actionRow = wrapRow(4)
+
+-- Chip-width action button: sizes to its text, never under MinTap tall.
+local function actionButton(text: string, kind: UiStyle.ButtonKind, order: number, twoLine: boolean?): TextButton
+	local button = UiStyle.button(actionRow, text, kind, 0, style.MinTap)
+	button.LayoutOrder = order
+	button.AutomaticSize = Enum.AutomaticSize.X
+	button.Size = UDim2.fromOffset(0, style.MinTap)
+	button.TextWrapped = false
+	if twoLine then
+		button.TextSize = style.TextSize.Small
 	end
-	tabButtons[index] = makeButton(tabRow, group.Name, index, SIZE * 1.8)
-	tabButtons[index].Size = UDim2.fromOffset(SIZE * 1.8, 30)
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, style.Tab.PadX)
+	pad.PaddingRight = UDim.new(0, style.Tab.PadX)
+	pad.Parent = button
+	local limit = Instance.new("UISizeConstraint")
+	limit.MinSize = Vector2.new(style.Tab.MinWidth, 0)
+	limit.Parent = button
+	return button
 end
 
-local rotateButton = makeButton(actionRow, "Rotate", 1)
-local placeButton = makeButton(actionRow, "Place", 2)
-local editButton = makeButton(actionRow, "Edit", 3)
-local moveButton = makeButton(actionRow, "Move", 4)
-local removeButton = makeButton(actionRow, "Remove", 5)
-local upgradeButton = makeButton(actionRow, "Upgrade", 6, SIZE * 1.8)
-local refillButton = makeButton(actionRow, "Refill", 7, SIZE * 1.6)
+local rotateButton = actionButton("Rotate", "neutral", 1)
+local placeButton = actionButton("Place", "primary", 2)
+local editButton = actionButton("Edit", "chip", 3)
+local moveButton = actionButton("Move", "neutral", 4)
+local removeButton = actionButton("Remove", "danger", 5)
+local upgradeButton = actionButton("Upgrade", "info", 6, true)
+local refillButton = actionButton("Refill", "neutral", 7, true)
 
-local message = Instance.new("TextLabel")
-message.AnchorPoint = Vector2.new(0.5, 1)
-message.Position = UDim2.new(0.5, 0, 0.62, 0)
-message.Size = UDim2.fromOffset(360, 30)
-message.BackgroundColor3 = Color3.new(0, 0, 0)
-message.BackgroundTransparency = 0.35
-message.TextColor3 = Color3.new(1, 1, 1)
-message.Font = Enum.Font.GothamBold
-message.TextSize = 16
-message.Visible = false
-message.Parent = gui
+local toast = UiStyle.toast(gui)
+toast.frame.AnchorPoint = Vector2.new(0.5, 1)
+toast.frame.Position = UDim2.fromScale(0.5, MESSAGE_Y)
 
 gui.Parent = player:WaitForChild("PlayerGui")
 
-local messageToken = 0
-local function showMessage(text: string)
-	messageToken += 1
-	local token = messageToken
-	message.Text = text
-	message.Visible = true
-	task.delay(uiCfg.MessageSeconds, function()
-		if messageToken == token then
-			message.Visible = false
-		end
-	end)
+local function showMessage(text: string, tone: UiStyle.ToastTone?)
+	toast.show(text, uiCfg.MessageSeconds, tone)
 end
+
+-- The panel is a fixed width so its rows can wrap: as wide as PiecesPerRow
+-- tiles, but never wider than the space left of the right-hand button column
+-- (Build/Done, Attack, Jump), so it never covers them. Phone landscape (short
+-- window) drops the status pills to save height.
+local function layoutPanel()
+	local screen = gui.AbsoluteSize
+	if screen.X <= 0 then
+		return -- not laid out yet; the AbsoluteSize signal calls us again
+	end
+	local wanted = uiCfg.PiecesPerRow * style.Tile.Width + (uiCfg.PiecesPerRow - 1) * style.Gap + 2 * style.Pad
+	local narrowest = style.Tile.Width + 2 * style.Pad -- always room for one tile
+	local region = math.max(narrowest, screen.X - (BUTTON_SIZE + 2 * BUTTON_MARGIN) - style.Window.EdgePad)
+	local width = math.min(wanted, region)
+	panel.Size = UDim2.fromOffset(width, 0)
+	-- A narrow phone still gets two tiles per row (shrunk to fit) so the six
+	-- defenses don't stack into a panel taller than the screen.
+	local inner = width - 2 * style.Pad
+	local perRow = math.clamp(math.floor((inner + style.Gap) / (style.Tile.Width + style.Gap)), 2, uiCfg.PiecesPerRow)
+	local cellWidth = math.min(style.Tile.Width, math.floor((inner - (perRow - 1) * style.Gap) / perRow))
+	local grid = pieceGrid:FindFirstChildOfClass("UIGridLayout")
+	if grid then
+		grid.FillDirectionMaxCells = perRow
+		grid.CellSize = UDim2.fromOffset(cellWidth, style.Tile.Height)
+	end
+	panel.Position = UDim2.new(0, style.Window.EdgePad + (region - width) / 2, 1, -BOTTOM_GAP)
+	infoRow.Visible = screen.Y >= style.ShortWindowHeight
+end
+gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(layoutPanel)
 
 -- ── Ghost preview + selection highlight (client-only) ────────────────────
 
@@ -332,16 +332,16 @@ end
 -- ── Refreshing the panel ─────────────────────────────────────────────────
 
 local function refreshPanel()
+	layoutPanel()
 	panel.Visible = active
 	buildButton.Text = if active then "Done" else "Build"
-	for pieceKind, button in pieceButtons do
+	UiStyle.setButtonKind(buildButton, if active then "neutral" else "primary")
+	for pieceKind, tile in pieceTiles do
 		local chosen = mode == "place" and movingId == nil and pieceKind == kind
-		button.BackgroundColor3 = if chosen then Color3.fromRGB(40, 120, 70) else Color3.fromRGB(45, 45, 60)
-		button.Visible = groupOf[pieceKind] == currentGroup
+		UiStyle.setTileState(tile, if chosen then "selected" else "normal")
+		tile.button.Visible = groupOf[pieceKind] == currentGroup
 	end
-	for index, button in tabButtons do
-		button.BackgroundColor3 = if index == currentGroup then Color3.fromRGB(70, 70, 100) else Color3.fromRGB(45, 45, 60)
-	end
+	UiStyle.setActiveTab(tabBar, groupNames[currentGroup])
 	-- Defenses show their charges (public: 02 § Defenses "a loadout puzzle
 	-- raiders can read") and can be refilled in Edit mode.
 	local charges = selected and selected:GetAttribute("Charges")
@@ -352,7 +352,7 @@ local function refreshPanel()
 	if refillButton.Visible and defenseCfg then
 		refillButton.Text = `Refill {charges}/{maxCharges}\n{costText(defenseCfg.RefillCost)}`
 	end
-	editButton.BackgroundColor3 = if mode == "select" then Color3.fromRGB(40, 120, 70) else Color3.fromRGB(45, 45, 60)
+	UiStyle.setButtonKind(editButton, if mode == "select" then "primary" else "chip")
 	placeButton.Text = if movingId then "Put here" else "Place"
 	rotateButton.Visible = mode == "place"
 	placeButton.Visible = mode == "place"
@@ -361,13 +361,22 @@ local function refreshPanel()
 
 	local state = baseState
 	if state then
-		infoLabel.Text = `Vault tier {state.Tier}/{state.MaxTier}   ·   Budget {state.BudgetUsed}/{state.Budget}   ·   Defenses {state.DefenseSlotsUsed}/{state.DefenseSlots}`
+		tierPill.Text = `Vault tier {state.Tier}/{state.MaxTier}`
+		budgetPill.Text = `Budget {state.BudgetUsed}/{state.Budget}`
+		defensePill.Text = `Defenses {state.DefenseSlotsUsed}/{state.DefenseSlots}`
+		-- Amber when a limit is reached: that's what OverBudget / NoDefenseSlot answer.
+		budgetPill.TextColor3 = if state.BudgetUsed >= state.Budget then style.Colors.Warn else style.Colors.Text
+		defensePill.TextColor3 = if state.DefenseSlotsUsed >= state.DefenseSlots then style.Colors.Warn else style.Colors.Text
+		budgetPill.Visible = true
+		defensePill.Visible = true
 		upgradeButton.Visible = state.UpgradeCost ~= nil
 		if state.UpgradeCost then
 			upgradeButton.Text = `Upgrade Vault\n{costText(state.UpgradeCost)}`
 		end
 	else
-		infoLabel.Text = "..."
+		tierPill.Text = "..."
+		budgetPill.Visible = false
+		defensePill.Visible = false
 		upgradeButton.Visible = false
 	end
 end
@@ -408,11 +417,11 @@ local function ask(remote: RemoteFunction, ...: any): boolean
 	local ok, accepted, reason = pcall(remote.InvokeServer, remote, ...)
 	busy = false
 	if not ok then
-		showMessage(REASON_TEXT.Failed)
+		showMessage(REASON_TEXT.Failed, "bad")
 		return false
 	end
 	if not accepted then
-		showMessage(REASON_TEXT[reason] or REASON_TEXT.Failed)
+		showMessage(REASON_TEXT[reason] or REASON_TEXT.Failed, "warn")
 		return false
 	end
 	return true
@@ -420,7 +429,7 @@ end
 
 local function doPlace()
 	if not targetX or not targetZ then
-		showMessage(REASON_TEXT.OutOfBounds)
+		showMessage(REASON_TEXT.OutOfBounds, "warn")
 		return
 	end
 	if movingId then
@@ -456,8 +465,8 @@ buildButton.Activated:Connect(function()
 	setActive(not active)
 end)
 
-for pieceKind, button in pieceButtons do
-	button.Activated:Connect(function()
+for pieceKind, tile in pieceTiles do
+	tile.button.Activated:Connect(function()
 		kind = pieceKind
 		mode = "place"
 		movingId = nil
@@ -493,8 +502,8 @@ moveButton.Activated:Connect(function()
 	refreshPanel()
 end)
 
-for index, button in tabButtons do
-	button.Activated:Connect(function()
+for index, name in groupNames do
+	tabBar.buttons[name].Activated:Connect(function()
 		currentGroup = index
 		refreshPanel()
 	end)
@@ -504,7 +513,7 @@ refillButton.Activated:Connect(function()
 	local model = selected
 	local id = model and model:GetAttribute("PieceId")
 	if typeof(id) == "string" and ask(refillRemote, id) then
-		showMessage("Refilled")
+		showMessage("Refilled", "good")
 	end
 end)
 
@@ -518,7 +527,7 @@ end)
 
 upgradeButton.Activated:Connect(function()
 	if ask(upgradeRemote) then
-		showMessage("Vault upgraded")
+		showMessage("Vault upgraded", "good")
 	end
 end)
 

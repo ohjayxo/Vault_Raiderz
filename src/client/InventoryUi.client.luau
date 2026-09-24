@@ -1,7 +1,7 @@
 --!strict
 -- The Bag (Josh, 2026-09-23): everything you own in one panel, split into
 -- SAFE (banked / worn) and AT RISK (exposed / spare armor), with tabs
--- Resources | Gear | Items. 02-core-loop.md § Bank vs Exposed; 05-items.md
+-- Resources | Gear | Skins | Items. 02-core-loop.md § Bank vs Exposed; 05-items.md
 -- § Armor (D112).
 --
 -- Display and intents only: every number comes from the server (VaultChanged
@@ -14,10 +14,17 @@
 -- call: in the Bag, not on the HUD, so the FTUE's no-text rule holds), and
 -- the Items tab has a Craft row for Breach Charges (shown once you have
 -- Riftsalt or charges). The server owns the recipe; this only asks (R5).
--- Studio only: a Debug tab with every debug key (Shared/DebugKeyList) and a
--- Run button for each, plus small X buttons that delete items / armor.
+-- Studio only: a small Debug button at the top centre of the screen opens the
+-- Bag on a Debug tab (every key in Shared/DebugKeyList with a Run button); the
+-- tab is not in the tab bar. Small X buttons also delete items / armor. It all
+-- goes away with the debug tools.
 -- Other scripts open it with the "Open" BindableEvent inside this ScreenGui
--- (argument: tab name): the vault meter and the Gear menu's Armor/Skin rows.
+-- (argument: tab name): the vault meter and the Gear menu's Armor/Skin rows
+-- (Armor opens Gear, Skin opens Skins).
+-- Look: Shared/UiStyle (Config.UiStyle, look only). Cards and rows instead of
+-- text cells; two columns on wide windows, one on phones; the tab bar moves up
+-- into the header when there is room, and short windows (phone landscape) drop
+-- the explanatory notes.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -34,11 +41,24 @@ local player = Players.LocalPlayer
 local bagCfg = Config.Inventory
 local meterCfg = Config.Bank.Meter
 local combatCfg = Config.Combat
+local style = Config.UiStyle
+local colors = style.Colors
+local windowCfg = style.Window
+local TAP = style.MinTap
 local SIZE = combatCfg.Ui.ButtonSize
 local SAFE = meterCfg.BankedColor
 local RISK = meterCfg.ExposedColor
 local SHIELD = bagCfg.ShieldColor
-local NOTE = Color3.fromRGB(170, 170, 190)
+local money = UiStyle.money
+
+-- [PH] invented look-only: the Bag needs more height than the old 340px cap
+-- now that the tab bar and 56px rows are in (width keeps Config's cap).
+local BAG_MAX_HEIGHT = 560
+-- [PH] invented look-only: width of the track name ("Miner 4") in the Level block.
+local TRACK_NAME_WIDTH = 78
+-- [PH] invented look-only: button widths inside item rows (height is MinTap).
+local ROW_BUTTON_WIDTH = 92
+local ROW_BUTTON_SHORT = 64
 
 local equipRemote = Remotes.getFunction("EquipArmor")
 -- Studio only (Josh's test request): a small X on item and armor rows that
@@ -56,8 +76,8 @@ local REASON_TEXT: { [string]: string } = {
 	CantAfford = "Not enough Riftsalt",
 }
 
-type Tab = "Resources" | "Gear" | "Items" | "Debug"
-local TABS: { Tab } = { "Resources", "Gear", "Items", "Debug" }
+type Tab = "Resources" | "Gear" | "Skins" | "Items" | "Debug"
+local TABS: { string } = { "Resources", "Gear", "Skins", "Items", "Debug" }
 
 local vault: Types.VaultState? = nil
 local gear: Types.GearState? = nil
@@ -70,31 +90,16 @@ local currentTab: Tab = "Resources"
 local openResource: string? = nil -- the resource whose Grades are showing
 local busy = false
 
--- ── UI (greybox) ─────────────────────────────────────────────────────────
+-- ── UI ───────────────────────────────────────────────────────────────────
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "InventoryUi"
 gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling -- children always draw above their parent (toast, bar text)
 gui.DisplayOrder = bagCfg.DisplayOrder
 local openEvent = Instance.new("BindableEvent")
 openEvent.Name = "Open"
 openEvent.Parent = gui
-
-local function makeButton(parent: Instance, text: string, width: number, height: number): TextButton
-	local b = Instance.new("TextButton")
-	b.Size = UDim2.fromOffset(width, height)
-	b.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-	b.BackgroundTransparency = 0.1
-	b.TextColor3 = Color3.new(1, 1, 1)
-	b.Font = Enum.Font.GothamBold
-	b.TextSize = 14
-	b.Text = text
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = b
-	b.Parent = parent
-	return b
-end
 
 -- Next to the Raids button (RaidUi: 12, 170, SIZE*1.2 x SIZE*0.5). Its own
 -- HUD-level ScreenGui, so open menus (Gear) draw over it; the open Bag
@@ -103,139 +108,73 @@ local buttonGui = Instance.new("ScreenGui")
 buttonGui.Name = "InventoryButton"
 buttonGui.ResetOnSpawn = false
 buttonGui.DisplayOrder = bagCfg.ButtonDisplayOrder
-local bagButton = makeButton(buttonGui, bagCfg.ButtonLabel, SIZE * 1.2, SIZE * 0.5)
-bagButton.Position = UDim2.fromOffset(12 + SIZE * 1.2 + 8, 170)
-bagButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+local bagButtonHeight = math.max(SIZE * 0.5, TAP)
+local bagButton = UiStyle.hudButton(buttonGui, bagCfg.ButtonLabel, "neutral", SIZE * 1.2, bagButtonHeight)
+-- Centered on the Raids button's row even though the tap target is taller.
+bagButton.Position = UDim2.fromOffset(12 + SIZE * 1.2 + 8, 170 - (bagButtonHeight - SIZE * 0.5) / 2) -- matches the Raids button's y
 bagButton.Visible = false
 
-local panel = Instance.new("Frame")
-panel.AnchorPoint = Vector2.new(0.5, 0.5)
-panel.Position = UDim2.fromScale(0.5, 0.5)
-panel.Size = UDim2.fromScale(0.9, 0.9)
-panel.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-panel.BackgroundTransparency = 0.05
-panel.Visible = false
-panel.Parent = gui
-local limit = Instance.new("UISizeConstraint")
-limit.MaxSize = bagCfg.PanelMaxSize
-limit.Parent = panel
-local panelCorner = Instance.new("UICorner")
-panelCorner.CornerRadius = UDim.new(0, 10)
-panelCorner.Parent = panel
+-- Studio only, goes away with the debug tools: a small button at the top centre
+-- that opens the Bag on its Debug tab (wired below, once `open` exists).
+local DEBUG_BUTTON_TOP = 6 -- [PH] invented look-only: px from the top edge
+local debugButton = UiStyle.hudButton(buttonGui, "Debug", "info", 88, TAP)
+debugButton.AnchorPoint = Vector2.new(0.5, 0)
+debugButton.Position = UDim2.new(0.5, 0, 0, DEBUG_BUTTON_TOP)
+debugButton.Visible = STUDIO_DELETE
 
--- Header: tabs on the left, close on the right.
-local header = Instance.new("Frame")
-header.Size = UDim2.new(1, -16, 0, 34)
-header.Position = UDim2.fromOffset(8, 8)
-header.BackgroundTransparency = 1
-header.Parent = panel
-local headerLayout = Instance.new("UIListLayout")
-headerLayout.FillDirection = Enum.FillDirection.Horizontal
-headerLayout.Padding = UDim.new(0, 6)
-headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-headerLayout.Parent = header
-local tabButtons: { [string]: TextButton } = {}
-for order, tab in TABS do
-	local b = makeButton(header, tab, 110, 34)
-	b.LayoutOrder = order
-	tabButtons[tab] = b
-end
-local closeButton = makeButton(panel, "X", 34, 34)
-closeButton.AnchorPoint = Vector2.new(1, 0)
-closeButton.Position = UDim2.new(1, -8, 0, 8)
+local win = UiStyle.window(gui, "Bag", 0.9, 0.9, Vector2.new(bagCfg.PanelMaxSize.X, BAG_MAX_HEIGHT))
+local panel = win.panel
+local header = win.header
+local closeButton = win.close
+local content = win.content
 
-local content = Instance.new("ScrollingFrame")
-content.Position = UDim2.fromOffset(8, 50)
-content.Size = UDim2.new(1, -16, 1, -58)
-content.BackgroundTransparency = 1
-content.BorderSizePixel = 0
-content.ScrollBarThickness = 6
-content.AutomaticCanvasSize = Enum.AutomaticSize.Y
-content.CanvasSize = UDim2.new()
-content.Parent = panel
-local contentLayout = Instance.new("UIListLayout")
-contentLayout.Padding = UDim.new(0, 4)
-contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-contentLayout.Parent = content
+local tabs = UiStyle.tabBar(panel, TABS)
+local tabButtons = tabs.buttons
 
-local message = Instance.new("TextLabel")
-message.AnchorPoint = Vector2.new(0.5, 1)
-message.Position = UDim2.new(0.5, 0, 1, -8)
-message.Size = UDim2.fromOffset(340, 28)
-message.BackgroundColor3 = Color3.new(0, 0, 0)
-message.BackgroundTransparency = 0.2
-message.TextColor3 = Color3.new(1, 1, 1)
-message.Font = Enum.Font.GothamBold
-message.TextSize = 14
-message.Visible = false
-message.ZIndex = 5
-message.Parent = panel
+-- Short messages ("Too fast", "Not enough Riftsalt") along the panel's bottom.
+local toast = UiStyle.toast(panel)
+toast.frame.AnchorPoint = Vector2.new(0.5, 1)
+toast.frame.Position = UDim2.new(0.5, 0, 1, -windowCfg.EdgePad)
 
 gui.Parent = player:WaitForChild("PlayerGui")
 buttonGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Wide windows have room for the tabs beside the title; narrow ones give them
+-- their own row and the list starts lower.
+local function layoutChrome()
+	local wide = UiStyle.isWide(panel)
+	local rowTop = windowCfg.EdgePad + TAP + windowCfg.BodyGap
+	tabs.frame.Parent = if wide then header else panel
+	tabs.frame.LayoutOrder = 2
+	tabs.frame.AutomaticSize = Enum.AutomaticSize.X
+	tabs.frame.Size = UDim2.fromOffset(0, TAP)
+	tabs.frame.Position = UDim2.fromOffset(windowCfg.HeaderInset, rowTop)
+	local top = if wide then rowTop else rowTop + TAP + windowCfg.BodyGap
+	content.Position = UDim2.fromOffset(windowCfg.EdgePad, top)
+	content.Size = UDim2.new(1, -2 * windowCfg.EdgePad, 1, -(top + windowCfg.EdgePad))
+end
+layoutChrome()
+
 -- ── Row builders ─────────────────────────────────────────────────────────
 
-local rowCount = 0
-
--- One row: text cells of given widths, an optional button at the end, and
--- optionally the whole row tappable (onTap).
-local function row(cells: { { text: string, width: number, color: Color3? } }, action: string?, onAction: (() -> ())?, indent: number?, onTap: (() -> ())?, onDelete: (() -> ())?): GuiObject
-	rowCount += 1
-	local frame: GuiObject
-	if onTap then
-		local tappable = Instance.new("TextButton")
-		tappable.Text = ""
-		tappable.AutoButtonColor = false
-		tappable.Activated:Connect(onTap)
-		frame = tappable
-	else
-		frame = Instance.new("Frame")
+-- Hands out 1, 2, 3... for LayoutOrder inside one parent.
+local function sequence(): () -> number
+	local n = 0
+	return function(): number
+		n += 1
+		return n
 	end
-	frame.LayoutOrder = rowCount
-	frame.Size = UDim2.new(1, -8, 0, bagCfg.RowHeight)
-	frame.BackgroundTransparency = 1
-	frame.Parent = content
-	local layout = Instance.new("UIListLayout")
-	layout.FillDirection = Enum.FillDirection.Horizontal
-	layout.VerticalAlignment = Enum.VerticalAlignment.Center
-	layout.Padding = UDim.new(0, 6)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = frame
-	if indent then
-		local pad = Instance.new("UIPadding")
-		pad.PaddingLeft = UDim.new(0, indent)
-		pad.Parent = frame
-	end
-	for i, cell in cells do
-		local label = Instance.new("TextLabel")
-		label.LayoutOrder = i
-		label.Size = UDim2.fromOffset(cell.width, bagCfg.RowHeight)
-		label.BackgroundTransparency = 1
-		label.TextColor3 = cell.color or Color3.new(1, 1, 1)
-		label.Font = Enum.Font.GothamBold
-		label.TextSize = 14
-		label.TextXAlignment = Enum.TextXAlignment.Left
-		label.Text = cell.text
-		label.Parent = frame
-	end
-	if action and onAction then
-		local b = makeButton(frame, action, 100, bagCfg.RowHeight - 4)
-		b.LayoutOrder = #cells + 1
-		b.Activated:Connect(onAction)
-	end
-	if onDelete and STUDIO_DELETE then
-		local x = makeButton(frame, "X", bagCfg.RowHeight - 6, bagCfg.RowHeight - 6)
-		x.LayoutOrder = #cells + 2
-		x.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
-		x.TextSize = 12
-		x.Activated:Connect(onDelete)
-	end
-	return frame
 end
 
-local function heading(text: string)
-	row({ { text = text, width = 400, color = Color3.fromRGB(170, 170, 190) } })
+-- The columns of the tab being shown (nil when it has none), so a resize can
+-- switch them between one and two without rebuilding.
+local activeColumns: UiStyle.Columns? = nil
+
+local function makeColumns(order: number): UiStyle.Columns
+	local cols = UiStyle.columns(content, order)
+	UiStyle.setColumns(cols, UiStyle.isWide(panel))
+	activeColumns = cols
+	return cols
 end
 
 local function clearRows()
@@ -244,14 +183,31 @@ local function clearRows()
 			child:Destroy()
 		end
 	end
-	rowCount = 0
+	activeColumns = nil
 end
 
--- 12345 -> "12,345"
-local function withCommas(n: number): string
-	local text = tostring(math.floor(n))
-	local formatted = text:reverse():gsub("(%d%d%d)", "%1,"):reverse()
-	return (formatted:gsub("^,", ""))
+local function note(parent: Instance, text: string, order: number, color: Color3?): TextLabel
+	local label = UiStyle.label(parent, text, style.TextSize.Small, color or colors.TextDim, false)
+	label.LayoutOrder = order
+	return label
+end
+
+local function addButton(r: UiStyle.ItemRow, text: string, kind: UiStyle.ButtonKind, width: number, order: number, onTap: () -> ()): TextButton
+	local b = UiStyle.button(r.trailing, text, kind, width, TAP)
+	b.LayoutOrder = order
+	b.Activated:Connect(onTap)
+	return b
+end
+
+-- Studio only: the small X that deletes an item / armor piece (Josh's test request).
+local function addDelete(r: UiStyle.ItemRow, order: number, onDelete: (() -> ())?)
+	if onDelete and STUDIO_DELETE then
+		addButton(r, "X", "danger", TAP, order, onDelete)
+	end
+end
+
+local function loadingCard()
+	UiStyle.emptyState(content, "Loading...", nil, 1)
 end
 
 local function total(grades: Types.GradeCounts?): number
@@ -268,7 +224,7 @@ local function gradeText(grades: Types.GradeCounts?): string
 	for _, grade in Config.Grade.Names do
 		local count = (grades or ({} :: Types.GradeCounts))[grade] or 0
 		if count > 0 then
-			table.insert(parts, `{grade} {withCommas(count)}`)
+			table.insert(parts, `{grade} {money(count)}`)
 		end
 	end
 	return if #parts > 0 then table.concat(parts, " · ") else "none"
@@ -321,17 +277,8 @@ end
 
 -- ── Messages + intents ───────────────────────────────────────────────────
 
-local messageToken = 0
 local function showMessage(text: string)
-	messageToken += 1
-	local token = messageToken
-	message.Text = text
-	message.Visible = true
-	task.delay(Config.Base.BuildUi.MessageSeconds, function()
-		if messageToken == token then
-			message.Visible = false
-		end
-	end)
+	toast.show(text, Config.Base.BuildUi.MessageSeconds, "bad")
 end
 
 local function ask(remote: RemoteFunction, ...: any)
@@ -351,146 +298,184 @@ end
 -- ── Tabs ─────────────────────────────────────────────────────────────────
 
 local render: () -> ()
+local shortWindow = false -- phone landscape: drop the explanatory notes
+
+-- Step 9: Credits and Level (06 § Currencies; 03 § Level). Shown while
+-- Config.Inventory.ShowCredits is on; the FTUE turns it off (step 14).
+local function levelBlock(parent: Instance, order: number)
+	local rep = reputation
+	local badgeSize = style.Level.BadgeSize
+	local card = UiStyle.card(parent, order)
+	local top = Instance.new("Frame")
+	top.LayoutOrder = 1
+	top.Size = UDim2.new(1, 0, 0, 0)
+	top.AutomaticSize = Enum.AutomaticSize.Y
+	top.BackgroundTransparency = 1
+	top.Parent = card
+	UiStyle.list(top, true, style.Gap)
+
+	-- Level badge on the left.
+	local badge = Instance.new("Frame")
+	badge.LayoutOrder = 1
+	badge.Size = UDim2.fromOffset(badgeSize, badgeSize)
+	badge.BackgroundColor3 = colors.BarTrack
+	badge.BorderSizePixel = 0
+	badge.Parent = top
+	UiStyle.corner(badge, style.CardCorner)
+	UiStyle.stroke(badge, colors.Accent, 2)
+	local badgeList = UiStyle.list(badge, false, 0)
+	badgeList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	badgeList.VerticalAlignment = Enum.VerticalAlignment.Center
+	local levelNumber = UiStyle.label(badge, if rep then tostring(rep.Level) else "...", style.TextSize.Huge, colors.Accent, true)
+	levelNumber.LayoutOrder = 1
+	levelNumber.TextXAlignment = Enum.TextXAlignment.Center
+	local levelCaption = UiStyle.label(badge, "LEVEL", style.TextSize.Small, colors.TextDim, true)
+	levelCaption.LayoutOrder = 2
+	levelCaption.TextXAlignment = Enum.TextXAlignment.Center
+
+	-- Credits pill + one bar per track on the right.
+	local right = Instance.new("Frame")
+	right.LayoutOrder = 2
+	right.Size = UDim2.new(1, -(badgeSize + style.Gap), 0, 0)
+	right.AutomaticSize = Enum.AutomaticSize.Y
+	right.BackgroundTransparency = 1
+	right.Parent = top
+	UiStyle.list(right, false, style.Gap / 2)
+	local creditsPill = UiStyle.pill(right, `Credits {money(credits or 0)}`, colors.Accent)
+	creditsPill.LayoutOrder = 1
+	if rep then
+		for index, track in Config.Progression.Tracks do
+			local t = rep.Tracks[track]
+			local trackRow = UiStyle.row(right, style.Level.BarHeight + 2, index + 1)
+			local name = UiStyle.label(trackRow, `{track} {t.Level}`, style.TextSize.Small, colors.Text, true)
+			name.Size = UDim2.fromOffset(TRACK_NAME_WIDTH, style.Level.BarHeight + 2)
+			name.AutomaticSize = Enum.AutomaticSize.None
+			name.TextTruncate = Enum.TextTruncate.AtEnd
+			name.TextWrapped = false
+			name.LayoutOrder = 1
+			local span = math.max(1, t.Next - t.Prev)
+			-- The bar takes whatever width is left (never negative on a narrow
+			-- phone); the XP numbers sit inside it.
+			local bar = UiStyle.bar(trackRow, style.Level.BarHeight, (t.XP - t.Prev) / span, colors.Good)
+			bar.LayoutOrder = 2
+			bar.Size = UDim2.fromOffset(0, style.Level.BarHeight)
+			local flex = Instance.new("UIFlexItem")
+			flex.FlexMode = Enum.UIFlexMode.Fill
+			flex.Parent = bar
+			UiStyle.barLabel(bar, `{money(t.XP - t.Prev)}/{money(span)}`)
+		end
+	end
+	if rep and not rep.TradeUnlocked then
+		note(card, `Trading unlocks at Level {Config.Progression.TradeUnlockLevel}.`, 2)
+	end
+end
+
+-- Your raid shields (01 R6; D67, D75). The top label is ticked every second.
+local function shieldCard(parent: Instance, order: number, text: string)
+	local card = UiStyle.card(parent, order)
+	local stroke = card:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = SHIELD
+	end
+	local label = UiStyle.label(card, text, style.TextSize.Body, SHIELD, true)
+	label.LayoutOrder = 1
+	shieldLabel = label
+	if not shortWindow then
+		note(card, "Breaching someone's base ends your shield.", 2)
+	end
+end
+
+
+-- SAFE / AT RISK share the row's detail line (two pills squeezed the name on a
+-- 360px phone). The bank cap, when given, shows as "SAFE 120 / 500".
+local function setSafeRisk(row: UiStyle.ItemRow, safe: number, risk: number, cap: number?)
+	local safeText = if cap then `{money(safe)} / {money(cap)}` else money(safe)
+	row.detail.RichText = true
+	row.detail.Text = `<font color="#{SAFE:ToHex()}">SAFE {safeText}</font>  ·  <font color="#{RISK:ToHex()}">AT RISK {money(risk)}</font>`
+	row.detail.Visible = true
+end
 
 local function renderResources()
 	local v = vault
 	if not v then
-		heading("Loading...")
+		loadingCard()
 		return
 	end
-	-- Step 9: Credits and Level (06 § Currencies; 03 § Level). Shown while
-	-- Config.Inventory.ShowCredits is on; the FTUE turns it off (step 14).
-	if bagCfg.ShowCredits then
-		local rep = reputation
-		local look = Config.UiStyle
-		local palette = look.Colors
-		local badgeSize = look.Level.BadgeSize
-		rowCount += 1
-		local block = Instance.new("Frame")
-		block.LayoutOrder = rowCount
-		block.Size = UDim2.new(1, -8, 0, badgeSize + 24)
-		block.BackgroundColor3 = palette.Card
-		block.BorderSizePixel = 0
-		block.Parent = content
-		UiStyle.corner(block, look.CardCorner)
-		UiStyle.stroke(block, palette.CardStroke, 1)
-		UiStyle.padding(block, 6)
-
-		-- Level badge on the left.
-		local badge = Instance.new("Frame")
-		badge.Size = UDim2.fromOffset(badgeSize, badgeSize)
-		badge.Position = UDim2.fromOffset(0, 6)
-		badge.BackgroundColor3 = palette.BarTrack
-		badge.BorderSizePixel = 0
-		badge.Parent = block
-		UiStyle.corner(badge, look.CardCorner + 4)
-		UiStyle.stroke(badge, palette.Accent, 2)
-		local levelNumber = UiStyle.label(badge, if rep then tostring(rep.Level) else "...", 30, palette.Accent, true)
-		levelNumber.Position = UDim2.fromOffset(0, 8)
-		levelNumber.Size = UDim2.new(1, 0, 0, 34)
-		levelNumber.AutomaticSize = Enum.AutomaticSize.None
-		levelNumber.TextXAlignment = Enum.TextXAlignment.Center
-		local levelCaption = UiStyle.label(badge, "LEVEL", look.TextSize.Small, palette.TextDim, true)
-		levelCaption.Position = UDim2.fromOffset(0, 44)
-		levelCaption.Size = UDim2.new(1, 0, 0, 18)
-		levelCaption.AutomaticSize = Enum.AutomaticSize.None
-		levelCaption.TextXAlignment = Enum.TextXAlignment.Center
-
-		-- Credits pill + one bar per track on the right.
-		local right = Instance.new("Frame")
-		right.Position = UDim2.fromOffset(badgeSize + 12, 0)
-		right.Size = UDim2.new(1, -(badgeSize + 12), 1, 0)
-		right.BackgroundTransparency = 1
-		right.Parent = block
-		UiStyle.list(right, false, 4)
-		local creditsPill = UiStyle.pill(right, `Credits {UiStyle.money(credits or 0)}`, palette.Accent)
-		creditsPill.LayoutOrder = 1
-		if rep then
-			for index, track in Config.Progression.Tracks do
-				local t = rep.Tracks[track]
-				local trackRow = UiStyle.row(right, 16, index + 1)
-				local name = UiStyle.label(trackRow, `{track} {t.Level}`, look.TextSize.Small, palette.Text, true)
-				name.Size = UDim2.fromOffset(78, 16)
-				name.AutomaticSize = Enum.AutomaticSize.None
-				name.TextTruncate = Enum.TextTruncate.AtEnd
-				name.TextWrapped = false
-				local span = math.max(1, t.Next - t.Prev)
-				-- The bar takes whatever width is left (never negative on a narrow
-				-- phone); the XP numbers sit inside it.
-				local bar = UiStyle.bar(trackRow, look.Level.BarHeight, (t.XP - t.Prev) / span, palette.Good)
-				bar.Size = UDim2.new(1, -(78 + 6), 0, look.Level.BarHeight)
-				local xpText = UiStyle.label(bar, `{UiStyle.money(t.XP - t.Prev)}/{UiStyle.money(span)}`, 11, palette.Text, true)
-				xpText.Size = UDim2.fromScale(1, 1)
-				xpText.AutomaticSize = Enum.AutomaticSize.None
-				xpText.TextXAlignment = Enum.TextXAlignment.Center
-				xpText.TextWrapped = false
-				xpText.TextTruncate = Enum.TextTruncate.AtEnd
-				xpText.TextStrokeTransparency = 0.6
-				xpText.ZIndex = 3
-			end
-		end
-		if rep and not rep.TradeUnlocked then
-			row({ { text = `Trading unlocks at Level {Config.Progression.TradeUnlockLevel}.`, width = 560, color = NOTE } })
-		end
-	end
-	-- Your raid shields first (01 R6; D67, D75).
-	local shieldNow = shieldText()
+	local nextOrder = sequence()
 	shieldLabel = nil
-	if shieldNow then
-		local shieldRow = row({ { text = shieldNow, width = 560, color = SHIELD } })
-		shieldLabel = shieldRow:FindFirstChildOfClass("TextLabel")
-		row({ { text = "Breaching someone's base ends your shield.", width = 560, color = NOTE } }, nil, nil, 20)
+	local cols = makeColumns(nextOrder())
+	local left, right = cols.left, cols.right
+	local leftOrder, rightOrder = sequence(), sequence()
+
+	if bagCfg.ShowCredits then
+		levelBlock(left, leftOrder())
 	end
-	row({
-		{ text = "", width = 150 },
-		{ text = "SAFE (banked)", width = 150, color = SAFE },
-		{ text = "AT RISK (exposed)", width = 150, color = RISK },
-	})
+	local shieldNow = shieldText()
+	if shieldNow then
+		shieldCard(left, leftOrder(), shieldNow)
+	end
+
+	local bankedTotal = 0
+	for _, grades in v.Banked do
+		bankedTotal += total(grades)
+	end
+	local vaultCard = UiStyle.card(left, leftOrder())
+	local vaultMeter = UiStyle.meter(vaultCard, "Vault", 0, SAFE, 1)
+	UiStyle.setMeter(vaultMeter, bankedTotal / math.max(1, v.Capacity), `{money(bankedTotal)} / {money(v.Capacity)}`)
+	if not shortWindow then
+		note(vaultCard, "At-risk items can be stolen in raids. Bank them at your Vault Core.", 2)
+	end
+
+	UiStyle.sectionHeader(right, "Resources", rightOrder())
 	for _, resource in Config.Resources.Types do
 		local banked, exposed = total(v.Banked[resource]), total(v.Exposed[resource])
 		if banked > 0 or exposed > 0 or resource == Config.Resources.Types[1] then
 			local open = openResource == resource
 			-- Tap a resource to see its Grades (depth only when asked: R4).
-			row({
-				{ text = (if open then "v " else "> ") .. resource, width = 150 },
-				{ text = withCommas(banked), width = 150, color = SAFE },
-				{ text = withCommas(exposed), width = 150, color = RISK },
-			}, nil, nil, nil, function()
+			local r = UiStyle.itemRow(right, (if open then "v " else "> ") .. resource, "", rightOrder(), true)
+			setSafeRisk(r, banked, exposed)
+			local tap = r.root :: TextButton -- tappable => a TextButton
+			tap.Activated:Connect(function()
 				openResource = if open then nil else resource
 				render()
 			end)
 			if open then
-				row({ { text = "safe:    " .. gradeText(v.Banked[resource]), width = 560, color = SAFE } }, nil, nil, 20)
-				row({ { text = "at risk: " .. gradeText(v.Exposed[resource]), width = 560, color = RISK } }, nil, nil, 20)
+				local indent = Instance.new("Frame")
+				indent.LayoutOrder = rightOrder()
+				indent.Size = UDim2.new(1, 0, 0, 0)
+				indent.AutomaticSize = Enum.AutomaticSize.Y
+				indent.BackgroundTransparency = 1
+				indent.Parent = right
+				local pad = Instance.new("UIPadding")
+				pad.PaddingLeft = UDim.new(0, style.Pad * 2)
+				pad.Parent = indent
+				local grades = UiStyle.card(indent, 1)
+				grades.Size = UDim2.new(1, 0, 0, 0)
+				local safeLine = UiStyle.label(grades, "safe: " .. gradeText(v.Banked[resource]), style.TextSize.Small, SAFE, true)
+				safeLine.LayoutOrder = 1
+				local riskLine = UiStyle.label(grades, "at risk: " .. gradeText(v.Exposed[resource]), style.TextSize.Small, RISK, true)
+				riskLine.LayoutOrder = 2
 			end
 		end
 	end
-	row({
-		{ text = "Scrap", width = 150 },
-		{ text = `{withCommas(v.ScrapBanked)} / {withCommas(v.ScrapCapacity)}`, width = 150, color = SAFE },
-		{ text = withCommas(v.ScrapExposed), width = 150, color = RISK },
-	})
-	local bankedTotal = 0
-	for _, grades in v.Banked do
-		bankedTotal += total(grades)
-	end
-	row({ { text = `Vault {withCommas(bankedTotal)} / {withCommas(v.Capacity)}`, width = 400, color = SAFE } })
-	row({ { text = "At-risk items can be stolen in raids. Bank them at your Vault Core.", width = 560, color = Color3.fromRGB(170, 170, 190) } })
+	local scrap = UiStyle.itemRow(right, "Scrap", "", rightOrder())
+	setSafeRisk(scrap, v.ScrapBanked, v.ScrapExposed, v.ScrapCapacity)
 end
 
 local function renderGear()
 	local g = gear
 	if not g then
-		heading("Loading...")
+		loadingCard()
 		return
 	end
+	local nextOrder = sequence()
 	local skinCfgs: { [string]: { Name: string } } = Config.Cosmetics.PickaxeSkins :: any
 	local skinName = if g.EquippedSkin == "" then Config.Cosmetics.DefaultSkinName else (skinCfgs[g.EquippedSkin] and skinCfgs[g.EquippedSkin].Name or g.EquippedSkin)
-	row({ { text = `Pickaxe: {tierName(g.PickaxeTier)}   ·   Skin: {skinName}`, width = 500 } })
+	UiStyle.itemRow(content, `Pickaxe: {tierName(g.PickaxeTier)}`, `Skin: {skinName}`, nextOrder())
 
-	heading("ARMOR")
+	UiStyle.sectionHeader(content, "Armor", nextOrder())
 	if #g.ArmorPieces == 0 then
-		row({ { text = "none", width = 300, color = Color3.fromRGB(170, 170, 190) } })
+		UiStyle.emptyState(content, "No armor", nil, nextOrder())
 	end
 	-- The worn piece, then spares grouped by tier + slot ("Wooden chest x3").
 	-- Same-tier pieces are identical (D112), so Wear sends the first one.
@@ -498,12 +483,12 @@ local function renderGear()
 	local groups: { Group } = {}
 	for _, piece in g.ArmorPieces do
 		if piece.Id == g.ArmorEquipped then
-			row({
-				{ text = `{tierName(piece.Tier)} {piece.Slot:lower()}`, width = 170 },
-				{ text = "worn · safe", width = 200, color = SAFE },
-			}, "Take off", function()
+			local r = UiStyle.itemRow(content, `{tierName(piece.Tier)} {piece.Slot:lower()}`, "worn · safe", nextOrder())
+			r.detail.TextColor3 = SAFE
+			addButton(r, "Take off", "neutral", ROW_BUTTON_WIDTH, 1, function()
 				ask(equipRemote, "")
-			end, nil, nil, function()
+			end)
+			addDelete(r, 2, function()
 				debugEvent:FireServer("DeleteArmor", piece.Id)
 			end)
 		else
@@ -522,25 +507,38 @@ local function renderGear()
 	end
 	for _, group in groups do
 		local count = #group.ids
-		row({
-			{ text = `{tierName(group.tier)} {group.slot:lower()}{if count > 1 then ` x{count}` else ""}`, width = 170 },
-			{ text = "spare · can be stolen", width = 200, color = RISK },
-		}, "Wear", function()
+		local r = UiStyle.itemRow(content, `{tierName(group.tier)} {group.slot:lower()}{if count > 1 then ` x{count}` else ""}`, "spare · can be stolen", nextOrder())
+		r.detail.TextColor3 = RISK
+		addButton(r, "Wear", "primary", ROW_BUTTON_WIDTH, 1, function()
 			ask(equipRemote, group.ids[1])
-		end, nil, nil, function()
+		end)
+		addDelete(r, 2, function()
 			debugEvent:FireServer("DeleteArmor", group.ids[1])
 		end)
 	end
+end
 
-	heading("SKINS")
+-- Pickaxe skins are cosmetics (R1: identity, never lootable). Its own tab so
+-- it can grow (more skins, previews) without crowding Gear.
+local function renderSkins()
+	local g = gear
+	if not g then
+		loadingCard()
+		return
+	end
+	local nextOrder = sequence()
+	local skinCfgs: { [string]: { Name: string } } = Config.Cosmetics.PickaxeSkins :: any
+	UiStyle.sectionHeader(content, "Pickaxe skins", nextOrder())
 	local function skinRow(skinId: string, label: string)
 		local equipped = g.EquippedSkin == skinId
-		row({
-			{ text = label, width = 170 },
-			{ text = if equipped then "equipped" else "", width = 200, color = SAFE },
-		}, if equipped then nil else "Equip", function()
-			ask(skinRemote, skinId)
-		end)
+		local r = UiStyle.itemRow(content, label, nil, nextOrder())
+		if equipped then
+			UiStyle.pill(r.trailing, "EQUIPPED", colors.BarTrack, colors.Good).LayoutOrder = 1
+		else
+			addButton(r, "Equip", "primary", ROW_BUTTON_WIDTH, 1, function()
+				ask(skinRemote, skinId)
+			end)
+		end
 	end
 	skinRow("", Config.Cosmetics.DefaultSkinName)
 	for _, skinId in Config.Cosmetics.SkinOrder do
@@ -553,63 +551,72 @@ end
 
 local function renderItems()
 	if not gear then
-		heading("Loading...")
+		loadingCard()
 		return
 	end
-	local shown = false
+	local nextOrder = sequence()
 	-- Breach Charges: crafted from Riftsalt anywhere (Josh's call, step 8;
 	-- Workshop I takes over crafting in step 10).
 	local chargeCfg = Config.BreachCharges
-	if riftsaltHeld() > 0 or itemCount(chargeCfg.ItemId) > 0 then
-		shown = true
-		heading("CRAFT")
+	local craftShown = riftsaltHeld() > 0 or itemCount(chargeCfg.ItemId) > 0
+	local itemsParent: Instance = content
+	local itemsOrder = sequence()
+	if craftShown then
+		-- Craft on the left, what you own on the right (stacked on phones).
+		local cols = makeColumns(nextOrder())
+		local craftOrder = sequence()
+		UiStyle.sectionHeader(cols.left, "Craft", craftOrder())
 		local costParts = {}
 		for resource, amount in chargeCfg.Cost do
 			table.insert(costParts, `{amount} {resource}`)
 		end
-		row({
-			{ text = chargeCfg.Name, width = 200 },
-			{ text = table.concat(costParts, " + "), width = 120, color = NOTE },
-		}, "Craft", function()
+		local craft = UiStyle.itemRow(cols.left, chargeCfg.Name, table.concat(costParts, " + "), craftOrder())
+		addButton(craft, "Craft", "primary", ROW_BUTTON_WIDTH, 1, function()
 			ask(Remotes.getFunction("Craft"), chargeCfg.ItemId)
 		end)
-		heading("ITEMS")
+		itemsParent = cols.right
+		UiStyle.sectionHeader(itemsParent, "Items", itemsOrder())
 	end
+	local shown = false
 	for _, itemId in bagCfg.ItemOrder do
 		local count = itemCount(itemId)
 		if count > 0 then
 			shown = true
 			local names: { [string]: string } = bagCfg.ItemNames :: any
 			local gadgetNames: { [string]: string } = Config.Gadgets.Names :: any
-			row({ { text = names[itemId] or gadgetNames[itemId] or itemId, width = 200 }, { text = `x{count}`, width = 100 } }, nil, nil, nil, nil, function()
+			local r = UiStyle.itemRow(itemsParent, names[itemId] or gadgetNames[itemId] or itemId, nil, if craftShown then itemsOrder() else nextOrder())
+			UiStyle.pill(r.trailing, `x{count}`, colors.Text).LayoutOrder = 1
+			addDelete(r, 2, function()
 				debugEvent:FireServer("DeleteItem", itemId)
 			end)
 		end
 	end
 	if not shown then
-		row({ { text = "No items yet", width = 300, color = Color3.fromRGB(170, 170, 190) } })
+		UiStyle.emptyState(itemsParent, "No items yet", nil, if craftShown then itemsOrder() else nextOrder())
 	end
 end
 
 -- Studio only: every debug key, grouped, with a Run button (same command
 -- as the key; DebugService re-checks IsStudio).
 local function renderDebug()
-	heading("STUDIO ONLY: press the key, or Run. Results print in Output.")
+	local nextOrder = sequence()
+	note(content, "STUDIO ONLY: press the key, or Run. Results print in Output.", nextOrder())
 	local group = ""
 	for _, entry in DebugKeyList do
 		if entry.Group ~= group then
 			group = entry.Group
-			heading(group:upper())
+			UiStyle.sectionHeader(content, group, nextOrder())
 		end
 		local command = entry.Command
-		row({
-			{ text = `[{entry.Label}]`, width = 44, color = Color3.fromRGB(255, 210, 90) },
-			{ text = entry.Text, width = 330 },
-		}, if command ~= "" then "Run" else nil, function()
-			debugEvent:FireServer(command)
-		end)
+		local r = UiStyle.itemRow(content, entry.Text, nil, nextOrder())
+		UiStyle.pill(r.trailing, `[{entry.Label}]`, colors.Accent).LayoutOrder = 1
+		if command ~= "" then
+			addButton(r, "Run", "info", ROW_BUTTON_SHORT, 2, function()
+				debugEvent:FireServer(command)
+			end)
+		end
 	end
-	heading("Bag: the small X on Items / Gear rows deletes them.")
+	note(content, "Bag: the small X on Items / Gear rows deletes them.", nextOrder())
 end
 
 local function gearTabAllowed(): boolean
@@ -619,28 +626,47 @@ end
 render = function()
 	-- Tabs you can't use yet stay hidden (R4).
 	tabButtons.Gear.Visible = gearTabAllowed()
+	tabButtons.Skins.Visible = gearTabAllowed()
 	tabButtons.Items.Visible = anyItem() or riftsaltHeld() > 0
-	tabButtons.Debug.Visible = STUDIO_DELETE
-	if not tabButtons[currentTab].Visible then
+	tabButtons.Debug.Visible = false -- reached from the top-centre Debug button, not the tab bar
+	if not tabButtons[currentTab].Visible and not (currentTab == "Debug" and STUDIO_DELETE) then
 		currentTab = "Resources"
 	end
-	for tab, b in tabButtons do
-		b.BackgroundColor3 = if tab == currentTab then Color3.fromRGB(40, 110, 70) else Color3.fromRGB(45, 45, 60)
-	end
+	UiStyle.setActiveTab(tabs, currentTab)
 	if not panel.Visible then
 		return
 	end
+	layoutChrome()
+	shortWindow = UiStyle.isShort(panel)
 	clearRows()
 	if currentTab == "Resources" then
 		renderResources()
 	elseif currentTab == "Gear" then
 		renderGear()
+	elseif currentTab == "Skins" then
+		renderSkins()
 	elseif currentTab == "Items" then
 		renderItems()
 	else
 		renderDebug()
 	end
 end
+
+-- Rotating or resizing: re-flow the chrome and columns; the short-window notes
+-- need a rebuild.
+panel:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+	if not panel.Visible then
+		return
+	end
+	layoutChrome()
+	local cols = activeColumns
+	if cols then
+		UiStyle.setColumns(cols, UiStyle.isWide(panel))
+	end
+	if UiStyle.isShort(panel) ~= shortWindow then
+		render()
+	end
+end)
 
 -- ── Opening + data ───────────────────────────────────────────────────────
 
@@ -706,6 +732,13 @@ end)
 closeButton.Activated:Connect(function()
 	panel.Visible = false
 end)
+debugButton.Activated:Connect(function()
+	if panel.Visible and currentTab == "Debug" then
+		panel.Visible = false
+	else
+		open("Debug")
+	end
+end)
 for _, tab in TABS do
 	tabButtons[tab].Activated:Connect(function()
 		currentTab = tab :: Tab
@@ -713,7 +746,7 @@ for _, tab in TABS do
 	end)
 end
 openEvent.Event:Connect(function(tab: any)
-	open(if tab == "Gear" or tab == "Items" or tab == "Resources" or tab == "Debug" then tab :: Tab else nil)
+	open(if tab == "Gear" or tab == "Skins" or tab == "Items" or tab == "Resources" or tab == "Debug" then tab :: Tab else nil)
 end)
 
 Remotes.getEvent("VaultChanged").OnClientEvent:Connect(function(state: Types.VaultState)

@@ -16,6 +16,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local NodeMath = require(Shared:WaitForChild("NodeMath"))
+local UiStyle = require(Shared:WaitForChild("UiStyle"))
 
 local player = Players.LocalPlayer
 local mineEvent = Remotes.getEvent("MineNode")
@@ -27,29 +28,15 @@ local look = Config.Grade.FxLook
 local hintGui = Instance.new("ScreenGui")
 hintGui.Name = "MineHint"
 hintGui.ResetOnSpawn = false
-local hint = Instance.new("TextLabel")
-hint.AnchorPoint = Vector2.new(0.5, 1)
-hint.Position = UDim2.new(0.5, 0, 0.8, 0)
-hint.Size = UDim2.fromOffset(240, 32)
-hint.BackgroundColor3 = Color3.new(0, 0, 0)
-hint.BackgroundTransparency = 0.4
-hint.TextColor3 = Color3.new(1, 1, 1)
-hint.TextScaled = true
-hint.Text = "Walk closer to mine"
-hint.Visible = false
-hint.Parent = hintGui
+-- A toast (newest message wins, hides itself), moved from the top of the screen
+-- down to 80% height, as before, so it stays near where the player is looking.
+local hint = UiStyle.toast(hintGui)
+hint.frame.AnchorPoint = Vector2.new(0.5, 1)
+hint.frame.Position = UDim2.fromScale(0.5, 0.8)
 hintGui.Parent = player:WaitForChild("PlayerGui")
 
-local hintToken = 0
 local function showHint()
-	hintToken += 1
-	local token = hintToken
-	hint.Visible = true
-	task.delay(Config.Nodes.WalkCloserHintSeconds, function()
-		if hintToken == token then
-			hint.Visible = false
-		end
-	end)
+	hint.show("Walk closer to mine", Config.Nodes.WalkCloserHintSeconds)
 end
 
 -- ── Picking a node ───────────────────────────────────────────────────────

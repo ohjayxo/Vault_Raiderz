@@ -1310,7 +1310,7 @@ local Config = {
 	UiStyle = {
 		Font = Enum.Font.GothamMedium,
 		FontBold = Enum.Font.GothamBold,
-		TextSize = { Title = 20, Body = 15, Small = 13 },
+		TextSize = { Title = 20, Body = 15, Small = 13, Tiny = 11, Huge = 30 }, -- Tiny: text inside bars; Huge: big numbers (Level badge)
 		MinTap = 44, -- px: the smallest button height (thumb friendly, phones)
 		Corner = 12, -- panels
 		CardCorner = 10, -- cards and buttons
@@ -1335,6 +1335,19 @@ local Config = {
 			ButtonDisabled = Color3.fromRGB(58, 60, 74),
 			ButtonDanger = Color3.fromRGB(150, 56, 56),
 			ButtonChip = Color3.fromRGB(40, 43, 66),
+			ButtonInfo = Color3.fromRGB(40, 110, 170), -- escort offer and other "join / info" actions
+			ButtonSpecial = Color3.fromRGB(110, 60, 150), -- sabotage and other one-off actions
+			-- Banner / alert fills (white text on top): one set for every
+			-- alert, announcement and raid banner. Look only, [PH] invented.
+			Tones = {
+				Info = Color3.fromRGB(40, 110, 170),
+				Good = Color3.fromRGB(40, 120, 60),
+				Warn = Color3.fromRGB(170, 110, 30),
+				Bad = Color3.fromRGB(140, 40, 40),
+				Critical = Color3.fromRGB(190, 30, 30),
+				Muted = Color3.fromRGB(70, 74, 100),
+				Special = Color3.fromRGB(100, 60, 150),
+			},
 		},
 		-- Grade name colors (text + chips), matching the node bursts.
 		GradeColors = {
@@ -1352,6 +1365,18 @@ local Config = {
 		Level = { BadgeSize = 76, BarHeight = 14 }, -- the Bag's Level block (the XP text sits inside the bar)
 		ShortWindowHeight = 400, -- px: a trade window shorter than this drops its status line (phone landscape)
 		WarningStripHeight = 40, -- px: the fixed below-market warning above the trade list
+		-- Everything below was added for the all-screens look pass (Bag, Gear,
+		-- Build, Raid, HUD). LOOK ONLY, [PH] invented.
+		-- UiStyle.window: title row + close button + scrolling body (the NPC buyer's layout).
+		Window = { EdgePad = 10, HeaderInset = 12, HeaderGap = 10, BodyGap = 8 },
+		Tab = { PadX = 14, MinWidth = 72 }, -- UiStyle.tabBar buttons (height is MinTap)
+		Section = { Height = 28 }, -- UiStyle.sectionHeader
+		Item = { RowHeight = 56 }, -- UiStyle.itemRow: MinTap plus its 6px top and bottom padding
+		Tile = { Width = 116, Height = 60 }, -- UiStyle.tile / tileGrid cell
+		Toast = { MaxWidth = 360, TopOffset = 16, Fill = Color3.fromRGB(10, 11, 18), FillTransparency = 0.08, ZIndex = 20 },
+		Banner = { WidthScale = 0.9, MaxWidth = 520, MinHeight = 40, Transparency = 0.08 }, -- UiStyle.banner
+		Meter = { BarHeight = 12, LabelHeight = 20 }, -- UiStyle.meter (labeled bar)
+		Hud = { Transparency = 0.1, PanelTransparency = 0.2, PanelGap = 4 }, -- HUD buttons and panels sit over the 3D world
 	},
 
 	-- ── Step 10 ── Workshop I, Tech Path T1, Research, Blueprints ──────

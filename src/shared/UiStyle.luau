@@ -1,6 +1,6 @@
 --!strict
--- Shared look for the step 9 screens (NPC buyer, trade window, the Bag's Level
--- block): rounded panels, cards, chips, progress bars, one palette. Builders
+-- Shared look for every screen (NPC buyer, trade window, Bag, Gear, Build, Raid,
+-- HUD): rounded panels, cards, chips, progress bars, one palette. Builders
 -- only; no game logic and no server data. Every value is in Config.UiStyle
 -- (look only), so a UI template pass can restyle everything from one place.
 
@@ -13,7 +13,7 @@ local colors = style.Colors
 
 local UiStyle = {}
 
-export type ButtonKind = "neutral" | "primary" | "danger" | "chip" | "disabled"
+export type ButtonKind = "neutral" | "primary" | "danger" | "chip" | "disabled" | "info" | "special"
 
 function UiStyle.corner(parent: Instance, radius: number?): UICorner
 	local corner = Instance.new("UICorner")
@@ -104,6 +104,10 @@ local function kindColor(kind: ButtonKind): Color3
 		return colors.ButtonChip
 	elseif kind == "disabled" then
 		return colors.ButtonDisabled
+	elseif kind == "info" then
+		return colors.ButtonInfo
+	elseif kind == "special" then
+		return colors.ButtonSpecial
 	end
 	return colors.ButtonNeutral
 end
@@ -244,6 +248,507 @@ function UiStyle.money(n: number): string
 	local text = tostring(math.floor(n))
 	local formatted = text:reverse():gsub("(%d%d%d)", "%1,"):reverse()
 	return (formatted:gsub("^,", ""))
+end
+
+-- ── Layout helpers ───────────────────────────────────────────────────────
+
+-- Wide window = two columns; narrow (phone portrait) = one. Short window =
+-- phone landscape: drop status lines and other extras. Pass the window frame.
+function UiStyle.isWide(gui: GuiObject): boolean
+	return gui.AbsoluteSize.X >= style.WideBreakpoint
+end
+
+function UiStyle.isShort(gui: GuiObject): boolean
+	return gui.AbsoluteSize.Y > 0 and gui.AbsoluteSize.Y < style.ShortWindowHeight
+end
+
+-- A thin divider line between groups inside a list.
+function UiStyle.divider(parent: Instance, order: number?): Frame
+	local line = Instance.new("Frame")
+	line.LayoutOrder = order or 0
+	line.Size = UDim2.new(1, 0, 0, 1)
+	line.BackgroundColor3 = colors.CardStroke
+	line.BorderSizePixel = 0
+	line.Parent = parent
+	return line
+end
+
+-- Two side-by-side columns on a wide window, stacked on a narrow one. Put
+-- cards in `left` / `right`, then call setColumns(cols, UiStyle.isWide(window))
+-- whenever the window's size changes.
+export type Columns = { root: Frame, left: Frame, right: Frame, layout: UIListLayout }
+
+function UiStyle.columns(parent: Instance, order: number?): Columns
+	local root = Instance.new("Frame")
+	root.LayoutOrder = order or 0
+	root.Size = UDim2.new(1, 0, 0, 0)
+	root.AutomaticSize = Enum.AutomaticSize.Y
+	root.BackgroundTransparency = 1
+	root.Parent = parent
+	local layout = UiStyle.list(root, false, style.Gap)
+	local function side(index: number): Frame
+		local frame = Instance.new("Frame")
+		frame.LayoutOrder = index
+		frame.Size = UDim2.new(1, 0, 0, 0)
+		frame.AutomaticSize = Enum.AutomaticSize.Y
+		frame.BackgroundTransparency = 1
+		frame.Parent = root
+		UiStyle.list(frame, false, style.Gap)
+		return frame
+	end
+	local cols: Columns = { root = root, left = side(1), right = side(2), layout = layout }
+	UiStyle.setColumns(cols, false)
+	return cols
+end
+
+function UiStyle.setColumns(cols: Columns, wide: boolean)
+	cols.layout.FillDirection = if wide then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
+	cols.layout.VerticalAlignment = Enum.VerticalAlignment.Top
+	local size = if wide then UDim2.new(0.5, -style.Gap / 2, 0, 0) else UDim2.new(1, 0, 0, 0)
+	cols.left.Size = size
+	cols.right.Size = size
+end
+
+-- ── Windows ──────────────────────────────────────────────────────────────
+
+-- The close "X": a MinTap square in the panel's top-right corner. The caller
+-- connects Activated.
+function UiStyle.closeButton(parent: Instance): TextButton
+	local close = UiStyle.button(parent, "X", "neutral", style.MinTap, style.MinTap)
+	close.AnchorPoint = Vector2.new(1, 0)
+	close.Position = UDim2.new(1, -style.Window.HeaderInset, 0, style.Window.EdgePad)
+	return close
+end
+
+-- A full menu window: panel (hidden), a header row for the title (and pills),
+-- a close button in the corner (outside the row, so a narrow phone can never
+-- push it off) and a scrolling body under them. Same layout as the NPC buyer.
+export type Window = { panel: Frame, header: Frame, title: TextLabel, close: TextButton, content: ScrollingFrame }
+
+function UiStyle.window(parent: Instance, titleText: string, widthScale: number, heightScale: number, maxSize: Vector2?): Window
+	local w = style.Window
+	local panel = UiStyle.panel(parent, widthScale, heightScale, maxSize)
+	local header = Instance.new("Frame")
+	header.Position = UDim2.fromOffset(w.HeaderInset, w.EdgePad)
+	header.Size = UDim2.new(1, -2 * w.HeaderInset - style.MinTap - w.BodyGap, 0, style.MinTap)
+	header.BackgroundTransparency = 1
+	header.Parent = panel
+	UiStyle.list(header, true, w.HeaderGap)
+	local title = UiStyle.title(header, titleText)
+	title.AutomaticSize = Enum.AutomaticSize.XY
+	title.Size = UDim2.fromOffset(0, 0)
+	title.LayoutOrder = 1
+	local close = UiStyle.closeButton(panel)
+	local top = w.EdgePad + style.MinTap + w.BodyGap
+	local content = UiStyle.scroller(panel, UDim2.fromOffset(w.EdgePad, top), UDim2.new(1, -2 * w.EdgePad, 1, -(top + w.EdgePad)))
+	return { panel = panel, header = header, title = title, close = close, content = content }
+end
+
+-- A menu that sizes itself to what's inside (Gear menu, Build panel): rounded
+-- panel, padded, vertical list, hidden until the caller shows it.
+function UiStyle.dockPanel(parent: Instance): Frame
+	local dock = Instance.new("Frame")
+	dock.AutomaticSize = Enum.AutomaticSize.XY
+	dock.Size = UDim2.fromOffset(0, 0)
+	dock.BackgroundColor3 = colors.Panel
+	dock.BackgroundTransparency = 0.03
+	dock.BorderSizePixel = 0
+	dock.Visible = false
+	dock.Parent = parent
+	UiStyle.corner(dock, style.Corner)
+	UiStyle.stroke(dock, colors.PanelStroke, style.StrokeThickness)
+	UiStyle.padding(dock, style.Pad)
+	UiStyle.list(dock, false, style.Gap).HorizontalAlignment = Enum.HorizontalAlignment.Center
+	return dock
+end
+
+-- ── Tabs, headings, rows, tiles ──────────────────────────────────────────
+
+-- A row of tab buttons that size to their text. Hidden tabs (Visible = false)
+-- leave no gap. The caller connects Activated on each button.
+export type TabBar = { frame: Frame, buttons: { [string]: TextButton } }
+
+function UiStyle.tabBar(parent: Instance, names: { string }, order: number?): TabBar
+	local frame = Instance.new("Frame")
+	frame.LayoutOrder = order or 0
+	frame.Size = UDim2.new(1, 0, 0, style.MinTap)
+	frame.BackgroundTransparency = 1
+	frame.Parent = parent
+	UiStyle.list(frame, true, 6)
+	local buttons: { [string]: TextButton } = {}
+	for index, name in names do
+		local button = UiStyle.button(frame, name, "chip", 0, style.MinTap)
+		button.LayoutOrder = index
+		button.AutomaticSize = Enum.AutomaticSize.X
+		button.Size = UDim2.fromOffset(0, style.MinTap)
+		button.TextWrapped = false
+		local pad = Instance.new("UIPadding")
+		pad.PaddingLeft = UDim.new(0, style.Tab.PadX)
+		pad.PaddingRight = UDim.new(0, style.Tab.PadX)
+		pad.Parent = button
+		local limit = Instance.new("UISizeConstraint")
+		limit.MinSize = Vector2.new(style.Tab.MinWidth, 0)
+		limit.Parent = button
+		buttons[name] = button
+	end
+	return { frame = frame, buttons = buttons }
+end
+
+function UiStyle.setActiveTab(bar: TabBar, active: string)
+	for name, button in bar.buttons do
+		UiStyle.setButtonKind(button, if name == active then "primary" else "chip")
+	end
+end
+
+-- Small dim ALL-CAPS heading over a group of rows ("SAFE", "ARMOR", "CRAFT").
+function UiStyle.sectionHeader(parent: Instance, text: string, order: number?, color: Color3?): TextLabel
+	local header = UiStyle.label(parent, string.upper(text), style.TextSize.Small, color or colors.TextDim, true)
+	header.LayoutOrder = order or 0
+	header.Size = UDim2.new(1, 0, 0, style.Section.Height)
+	header.AutomaticSize = Enum.AutomaticSize.None
+	header.TextYAlignment = Enum.TextYAlignment.Bottom
+	header.TextWrapped = false
+	header.TextTruncate = Enum.TextTruncate.AtEnd
+	return header
+end
+
+-- One list row: a name (with an optional dim detail line under it) that takes
+-- all the spare width, and a `trailing` frame on the right for pills, counts
+-- and buttons (add them there; they sit MinTap tall inside the row). Tappable
+-- rows are a TextButton (the caller connects Activated on `root`).
+export type ItemRow = { root: GuiObject, title: TextLabel, detail: TextLabel, trailing: Frame }
+
+function UiStyle.itemRow(parent: Instance, titleText: string, detailText: string?, order: number?, tappable: boolean?): ItemRow
+	local root: GuiObject
+	if tappable then
+		local button = Instance.new("TextButton")
+		button.Text = ""
+		button.AutoButtonColor = false
+		root = button
+	else
+		root = Instance.new("Frame")
+	end
+	root.LayoutOrder = order or 0
+	root.Size = UDim2.new(1, 0, 0, style.Item.RowHeight)
+	root.BackgroundColor3 = colors.Card
+	root.BorderSizePixel = 0
+	root.Parent = parent
+	UiStyle.corner(root, style.CardCorner)
+	UiStyle.stroke(root, colors.CardStroke, 1)
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0, 6)
+	pad.PaddingBottom = UDim.new(0, 6)
+	pad.PaddingLeft = UDim.new(0, style.Pad)
+	pad.PaddingRight = UDim.new(0, style.Pad)
+	pad.Parent = root
+	UiStyle.list(root, true, style.Gap)
+
+	local info = Instance.new("Frame")
+	info.LayoutOrder = 1
+	info.Size = UDim2.fromScale(0, 1)
+	info.BackgroundTransparency = 1
+	info.Parent = root
+	local flex = Instance.new("UIFlexItem")
+	flex.FlexMode = Enum.UIFlexMode.Fill
+	flex.Parent = info
+	local infoList = UiStyle.list(info, false, 2)
+	infoList.VerticalAlignment = Enum.VerticalAlignment.Center
+
+	local function line(text: string, size: number, color: Color3, bold: boolean, lineOrder: number): TextLabel
+		local label = UiStyle.label(info, text, size, color, bold)
+		label.LayoutOrder = lineOrder
+		label.Size = UDim2.new(1, 0, 0, size + 5)
+		label.AutomaticSize = Enum.AutomaticSize.None
+		label.TextWrapped = false
+		label.TextTruncate = Enum.TextTruncate.AtEnd
+		return label
+	end
+	local title = line(titleText, style.TextSize.Body, colors.Text, true, 1)
+	local detail = line(detailText or "", style.TextSize.Small, colors.TextDim, false, 2)
+	detail.Visible = detailText ~= nil and detailText ~= ""
+
+	local trailing = Instance.new("Frame")
+	trailing.LayoutOrder = 2
+	trailing.Size = UDim2.fromScale(0, 1)
+	trailing.AutomaticSize = Enum.AutomaticSize.X
+	trailing.BackgroundTransparency = 1
+	trailing.Parent = root
+	UiStyle.list(trailing, true, 6)
+	return { root = root, title = title, detail = detail, trailing = trailing }
+end
+
+-- A tappable tile for grids (build pieces, gadgets): a name over a small dim
+-- line (cost, count). The caller connects Activated on `button`.
+export type Tile = { button: TextButton, title: TextLabel, sub: TextLabel }
+export type TileState = "normal" | "selected" | "disabled"
+
+function UiStyle.tile(parent: Instance, titleText: string, subText: string?, order: number?): Tile
+	local button = Instance.new("TextButton")
+	button.Name = "Tile"
+	button.LayoutOrder = order or 0
+	button.Size = UDim2.fromOffset(style.Tile.Width, style.Tile.Height)
+	button.Text = ""
+	button.AutoButtonColor = true
+	button.BorderSizePixel = 0
+	button.Parent = parent
+	UiStyle.corner(button, style.CardCorner)
+	local stroke = UiStyle.stroke(button, colors.CardStroke, 1)
+	stroke.Name = "Stroke"
+	UiStyle.padding(button, 4)
+	local list = UiStyle.list(button, false, 2)
+	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	list.VerticalAlignment = Enum.VerticalAlignment.Center
+	local function line(text: string, size: number, color: Color3, bold: boolean, lineOrder: number): TextLabel
+		local label = UiStyle.label(button, text, size, color, bold)
+		label.LayoutOrder = lineOrder
+		label.Size = UDim2.new(1, 0, 0, size + 5)
+		label.AutomaticSize = Enum.AutomaticSize.None
+		label.TextXAlignment = Enum.TextXAlignment.Center
+		label.TextWrapped = false
+		label.TextTruncate = Enum.TextTruncate.AtEnd
+		return label
+	end
+	local title = line(titleText, style.TextSize.Small, colors.Text, true, 1)
+	local sub = line(subText or "", style.TextSize.Tiny, colors.TextDim, false, 2)
+	sub.Visible = subText ~= nil and subText ~= ""
+	local tile: Tile = { button = button, title = title, sub = sub }
+	UiStyle.setTileState(tile, "normal")
+	return tile
+end
+
+function UiStyle.setTileState(tile: Tile, state: TileState)
+	local stroke = tile.button:FindFirstChild("Stroke")
+	tile.button.BackgroundColor3 = if state == "selected"
+		then colors.ButtonPrimary
+		elseif state == "disabled" then colors.ButtonDisabled
+		else colors.ButtonChip
+	tile.title.TextColor3 = if state == "disabled" then colors.TextDim else colors.Text
+	if stroke and stroke:IsA("UIStroke") then
+		stroke.Color = if state == "selected" then colors.Good else colors.CardStroke
+	end
+end
+
+-- The wrapping grid that tiles go in (Config.UiStyle.Tile cell size). Grows
+-- taller as tiles wrap, so it lives inside a scroller or a dock panel.
+function UiStyle.tileGrid(parent: Instance, order: number?): Frame
+	local frame = Instance.new("Frame")
+	frame.LayoutOrder = order or 0
+	frame.Size = UDim2.new(1, 0, 0, 0)
+	frame.AutomaticSize = Enum.AutomaticSize.Y
+	frame.BackgroundTransparency = 1
+	frame.Parent = parent
+	local grid = Instance.new("UIGridLayout")
+	grid.CellSize = UDim2.fromOffset(style.Tile.Width, style.Tile.Height)
+	grid.CellPadding = UDim2.fromOffset(style.Gap, style.Gap)
+	grid.SortOrder = Enum.SortOrder.LayoutOrder
+	grid.Parent = frame
+	return frame
+end
+
+-- ── HUD ──────────────────────────────────────────────────────────────────
+
+-- A HUD button over the 3D world: never under MinTap in either direction;
+-- `round` makes it a circle (Attack, Build) of the larger side.
+function UiStyle.hudButton(parent: Instance, text: string, kind: ButtonKind, width: number, height: number, round: boolean?): TextButton
+	local w = math.max(width, style.MinTap)
+	local h = math.max(height, style.MinTap)
+	if round then
+		w = math.max(w, h)
+		h = w
+	end
+	local button = UiStyle.button(parent, text, kind, w, h)
+	button.TextWrapped = true
+	button.BackgroundTransparency = style.Hud.Transparency
+	local corner = button:FindFirstChildOfClass("UICorner")
+	if corner then
+		corner.CornerRadius = UDim.new(0, if round then 999 else style.Corner)
+	end
+	if kind ~= "chip" then -- chip buttons already have their stroke
+		UiStyle.stroke(button, colors.PanelStroke, 1)
+	end
+	return button
+end
+
+-- A translucent info box on the HUD (vault meter). Auto-sizes to its content;
+-- set Size / AutomaticSize to fix the width. `interactive` = tappable (the
+-- caller connects Activated); otherwise touches pass straight through.
+function UiStyle.hudPanel(parent: Instance, interactive: boolean?): TextButton
+	local panel = Instance.new("TextButton")
+	panel.Text = ""
+	panel.AutoButtonColor = false
+	panel.Active = interactive == true
+	panel.Selectable = false
+	panel.AutomaticSize = Enum.AutomaticSize.XY
+	panel.Size = UDim2.fromOffset(0, 0)
+	panel.BackgroundColor3 = colors.Panel
+	panel.BackgroundTransparency = style.Hud.PanelTransparency
+	panel.BorderSizePixel = 0
+	panel.Parent = parent
+	UiStyle.corner(panel, style.CardCorner)
+	UiStyle.stroke(panel, colors.CardStroke, 1)
+	UiStyle.padding(panel, style.Pad)
+	UiStyle.list(panel, false, style.Hud.PanelGap)
+	return panel
+end
+
+-- ── Messages ─────────────────────────────────────────────────────────────
+
+export type Tone = "info" | "good" | "warn" | "bad" | "critical" | "muted" | "special"
+
+-- Banner fill for a tone (alerts, announcements, raid status).
+function UiStyle.tone(tone: Tone): Color3
+	local tones = colors.Tones
+	if tone == "good" then
+		return tones.Good
+	elseif tone == "warn" then
+		return tones.Warn
+	elseif tone == "bad" then
+		return tones.Bad
+	elseif tone == "critical" then
+		return tones.Critical
+	elseif tone == "muted" then
+		return tones.Muted
+	elseif tone == "special" then
+		return tones.Special
+	end
+	return tones.Info
+end
+
+-- A short message that hides itself. show(text, seconds, tone?): the newest
+-- message wins; the old one's timer can't hide it. Position it if the default
+-- (top centre) isn't right.
+export type ToastTone = "neutral" | "good" | "warn" | "bad"
+export type Toast = { frame: TextLabel, show: (text: string, seconds: number, tone: ToastTone?) -> () }
+
+function UiStyle.toast(parent: Instance): Toast
+	local toastCfg = style.Toast
+	local frame = UiStyle.pill(parent, "", colors.Text, toastCfg.Fill)
+	frame.AnchorPoint = Vector2.new(0.5, 0)
+	frame.Position = UDim2.new(0.5, 0, 0, toastCfg.TopOffset)
+	frame.BackgroundTransparency = toastCfg.FillTransparency
+	frame.TextWrapped = true
+	frame.TextSize = style.TextSize.Body
+	frame.Visible = false
+	frame.ZIndex = toastCfg.ZIndex
+	local corner = frame:FindFirstChildOfClass("UICorner")
+	if corner then
+		corner.CornerRadius = UDim.new(0, style.Corner) -- a pill would balloon on wrapped text
+	end
+	local limit = Instance.new("UISizeConstraint")
+	limit.MaxSize = Vector2.new(toastCfg.MaxWidth, math.huge)
+	limit.Parent = frame
+	local stroke = UiStyle.stroke(frame, colors.PanelStroke, 1)
+
+	local token = 0
+	local function show(text: string, seconds: number, tone: ToastTone?)
+		token += 1
+		local mine = token
+		local color = if tone == "good" then colors.Good elseif tone == "warn" then colors.Warn elseif tone == "bad" then colors.Bad else colors.Text
+		frame.Text = text
+		frame.TextColor3 = color
+		stroke.Color = if tone == nil or tone == "neutral" then colors.PanelStroke else color
+		frame.Visible = true
+		task.delay(seconds, function()
+			if token == mine then
+				frame.Visible = false
+			end
+		end)
+	end
+	return { frame = frame, show = show }
+end
+
+-- A coloured status bar across the top (announcements, base alerts, raid
+-- status): wrapped bold text on a tone fill. The caller sets Position, Text and
+-- BackgroundColor3 (UiStyle.tone or a Config colour) and toggles Visible.
+function UiStyle.banner(parent: Instance, widthScale: number?): TextLabel
+	local cfg = style.Banner
+	local banner = UiStyle.label(parent, "", style.TextSize.Body, colors.Text, true)
+	banner.AnchorPoint = Vector2.new(0.5, 0)
+	banner.Position = UDim2.new(0.5, 0, 0, style.Window.EdgePad)
+	banner.Size = UDim2.new(widthScale or cfg.WidthScale, 0, 0, 0)
+	banner.TextXAlignment = Enum.TextXAlignment.Center
+	banner.BackgroundTransparency = cfg.Transparency
+	banner.BackgroundColor3 = UiStyle.tone("muted")
+	banner.BorderSizePixel = 0
+	banner.Visible = false
+	local limit = Instance.new("UISizeConstraint")
+	limit.MinSize = Vector2.new(0, cfg.MinHeight)
+	limit.MaxSize = Vector2.new(cfg.MaxWidth, math.huge)
+	limit.Parent = banner
+	UiStyle.corner(banner, style.CardCorner)
+	UiStyle.stroke(banner, colors.BarTrack, 1)
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0, 6)
+	pad.PaddingBottom = UDim.new(0, 6)
+	pad.PaddingLeft = UDim.new(0, style.Pad)
+	pad.PaddingRight = UDim.new(0, style.Pad)
+	pad.Parent = banner
+	return banner
+end
+
+-- ── Meters, empty states ─────────────────────────────────────────────────
+
+-- A labeled bar: name on the left, value text on the right, bar underneath.
+export type Meter = { root: Frame, label: TextLabel, value: TextLabel, bar: Frame }
+
+function UiStyle.meter(parent: Instance, labelText: string, fraction: number, color: Color3, order: number?): Meter
+	local cfg = style.Meter
+	local root = Instance.new("Frame")
+	root.LayoutOrder = order or 0
+	root.Size = UDim2.new(1, 0, 0, 0)
+	root.AutomaticSize = Enum.AutomaticSize.Y
+	root.BackgroundTransparency = 1
+	root.Parent = parent
+	UiStyle.list(root, false, 4)
+	local top = UiStyle.row(root, cfg.LabelHeight, 1)
+	local label = UiStyle.label(top, labelText, style.TextSize.Small, colors.Text, true)
+	label.Size = UDim2.new(0.6, 0, 1, 0)
+	label.AutomaticSize = Enum.AutomaticSize.None
+	label.TextWrapped = false
+	label.TextTruncate = Enum.TextTruncate.AtEnd
+	local value = UiStyle.label(top, "", style.TextSize.Small, colors.TextDim, false)
+	value.Size = UDim2.new(0.4, -6, 1, 0)
+	value.AutomaticSize = Enum.AutomaticSize.None
+	value.TextXAlignment = Enum.TextXAlignment.Right
+	value.TextWrapped = false
+	value.TextTruncate = Enum.TextTruncate.AtEnd
+	local bar = UiStyle.bar(root, cfg.BarHeight, fraction, color)
+	bar.LayoutOrder = 2
+	return { root = root, label = label, value = value, bar = bar }
+end
+
+function UiStyle.setMeter(meter: Meter, fraction: number, valueText: string?, color: Color3?)
+	UiStyle.setBar(meter.bar, fraction, color)
+	if valueText then
+		meter.value.Text = valueText
+	end
+end
+
+-- Text centred inside a bar ("120/300 XP"), readable over both track and fill.
+function UiStyle.barLabel(track: Frame, text: string): TextLabel
+	local label = UiStyle.label(track, text, style.TextSize.Tiny, colors.Text, true)
+	label.Size = UDim2.fromScale(1, 1)
+	label.AutomaticSize = Enum.AutomaticSize.None
+	label.TextXAlignment = Enum.TextXAlignment.Center
+	label.TextWrapped = false
+	label.TextTruncate = Enum.TextTruncate.AtEnd
+	label.TextStrokeTransparency = 0.6
+	label.ZIndex = 3
+	return label
+end
+
+-- "Nothing here yet" card: a title and one line saying what to do about it.
+function UiStyle.emptyState(parent: Instance, titleText: string, hint: string?, order: number?): Frame
+	local card = UiStyle.card(parent, order)
+	local title = UiStyle.label(card, titleText, style.TextSize.Title, colors.Text, true)
+	title.LayoutOrder = 1
+	title.TextXAlignment = Enum.TextXAlignment.Center
+	if hint and hint ~= "" then
+		local body = UiStyle.label(card, hint, style.TextSize.Body, colors.TextDim, false)
+		body.LayoutOrder = 2
+		body.TextXAlignment = Enum.TextXAlignment.Center
+	end
+	return card
 end
 
 return UiStyle

@@ -22,6 +22,7 @@ local NodeMath = require(Shared:WaitForChild("NodeMath"))
 local player = Players.LocalPlayer
 local uiCfg = Config.Base.BuildUi
 local cfg = uiCfg.PlotMarker
+local style = Config.UiStyle
 
 -- ── The marker (built once, moved onto whichever plot is yours) ─────────
 
@@ -66,9 +67,10 @@ arrow.Size = UDim2.fromScale(1, 1)
 arrow.BackgroundTransparency = 1
 arrow.Text = "▼" -- a shape, not words (FTUE hard rule 1)
 arrow.TextScaled = true
-arrow.Font = Enum.Font.GothamBold
+arrow.Font = style.FontBold
 arrow.TextColor3 = cfg.BeamColor
 arrow.TextStrokeTransparency = 0.3
+arrow.TextStrokeColor3 = style.Colors.BarTrack
 arrow.Parent = billboard
 
 -- Repeat forever (-1), reversing each time: a pulse and a bounce.

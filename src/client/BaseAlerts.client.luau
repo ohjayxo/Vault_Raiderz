@@ -6,7 +6,6 @@
 -- 02-core-loop.md § HUD priority (D64): one compact, priority-ordered
 -- "threat strip". Raid alerts jump the queue, then Scav Waves, then
 -- everything else; lower ones wait. (Raid status itself is RaidUi's banner.)
--- Greybox styling.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,20 +13,22 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local UiStyle = require(Shared:WaitForChild("UiStyle"))
 
--- Look only. [PH] invented, REVISIT with the D64 threat strip.
-local COLORS: { [string]: Color3 } = {
-	WaveIncoming = Color3.fromRGB(170, 90, 30),
-	Tripwire = Color3.fromRGB(170, 30, 30),
-	ScavLooted = Color3.fromRGB(170, 30, 30),
-	WaveLost = Color3.fromRGB(140, 40, 40),
-	WaveWon = Color3.fromRGB(40, 120, 60),
-	CaptainLoot = Color3.fromRGB(150, 115, 20),
-	DefenseEmpty = Color3.fromRGB(90, 90, 110),
-	Disrupted = Color3.fromRGB(90, 60, 140),
-	RaidAlert = Color3.fromRGB(190, 20, 20),
-	RaidLost = Color3.fromRGB(140, 30, 30),
-	RaidOver = Color3.fromRGB(40, 110, 60),
+-- Look only: each kind maps to a shared tone (UiStyle.tone), so alerts, the
+-- announcement banner and the raid banner all use one palette.
+local TONES: { [string]: UiStyle.Tone } = {
+	WaveIncoming = "warn",
+	Tripwire = "critical",
+	ScavLooted = "critical",
+	WaveLost = "bad",
+	WaveWon = "good",
+	CaptainLoot = "info",
+	DefenseEmpty = "muted",
+	Disrupted = "special",
+	RaidAlert = "critical",
+	RaidLost = "bad",
+	RaidOver = "good",
 }
 -- D64 priority: lower number shows first. Unlisted kinds = 3.
 local PRIORITY: { [string]: number } = {
@@ -46,19 +47,10 @@ local gui = Instance.new("ScreenGui")
 gui.Name = "BaseAlerts"
 gui.ResetOnSpawn = false
 
-local banner = Instance.new("TextLabel")
-banner.AnchorPoint = Vector2.new(0.5, 0)
-banner.Position = UDim2.new(0.5, 0, 0, 60)
-banner.Size = UDim2.new(0.5, 0, 0, 34)
-banner.BackgroundTransparency = 0.15
-banner.TextColor3 = Color3.new(1, 1, 1)
-banner.Font = Enum.Font.GothamBold
-banner.TextScaled = true
-banner.Visible = false
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = banner
-banner.Parent = gui
+-- Sits below the announcement banner (top of the screen) so both can show at once.
+local BANNER_TOP = 60 -- [PH] invented look-only: px
+local banner = UiStyle.banner(gui)
+banner.Position = UDim2.new(0.5, 0, 0, BANNER_TOP)
 gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 -- Alerts queue and show one after another, so a quick follow-up (e.g.
@@ -76,7 +68,7 @@ local function showNext()
 	end
 	showing = true
 	banner.Text = nextAlert.text
-	banner.BackgroundColor3 = COLORS[nextAlert.kind] or Config.Broadcast.DefaultBannerColor
+	banner.BackgroundColor3 = UiStyle.tone(TONES[nextAlert.kind] or "muted")
 	banner.Visible = true
 	task.delay(Config.Broadcast.BannerSeconds, showNext)
 end

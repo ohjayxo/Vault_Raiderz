@@ -19,7 +19,7 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local debugEvent = Remotes.getEvent("DebugCommand")
 local mineEvent = Remotes.getEvent("MineNode")
 
--- The keys live in Shared/DebugKeyList (also the Bag's Debug tab). They
+-- The keys live in Shared/DebugKeyList (also the top-centre Debug button). They
 -- avoid I/O (camera zoom: Roblox marks them as handled, so they never reach
 -- this script), WASD/Space, E (prompts), R (build rotate), 1-4 (gadgets),
 -- \ (Roblox UI navigation: it grabs input and stops movement).
@@ -79,4 +79,4 @@ local parts = {}
 for _, entry in DebugKeyList do
 	table.insert(parts, `{entry.Label} = {entry.Text}`)
 end
-print("[Debug] Studio keys (also in the Bag's Debug tab): " .. table.concat(parts, ", ") .. "; Bag X = delete")
+print("[Debug] Studio keys (also on the top-centre Debug button): " .. table.concat(parts, ", ") .. "; Bag X = delete")

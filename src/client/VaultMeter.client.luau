@@ -15,66 +15,60 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Types = require(Shared:WaitForChild("PlayerDataTypes"))
+local UiStyle = require(Shared:WaitForChild("UiStyle"))
 
 local player = Players.LocalPlayer
 local meterCfg = Config.Bank.Meter
+local style = Config.UiStyle
+local colors = style.Colors
+local money = UiStyle.money
 
--- ── UI (greybox) ─────────────────────────────────────────────────────────
+-- ── UI ───────────────────────────────────────────────────────────────────
+-- Look: Shared/UiStyle (Config.UiStyle, look only). A small translucent card
+-- in the top-left: a Banked meter, then two one-line stats.
+
+local TOP_BAR_CLEARANCE = 60 -- [PH] invented look-only: px, keeps the card under Roblox's top-bar icons
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "VaultMeter"
 gui.ResetOnSpawn = false
 gui.Enabled = false -- hidden until the server says otherwise
 
-local panel = Instance.new("TextButton")
-panel.Text = ""
-panel.AutoButtonColor = false
-panel.Position = UDim2.fromOffset(12, 60)
+local panel = UiStyle.hudPanel(gui, true)
+panel.Position = UDim2.fromOffset(style.Window.EdgePad, TOP_BAR_CLEARANCE)
 panel.Size = UDim2.fromOffset(meterCfg.Width, 0)
 panel.AutomaticSize = Enum.AutomaticSize.Y
-panel.BackgroundColor3 = Color3.new(0, 0, 0)
-panel.BackgroundTransparency = 0.35
-panel.Parent = gui
-local padding = Instance.new("UIPadding")
-padding.PaddingLeft = UDim.new(0, 8)
-padding.PaddingRight = UDim.new(0, 8)
-padding.PaddingTop = UDim.new(0, 6)
-padding.PaddingBottom = UDim.new(0, 6)
-padding.Parent = panel
-local list = Instance.new("UIListLayout")
-list.Padding = UDim.new(0, 4)
-list.SortOrder = Enum.SortOrder.LayoutOrder
-list.Parent = panel
 
-local function makeLabel(order: number, color: Color3, size: number): TextLabel
-	local label = Instance.new("TextLabel")
-	label.LayoutOrder = order
-	label.Size = UDim2.new(1, 0, 0, size + 4)
-	label.BackgroundTransparency = 1
-	label.TextColor3 = color
-	label.Font = Enum.Font.GothamBold
-	label.TextSize = size
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = panel
-	return label
+-- The name takes only the width it needs and the value takes the rest, so
+-- "10,000 / 10,000  ›" is never cut short on a narrow card.
+local function fitValue(name: TextLabel, value: TextLabel)
+	name.AutomaticSize = Enum.AutomaticSize.X
+	name.Size = UDim2.fromScale(0, 1)
+	value.AutomaticSize = Enum.AutomaticSize.None
+	value.Size = UDim2.fromScale(0, 1)
+	value.TextXAlignment = Enum.TextXAlignment.Right
+	value.TextWrapped = false
+	value.TextTruncate = Enum.TextTruncate.AtEnd
+	local flex = Instance.new("UIFlexItem")
+	flex.FlexMode = Enum.UIFlexMode.Fill
+	flex.Parent = value
 end
 
-local bankedLabel = makeLabel(1, meterCfg.BankedColor, 14)
+local bankedMeter = UiStyle.meter(panel, "Banked", 0, meterCfg.BankedColor, 1)
+bankedMeter.value.TextColor3 = colors.Text
+fitValue(bankedMeter.label, bankedMeter.value)
 
-local barBack = Instance.new("Frame")
-barBack.LayoutOrder = 2
-barBack.Size = UDim2.new(1, 0, 0, meterCfg.BarHeight)
-barBack.BackgroundColor3 = meterCfg.BarBackColor
-barBack.BorderSizePixel = 0
-barBack.Parent = panel
-local barFill = Instance.new("Frame")
-barFill.Size = UDim2.fromScale(0, 1)
-barFill.BackgroundColor3 = meterCfg.BankedColor
-barFill.BorderSizePixel = 0
-barFill.Parent = barBack
+-- One line: a coloured name on the left, its value on the right.
+local function statRow(order: number, name: string, nameColor: Color3, valueColor: Color3): (Frame, TextLabel)
+	local row = UiStyle.row(panel, style.Meter.LabelHeight, order)
+	local nameLabel = UiStyle.label(row, name, style.TextSize.Small, nameColor, true)
+	local valueLabel = UiStyle.label(row, "", style.TextSize.Small, valueColor, false)
+	fitValue(nameLabel, valueLabel)
+	return row, valueLabel
+end
 
-local exposedLabel = makeLabel(3, meterCfg.ExposedColor, 14)
-local scrapLabel = makeLabel(4, Color3.fromRGB(200, 200, 200), 12)
+local exposedRow, exposedValue = statRow(2, "Exposed", meterCfg.ExposedColor, colors.Text)
+local scrapRow, scrapValue = statRow(3, "Scrap", colors.TextDim, colors.TextDim)
 
 gui.Parent = player:WaitForChild("PlayerGui")
 
@@ -98,27 +92,20 @@ local function totalUnits(store: Types.ResourceStore): number
 	return total
 end
 
--- 12345 -> "12,345"
-local function withCommas(n: number): string
-	local text = tostring(math.floor(n))
-	local formatted = text:reverse():gsub("(%d%d%d)", "%1,"):reverse()
-	return (formatted:gsub("^,", ""))
-end
-
 local function render(state: Types.VaultState?)
 	if not state then
-		bankedLabel.Text = "Banked ..."
-		exposedLabel.Text = ""
-		scrapLabel.Text = ""
+		UiStyle.setMeter(bankedMeter, 0, "...")
+		exposedRow.Visible = false
+		scrapRow.Visible = false
 		return
 	end
 	local banked = totalUnits(state.Banked)
-	bankedLabel.Text = `Banked {withCommas(banked)} / {withCommas(state.Capacity)}   ›`
 	local fill = if state.Capacity > 0 then math.clamp(banked / state.Capacity, 0, 1) else 0
-	barFill.Size = UDim2.fromScale(fill, 1)
-	exposedLabel.Text = `Exposed {withCommas(totalUnits(state.Exposed))}`
-	scrapLabel.Text =
-		`Scrap {withCommas(state.ScrapBanked)} / {withCommas(state.ScrapCapacity)}  ·  exposed {withCommas(state.ScrapExposed)}`
+	UiStyle.setMeter(bankedMeter, fill, `{money(banked)} / {money(state.Capacity)}  ›`)
+	exposedRow.Visible = true
+	scrapRow.Visible = true
+	exposedValue.Text = money(totalUnits(state.Exposed))
+	scrapValue.Text = `{money(state.ScrapBanked)} / {money(state.ScrapCapacity)}  ·  {money(state.ScrapExposed)} exposed`
 end
 
 -- ── Visibility (server-controlled) ───────────────────────────────────────

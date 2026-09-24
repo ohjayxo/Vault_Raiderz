@@ -19,6 +19,7 @@ local UserInputService = game:GetService("UserInputService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local UiStyle = require(Shared:WaitForChild("UiStyle"))
 
 local player = Players.LocalPlayer
 local combatCfg = Config.Combat
@@ -102,22 +103,12 @@ gui.Name = "CombatUi"
 gui.ResetOnSpawn = false
 
 local size = combatCfg.Ui.ButtonSize * 1.3
-local attackButton = Instance.new("TextButton")
+local attackButton = UiStyle.hudButton(gui, "Attack", "danger", size, size, true)
 attackButton.Name = "Attack"
 attackButton.AnchorPoint = Vector2.new(1, 1)
 -- Left of the Build button, same height, so the thumb reaches both.
 attackButton.Position = UDim2.new(1, -32 - size, 1, -16 - combatCfg.Ui.ButtonSize * 1.6)
-attackButton.Size = UDim2.fromOffset(size, size)
-attackButton.BackgroundColor3 = Color3.fromRGB(160, 50, 50)
-attackButton.BackgroundTransparency = 0.1
-attackButton.TextColor3 = Color3.new(1, 1, 1)
-attackButton.Font = Enum.Font.GothamBold
-attackButton.TextSize = 18
-attackButton.Text = "Attack"
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(1, 0)
-corner.Parent = attackButton
-attackButton.Parent = gui
+attackButton.TextSize = Config.UiStyle.TextSize.Title
 -- PC players click instead; the button only appears on touch screens.
 attackButton.Visible = UserInputService.TouchEnabled
 gui.Parent = player:WaitForChild("PlayerGui")
