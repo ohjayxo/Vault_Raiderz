@@ -14,12 +14,14 @@
 -- * Targets: other players and NPCs tagged Config.Combat.CombatTag (Scavs,
 --   step 6). FTUE rule 3: players with the PvpProtected attribute can't hit
 --   or be hit by players (step 14 sets it).
--- * Dying costs time only: respawn next to your own plot (Josh's call, step 5).
+-- * Dying costs time only: respawn next to your own plot (02 § Death and
+--   respawn). D115: not while your base is being raided (RaidService's
+--   rule, setRespawnOnPlot): then you come back at the Main Street spawn.
 -- * The pickaxe is a greybox Tool always in hand; the swing animation is
 --   Roblox's built-in "Slash" (the server drops a "toolanim" value in the
 --   tool and the default Animate script plays it).
--- * Hit fires for other systems: the Chase (step 7, "any player who lands a
---   hit knocks the loot loose") and Scavs (step 6).
+-- * Hit fires for other systems: the Chase (hits wear down the carrier's
+--   grip, D115) and Scavs (step 6).
 
 local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
@@ -53,6 +55,16 @@ local CombatService = {}
 
 -- Fires (attacker: Player, targetModel: Model, damage: number, comboStep).
 CombatService.Hit = hitEvent.Event
+
+-- Whether a player who died respawns on their own plot. RaidService sets
+-- this (D115: not while their base is being raided); it can't be required
+-- from here (RaidService requires CombatService).
+local respawnOnPlot: (Player) -> boolean = function()
+	return true
+end
+function CombatService.setRespawnOnPlot(rule: (Player) -> boolean)
+	respawnOnPlot = rule
+end
 
 -- ── The pickaxe tool (greybox: stick + block, coloured by tier) ──────────
 
@@ -327,7 +339,8 @@ local function onCharacter(player: Player, character: Model)
 	end)
 	-- After a death, come back next to your own plot. (The very first
 	-- spawn stays at the Homestead spawn; the FTUE owns that, step 14.)
-	if diedOnce[player] then
+	-- D115: not during a raid on your base; then the Homestead spawn too.
+	if diedOnce[player] and respawnOnPlot(player) then
 		local spawnAt = PlotService.getSpawnCFrame(player)
 		if spawnAt then
 			MovementService.expectTeleport(player)

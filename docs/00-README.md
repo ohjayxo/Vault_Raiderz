@@ -1,9 +1,9 @@
 # Vault Raiderz — Design Document Set
 
-**Current version:** v5.10
+**Current version:** v5.11
 **Last updated:** 2026-09-22
 **Platform:** Roblox (Luau, Roblox Studio)
-**Status:** Vertical slice in build (docs v5.10). Build steps 0–7 are done; progress and build notes in `docs-build/` (`13-build-guide.md`).
+**Status:** Vertical slice in build (docs v5.11). Build steps 0–8 are done; progress and build notes in `docs-build/` (`13-build-guide.md`).
 
 ---
 

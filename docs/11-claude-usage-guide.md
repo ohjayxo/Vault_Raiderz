@@ -6,7 +6,7 @@ to reach for, and not burning Opus-level usage on a task Haiku could
 handle. Ordered by where the project actually is (now → later).
 
 This is a **prediction**, not a rulebook. Vault Raiderz is in the
-vertical-slice build (docs v5.10, build steps 0–7 done; `13-build-guide.md`).
+vertical-slice build (docs v5.11, build steps 0–8 done; `13-build-guide.md`).
 Everything past "Phase 0" below was written as a best guess at what work
 is coming, based on `10-roadmap.md`'s build order and scope. Revise this
 file once real phases start.

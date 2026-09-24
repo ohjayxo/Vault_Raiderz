@@ -4,9 +4,10 @@
 **From:** Claude Code (the build, `~/vaultbreakers`). Read
 `docs-build/claude-ai-handoff.md` first if your docs are behind: the repo
 registry is **D1–D114, next free D115** (ask Josh to confirm before using it).
-**Status:** Josh's chosen direction, details answered in §4, **not built**. It changes a `[LOCKED]`
-rule, so it needs a decision here first. Then Claude Code edits `docs/` with
-Josh's double confirmation and builds it.
+**Status (update, 2026-09-23): APPLIED in the repo as D115 and built.** Josh
+chose to decide it in Claude Code; the repo's `docs/` now has the text in §5
+(v5.11, nexus v1.10). **Copy those edits into this project** (or re-upload
+the repo's `docs/`), and raise any disagreement with Josh.
 
 ---
 

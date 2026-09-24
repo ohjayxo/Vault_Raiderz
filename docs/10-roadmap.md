@@ -301,13 +301,14 @@ viable for base/architectural geometry).
 | v5.8 | 2026-09-21 | Build-phase answers: Mobility "sprint recovery" → "stun recovery" (the docs had no sprint); Scav Captain Signature drop = a Captain pickaxe skin; Vaultborn beam made faint/blinking/fading so it doesn't give away the strike spot; "contested" is a zone flag (Reaches, later the Rift; never the Homestead). |
 | v5.9 | 2026-09-22 | Game renamed Vaultbreakers → Vault Raiderz; "Vaultbreaker Level" is now just "Level" (no title). |
 | v5.10 | 2026-09-22 | D113: slice world layout "Main Street" (equal bridges, rotated plots, south plaza for NPC buyer + derelict FTUE vault; "concentric" wording loosened). D114: Chase escape = ~140-stud radius from the victim plot; a carrier who dies (incl. falling) drops loot home. |
+| v5.11 | 2026-09-23 | D115: Chase grip limit (a carrier drops loot after 30 [PH] damage from other players, not one hit) + raid-time respawn (an owner killed during a raid on their base respawns on Main Street). Death-and-respawn rule written into `02 § Combat`. |
 
 ## Next actions
 
 The slice is being built (steps 0–7 done). Remaining items:
 
 1. **Continue the build** from the current step (see `docs-build/`)
-2. Rescore the current version (v5.10) against the rubric (`01-pillars.md § Design rubric`) —
+2. Rescore the current version (v5.11) against the rubric (`01-pillars.md § Design rubric`) —
    last scored at v4; useful, not blocking
 3. Resolve Q33/Q34 (boss loot distribution) before building Reaches-tier
    bosses (v1.0) — parked, does not affect the slice

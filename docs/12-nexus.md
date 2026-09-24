@@ -71,7 +71,7 @@ contradict a rule three files away.
 |---|---|
 | A resource (add/remove/reweight Stone/Ore/Voltstone/Riftsalt) | `02-core-loop` (progressive reveal), `06-economy` (Riftsalt rule), `03-progression` (Voltstone gates Workshop III), `07-decisions` D14 |
 | Tech Path structure or costs | `05-items` (Fragments), `06-economy` (scrap sink table), `08-questions` Q44–48 |
-| Raid theft percentages, timing, or the Chase | `06-economy` (sinks table), `07-decisions` D1/D3/D4/D23/D114, `02 § Slice layout` (escape radius vs. plot/bridge sizes), `09-research` (Rust warning it's modeled against) |
+| Raid theft percentages, timing, or the Chase | `06-economy` (sinks table), `07-decisions` D1/D3/D4/D23/D114/D115, `02 § Slice layout` (escape radius vs. plot/bridge sizes), `09-research` (Rust warning it's modeled against) |
 | Cases/Keys model | `06-economy` (Case/Key triangle + Monetization), `07-decisions` D15, `08-questions` Q24–27, `09-research` (platform policy) |
 | A `[LOCKED]` rule (R-number) or decision (D-number) | The rubric in `01-pillars` (does a score assumption still hold?), `10-roadmap` (does scope still match?) |
 | Anything currently `[OPEN]` in `08-questions.md` | Once answered: add a `D#` to `07-decisions.md`, move the `08-questions.md` entry to its Answered table, update the status tag in the mechanic's home file, then update the registries below |
@@ -129,7 +129,7 @@ insurance against a collision.
 | Series | Home file | Currently in use | Next available |
 |---|---|---|---|
 | **R (non-negotiable rules)** | `01-pillars.md` | R1–R8 | **R9** |
-| **D (locked decisions)** | `07-decisions.md` | D1–D114 | **D115** |
+| **D (locked decisions)** | `07-decisions.md` | D1–D115 | **D116** |
 | **Q (open questions)** | `08-questions.md` | up to Q70 | **Q71** |
 
 ---
@@ -209,3 +209,4 @@ creep in on a future edit.
 | v1.7 | 2026-09-20 | Registry: D1–D111 (next D112). D111 (pickaxes untradeable, skins tradeable) supersedes D21; made during the build phase. |
 | v1.8 | 2026-09-20 | Registry: D1–D112 (next D113). D112 adds armor to the slice (amends D107, D92). |
 | v1.9 | 2026-09-22 | Registry: D1–D114 (next D115). D113 slice layout (Main Street), D114 escape radius + carrier-death rule. Drift risk added: slice layout numbers. |
+| v1.10 | 2026-09-23 | Registry: D1–D115 (next D116). D115 Chase grip limit + raid-time respawn (amends `02 § The Chase` point 5). |

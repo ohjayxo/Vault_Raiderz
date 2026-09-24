@@ -369,7 +369,7 @@ math`, `§ The Chase`, `§ Raid escort` (D101), `§ Raid log path map`
 `§ Part D — The hard part` above.
 - [ ] Online raid: breach → lockpick → grab Exposed → escape in the window
 - [ ] Carrier is slowed, gadgets disabled, marked server-wide
-- [ ] Any player's hit (not the escort's) knocks loot loose back to the owner
+- [ ] Other players' hits (not the escort's) wear down grip; at 0 the loot goes back to the owner (D115)
 - [ ] Escort can body-block but can't grab
 - [ ] Spare (unworn) armor: one grab takes the victim's best spare piece; the worn piece never (D112, R1)
 - [ ] ~20% of stolen goods destroyed in transit

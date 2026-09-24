@@ -107,6 +107,21 @@ sabotageButton.AnchorPoint = Vector2.new(1, 1)
 sabotageButton.Position = UDim2.new(1, -16, 1, -16 - SIZE * 4.1)
 
 local banner = label(UDim2.fromOffset(420, 44), UDim2.new(0.5, 0, 0, 104), 18)
+-- D115 grip bar, right under the banner (carrier + owner only: the server
+-- only sends Grip to them).
+local gripBack = Instance.new("Frame")
+gripBack.AnchorPoint = Vector2.new(0.5, 0)
+gripBack.Position = UDim2.new(0.5, 0, 0, 104 + 44)
+gripBack.Size = UDim2.fromOffset(420, raidCfg.Ui.GripBarHeight)
+gripBack.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+gripBack.BorderSizePixel = 0
+gripBack.Visible = false
+gripBack.Parent = gui
+local gripFill = Instance.new("Frame")
+gripFill.Size = UDim2.fromScale(1, 1)
+gripFill.BackgroundColor3 = raidCfg.Ui.GripColor
+gripFill.BorderSizePixel = 0
+gripFill.Parent = gripBack
 local message = label(UDim2.fromOffset(360, 30), UDim2.new(0.5, 0, 0.62, 0), 16)
 message.AutomaticSize = Enum.AutomaticSize.Y -- longer refusals wrap onto a second line
 
@@ -420,7 +435,8 @@ local function chaseText(view: Types.RaidView): string
 	if view.Phase ~= "Carrying" or not view.ChaseStuds then
 		return ""
 	end
-	return `{view.ChaseStuds}/{raidCfg.EscapeRadiusStuds} studs · `
+	local grip = if view.Grip then `grip {view.Grip}/{raidCfg.GripDamage} · ` else ""
+	return `{view.ChaseStuds}/{raidCfg.EscapeRadiusStuds} studs · {grip}`
 end
 
 local actionKind = "" -- what actionButton does right now
@@ -435,7 +451,7 @@ RunService.RenderStepped:Connect(function(dt: number)
 		local left = math.max(0, math.ceil(current.EndsAt - t))
 		if current.Role == "Victim" then
 			banner.Text = if current.Phase == "Carrying"
-				then `{current.RaiderName} has your loot ({lootText(current.Loot)})! {chaseText(current)}Hit them before they escape - {left}s`
+				then `{current.RaiderName} has your loot ({lootText(current.Loot)})! {chaseText(current)}Hit them to break their grip - {left}s`
 				else `RAID! {current.RaiderName} is at your base - {left}s`
 		elseif current.Role == "Escort" then
 			banner.Text = `Escorting {current.RaiderName}: body-block anyone chasing them - {chaseText(current)}{left}s`
@@ -448,8 +464,14 @@ RunService.RenderStepped:Connect(function(dt: number)
 		end
 		banner.BackgroundColor3 = if current.Role == "Victim" then Color3.fromRGB(150, 30, 30) else Color3.fromRGB(120, 70, 20)
 		banner.Visible = true
+		local grip = if current.Phase == "Carrying" then current.Grip else nil
+		gripBack.Visible = grip ~= nil
+		if grip then
+			gripFill.Size = UDim2.fromScale(math.clamp(grip / raidCfg.GripDamage, 0, 1), 1)
+		end
 	else
 		banner.Visible = false
+		gripBack.Visible = false
 	end
 
 	-- Lockpick dial (raider, before the lock opens, near the vault).

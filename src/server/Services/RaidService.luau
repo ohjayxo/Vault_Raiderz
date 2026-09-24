@@ -12,8 +12,8 @@
 --
 -- The raid: Breach (at the victim's plot; starts the 90 s window) ->
 -- Lockpick (server-run Skyrim-style lock, speed not failure) -> Grab (Exposed only) ->
--- the Chase -> Escape. Any player's hit, death, leaving or running out of
--- time sends the loot home.
+-- the Chase -> Escape. Other players' hits wearing the carrier's grip to 0
+-- (D115), death, leaving or running out of time send the loot home.
 --
 -- WHY NOTHING DUPLICATES (full list: the step 7 plan in the chat log and
 -- docs-build/backlog.md):
@@ -104,6 +104,7 @@ type Raid = {
 	armor: Types.ArmorPiece?,
 	armorTaken: Types.ArmorPiece?,
 	chaseStuds: number?, -- Carrying: the distance last sent to the raid's players (steps)
+	grip: number, -- D115: damage the carrier can still take before the loot is knocked loose
 	halfwayAlerted: boolean,
 	sabotaged: boolean,
 	path: { { number } },
@@ -252,6 +253,7 @@ local function viewFor(raid: Raid, role: string): Types.RaidView
 		Loot = if raid.loot then totalsOf(raid.loot, raid.armor) else nil,
 		CanSabotage = canSabotage,
 		ChaseStuds = if raid.phase == "Carrying" then raid.chaseStuds else nil,
+		Grip = if raid.phase == "Carrying" and role ~= "Escort" then math.ceil(raid.grip) else nil,
 	}
 end
 
@@ -860,6 +862,7 @@ breachInner = function(player: Player): (boolean, string?)
 		armor = nil,
 		armorTaken = nil,
 		chaseStuds = nil,
+		grip = raidCfg.GripDamage,
 		halfwayAlerted = false,
 		sabotaged = false,
 		path = {},
@@ -1091,6 +1094,7 @@ local function grab(player: Player): (boolean, string?)
 	end
 	raid.loot = loot
 	raid.armorId, raid.armor = armorId, armor
+	raid.grip = raidCfg.GripDamage -- D115: full grip on every grab
 	raid.phase = "Carrying"
 	local _, humanoid = rootOf(player)
 	if humanoid then
@@ -1289,14 +1293,28 @@ function RaidService.start()
 	-- PlayerRemoving connections isn't something to rely on).
 	PlayerDataService.setBeforeRelease(victimLeft)
 
-	-- 02 § The Chase 5: any player's hit knocks the loot loose, except the
-	-- raider's own escort (D101: they're on the raider's side).
-	CombatService.Hit:Connect(function(attacker: Player, target: Model)
+	-- 02 § The Chase 5 (D115): other players' hits wear down the carrier's
+	-- grip by the damage dealt (after armor); at 0 the loot is knocked
+	-- loose. The raider's own escort never counts (D101), nor do defenses
+	-- or Scavs (they don't fire Hit with a Player attacker).
+	CombatService.Hit:Connect(function(attacker: Player, target: Model, damage: number)
 		for _, raid in raids do
 			if raid.phase == "Carrying" and raid.raider.Character == target and attacker ~= raid.raider and attacker ~= raid.escort then
-				task.spawn(failRaid, raid, "KnockedLoose", `{attacker.Name} knocked the loot loose`)
+				raid.grip = math.max(0, raid.grip - damage)
+				if raid.grip <= 0 then
+					task.spawn(failRaid, raid, "KnockedLoose", `{attacker.Name} knocked the loot loose`)
+				else
+					sendState(raid) -- the grip bar (carrier + owner)
+				end
 			end
 		end
+	end)
+
+	-- D115: an owner who dies while a raid on their base is active respawns
+	-- at the Main Street spawn instead of their plot.
+	CombatService.setRespawnOnPlot(function(player: Player): boolean
+		local raid = raidOnVictim[player.UserId]
+		return not (type(raid) == "table" and raid.phase ~= "Over")
 	end)
 
 	-- Where defenses fired, for the raid log's path map.

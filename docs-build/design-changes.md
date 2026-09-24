@@ -308,7 +308,7 @@ Also built as documented: both shields block online AND offline raids; the
 30-min shield starts at the login that applies an offline theft (#13);
 offline bases are only shown if someone on the server can raid them.
 
-## Chase grip + raid-time respawn (2026-09-23) — PROPOSED, not built, not in `docs/`
+## Chase grip + raid-time respawn (2026-09-23) — D115, APPLIED to `docs/` + built (design project still owed)
 
 Found in step 8 testing: one hit knocks the loot loose (02 § The Chase point
 5, LOCKED) + a single bridge per plot (D113) + respawn on your own plot
@@ -321,6 +321,12 @@ LOCKED rule, so it goes to the design project first:
 Josh's detail answers (§4 of the handoff): flat 30, no recovery, player hits
 only, bar for carrier + owner, owner-only Main Street respawn while their
 base is raided, spawn point is the only change.
+**Applied 2026-09-23 with Josh's double confirmation** as D115: `07-decisions`
+(new D115), `02 § The Chase` point 5 + key-design paragraph, `§ Raid escort`,
+`§ Escape and carrier death`, new `02 § Death and respawn`, `13` step 7
+checklist, README v5.11, roadmap v5.11 row, nexus v1.10 (D1–D115, next D116).
+Also (confirmed separately): `11-claude-usage-guide.md` status line → "docs
+v5.11, build steps 0–8 done".
 
 ## "Your plot" marker (2026-09-23) — NOT yet in `docs/`
 

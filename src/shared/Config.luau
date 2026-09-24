@@ -1023,6 +1023,10 @@ local Config = {
 		},
 		-- The Chase (02 § The Chase).
 		CarrySpeedMultiplier = 0.6, -- [PH] invented: "movement speed drops sharply"
+		-- 02 § The Chase point 5 (D115): other players' hits (not the escort's)
+		-- wear down the carrier's grip by the damage dealt after armor; at 0
+		-- the loot is knocked loose. No recovery; full again on a new grab.
+		GripDamage = 30, -- [PH] per D115: about one Wooden 3-hit combo
 		-- 02 § The raid sequence step 5 + § Escape and carrier death (D114):
 		-- the carrier escapes this far (horizontal) from the victim plot's
 		-- centre: ~15 s at carry speed on every plot. gen_world.py checks
@@ -1094,6 +1098,10 @@ local Config = {
 		},
 		Ui = {
 			RaidLogVisibleAttribute = "HudRaidLog",
+			-- D115 grip bar under the raid banner (carrier + owner only).
+			-- Look only [PH], REVISIT with real UI.
+			GripBarHeight = 8,
+			GripColor = Color3.fromRGB(255, 200, 60),
 			ShowBeforeFtue = true, -- TEMPORARY until step 14
 			MessageSeconds = 2, -- [PH] invented: raid UI toasts
 			MapStudsScale = 1.8, -- [PH] invented: raid log map shows this x the plot size

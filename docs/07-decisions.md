@@ -1465,6 +1465,31 @@ closes a fall-to-respawn teleport.
 inside one Homestead zone, unequal per plot); carry the loot to your own
 plot (distance depends on which two plots, rewards raiding neighbours).
 
+## D115 — Chase grip limit + raid-time respawn `[LOCKED — grip PH]`
+**Decision:** while carrying loot, a carrier has a **grip** of 30 damage
+[PH], separate from health. Only other players' hits wear it down (never
+the raider's own escort, D101; defenses and Scavs don't count), by the
+damage actually dealt after armor. At 0 the loot is knocked loose and
+returns to the owner. Grip doesn't recover; it resets only on a new grab.
+The carrier and the owner see a grip bar. **A base owner who dies while a
+raid on their base is active respawns at the Main Street spawn**, not on
+their plot (same timer, lose nothing).
+
+**Why:** one hit knocking loot loose, plus a single bridge per plot
+(D113), plus respawning on your own plot let an owner camp their bridge
+end and stop every raid with one tap. Killing them didn't help, because
+they respawned beside the raid. Grip needs a real combo, so a stray tap no
+longer ends a raid, but anyone can still crash it (point 5's third-party
+chaos survives). The respawn rule makes "kill the guard first" a real
+plan.
+
+**Rejected:** a full kill to drop loot (turns the Chase into a duel; gear
+decides too much, escorts matter less); a grace period after grabbing (a
+camper at the bridge end still wins); relying on existing counters (too
+weak against a 5 s respawn).
+
+**Amends:** `02 § The Chase` point 5 (was: any hit knocks the loot loose).
+
 ---
 
 # NON-NEGOTIABLES — rationale

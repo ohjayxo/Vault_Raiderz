@@ -157,6 +157,11 @@ infer a build from how someone moves. Respec costs resources, never Robux.
 - Fights resolve in 5–10 seconds [PH]
 - Long fights punish mobile players and wreck pacing
 
+## Death and respawn `[LOCKED — D115; timing PH]`
+Death costs time only: respawn ~5 s [PH] on your own plot and lose
+nothing. **Exception (D115):** if your base is being raided when you die,
+you respawn at the Main Street spawn until that raid ends.
+
 ## Gadgets `[LOCKED — D108; durations PH]`
 Single-use, crafted or bought. Skill expression without twitch aim.
 
@@ -268,29 +273,31 @@ When a raider grabs loot:
 2. **Gadgets disabled** while carrying
 3. **Owner alerted instantly** — including offline, via raid log
 4. **Raider visibly marked server-wide** with a loot trail
-5. **Any player who lands a hit** (except the raider's own escort, D101)
-   knocks the loot loose; it returns to the owner's vault
+5. **Hits from other players** (except the raider's own escort, D101)
+   wear down the carrier's **grip** (30 damage [PH], D115); at 0 the loot
+   is knocked loose and returns to the owner's vault
 
 **Point 5 is the key design choice.** Third parties can intervene. A raid
 is not victim-vs-thief, it is a **server-wide event anyone can profit
 from or crash**. That is the clip that ends up on TikTok, and it is free
-marketing.
+marketing. A real combo is needed, not a stray tap (D115), so a single
+guard at a bridge can't stop every raid.
 
 ## Escape and carrier death `[LOCKED — D114]`
 The Chase ends in escape when the carrier is outside the escape radius
 (`§ The raid sequence` step 5) while standing on solid ground (not
 mid-jump or falling); the same distance on every plot, in any layout. A carrier who **dies for any reason — including falling off an
-island — drops the loot back to the owner**, exactly as if hit (point 5
+island — drops the loot back to the owner**, exactly as if knocked loose (point 5
 above). Otherwise respawning at your own plot would carry the loot home.
 
 ## Raid escort `[LOCKED — D101; in the vertical slice]`
 A friend can accompany a solo raider and **body-block interceptors
 during the Chase** — they can't carry or grab loot themselves, only
-physically get in the way of anyone trying to land the hit that knocks
-loot loose (point 5 above). This gives early friend play something to
+physically get in the way of anyone trying to land the hits that wear
+down the carrier's grip (point 5 above). This gives early friend play something to
 do together without touching D4's crew-raid tier gate: it's a bystander
 role during someone else's solo raid, not joint raiding. The escort's own
-hits never knock the loot loose.
+hits never wear down grip.
 
 ## Raid log path map `[LOCKED — D105]`
 The raid log (point 3 above) includes a **path-line map** of the

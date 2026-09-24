@@ -95,6 +95,9 @@ export type RaidView = {
 	-- Carrying: the carrier's distance from the victim plot's centre, in
 	-- Config.Raiding.ChaseProgressStepStuds steps (the server's number).
 	ChaseStuds: number?,
+	-- D115: the carrier's grip left (0..Config.Raiding.GripDamage). Only sent
+	-- to the raider and the victim while Carrying.
+	Grip: number?,
 }
 
 -- Your own raid shields (ShieldState / GetShieldState), as seconds left
