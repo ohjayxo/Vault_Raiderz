@@ -318,6 +318,9 @@ them doesn't help (they respawn beside the raid). Josh's preferred fix:
 **+ die during a raid on your base → respawn on Main Street**. Changes a
 LOCKED rule, so it goes to the design project first:
 `docs-build/handoff-2026-09-23-chase-grip.md` (suggests D115).
+Josh's detail answers (§4 of the handoff): flat 30, no recovery, player hits
+only, bar for carrier + owner, owner-only Main Street respawn while their
+base is raided, spawn point is the only change.
 
 ## "Your plot" marker (2026-09-23) — NOT yet in `docs/`
 

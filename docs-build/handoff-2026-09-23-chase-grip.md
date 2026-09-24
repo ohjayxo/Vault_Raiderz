@@ -4,7 +4,7 @@
 **From:** Claude Code (the build, `~/vaultbreakers`). Read
 `docs-build/claude-ai-handoff.md` first if your docs are behind: the repo
 registry is **D1–D114, next free D115** (ask Josh to confirm before using it).
-**Status:** Josh's preferred direction, **not built**. It changes a `[LOCKED]`
+**Status:** Josh's chosen direction, details answered in §4, **not built**. It changes a `[LOCKED]`
 rule, so it needs a decision here first. Then Claude Code edits `docs/` with
 Josh's double confirmation and builds it.
 
@@ -71,7 +71,22 @@ then raid" becomes a plan, and the counters that already exist (Shock Trap,
 Smoke, escort) start to matter. A walk back was preferred over a longer death
 timer, which feels bad.
 
-## 4. Questions to decide here
+## 4. Questions (Josh answered them in Claude Code, 2026-09-23)
+
+**Josh's answers**, all Claude Code's recommendations. Confirm or change
+them here; the originals are kept below for context.
+1. Grip = **flat 30 damage [PH]** (not scaled by tier).
+2. **No recovery:** damage sticks for the whole Chase; grip resets only on
+   a new grab.
+3. **Player hits only** wear down grip (never the raider's escort, D101);
+   defenses and Scavs don't count.
+4. The grip bar is shown to **the carrier and the owner** only.
+5. Main Street respawn applies to **the base owner only, only while a raid
+   on their base is active** (breach until escape or fail). Crews can be
+   revisited at step 11.
+6. **Spawn point only:** same ~5 s [PH] timer, lose nothing.
+
+The original questions:
 
 1. **Grip value:** 30 [PH], or scale it (e.g. with the victim's vault tier)?
 2. **Does grip recover** while the carrier isn't being hit, or only reset
