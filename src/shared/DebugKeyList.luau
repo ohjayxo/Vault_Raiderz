@@ -13,6 +13,7 @@ local DebugKeyList: { Entry } = {
 	{ Key = Enum.KeyCode.G, Label = "G", Command = "GrantScrap", Text = "+Scrap", Group = "Resources" },
 	{ Key = Enum.KeyCode.C, Label = "C", Command = "GrantCredits", Text = "+Credits", Group = "Resources" },
 	{ Key = Enum.KeyCode.X, Label = "X", Command = "GrantMinerXP", Text = "+Miner XP", Group = "Resources" },
+	{ Key = Enum.KeyCode.Backquote, Label = "`", Command = "GrantLevel10", Text = "jump to Level 10 (trading unlocks)", Group = "Resources" },
 	{ Key = Enum.KeyCode.V, Label = "V", Command = "ForceVaultborn", Text = "next hit is Vaultborn", Group = "Resources" },
 	{ Key = Enum.KeyCode.T, Label = "T", Command = "NextVaultTier", Text = "next Vault tier", Group = "Resources" },
 	-- Gear + items

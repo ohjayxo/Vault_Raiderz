@@ -297,6 +297,22 @@ template(WORLD_DIR, "Plaza", attributes={"Zone": "Homestead"},
              visual_part("Underside", (px - 30, 30, pz - 20), (pcx, GROUND_TOP - 25, pcz), rgb(99, 95, 98), "Slate"),
          ])
 
+# Step 9: the NPC buyer's stall. Hitbox = solid stall + the "Sell" prompt
+# (EconomyService); Visual = the look (the artist swaps it, Visual.rbxm).
+# Tag must match Config.NpcSelling.BuyerTag. Stands on the NpcBuyerSlot spot.
+bx, bz = NPC_BUYER_SLOT
+template(os.path.join(WORLD_DIR, "Plaza"), "NpcBuyer", tags=["NpcBuyer"], attributes={"Kind": "NpcBuyer"},
+         children=[
+             hitbox_part("Hitbox", (8, 6, 4), (bx, GROUND_TOP + 3, bz)),
+         ],
+         visuals=[
+             visual_part("Counter", (8, 3.2, 4), (bx, GROUND_TOP + 1.6, bz), rgb(120, 84, 52), "Wood"),
+             visual_part("PostL", (0.6, 6, 0.6), (bx - 3.7, GROUND_TOP + 3, bz - 1.6), rgb(90, 62, 40), "Wood"),
+             visual_part("PostR", (0.6, 6, 0.6), (bx + 3.7, GROUND_TOP + 3, bz - 1.6), rgb(90, 62, 40), "Wood"),
+             visual_part("Awning", (9, 0.5, 5), (bx, GROUND_TOP + 6.2, bz - 0.4), rgb(214, 170, 60), "Fabric"),
+             visual_part("Goods", (2, 1.2, 1.6), (bx - 2, GROUND_TOP + 3.8, bz), rgb(160, 160, 170), "Slate"),
+         ])
+
 rx, rz = REACHES_C
 reaches_spawns = []
 for i, (x, z) in enumerate(ring(6, 55, rx, rz, start_deg=0)):

@@ -61,6 +61,8 @@ local TABS: { Tab } = { "Resources", "Gear", "Items", "Debug" }
 local vault: Types.VaultState? = nil
 local gear: Types.GearState? = nil
 local shields: Types.ShieldState? = nil
+local credits: number? = nil -- step 9: Credits (CreditsChanged)
+local reputation: Types.ReputationState? = nil -- step 9: Level + tracks (ReputationChanged)
 local shieldsAt = 0 -- os.clock() when `shields` arrived (it counts down from there)
 local shieldLabel: TextLabel? = nil -- the Resources tab's shield row, ticked every second
 local currentTab: Tab = "Resources"
@@ -355,6 +357,26 @@ local function renderResources()
 		heading("Loading...")
 		return
 	end
+	-- Step 9: Credits and Level (06 § Currencies; 03 § Level). Shown while
+	-- Config.Inventory.ShowCredits is on; the FTUE turns it off (step 14).
+	if bagCfg.ShowCredits then
+		local rep = reputation
+		row({
+			{ text = `Credits {withCommas(credits or 0)}`, width = 200, color = Color3.fromRGB(255, 220, 120) },
+			{ text = if rep then `Level {rep.Level}` else "Level ...", width = 150 },
+		})
+		if rep then
+			local cells = {}
+			for _, track in Config.Progression.Tracks do
+				local t = rep.Tracks[track]
+				table.insert(cells, { text = `{track} {t.Level}  ({withCommas(t.XP - t.Prev)}/{withCommas(t.Next - t.Prev)})`, width = 190, color = NOTE })
+			end
+			row(cells)
+			if not rep.TradeUnlocked then
+				row({ { text = `Trading unlocks at Level {Config.Progression.TradeUnlockLevel}.`, width = 560, color = NOTE } })
+			end
+		end
+	end
 	-- Your raid shields first (01 R6; D67, D75).
 	local shieldNow = shieldText()
 	shieldLabel = nil
@@ -585,6 +607,14 @@ local function fetchMissing()
 			gear = result
 		end
 	end
+	if credits == nil or not reputation then
+		local ok, gotCredits, gotState = pcall(function()
+			return Remotes.getFunction("GetProgressState"):InvokeServer()
+		end)
+		if ok and gotState then
+			credits, reputation = gotCredits, gotState
+		end
+	end
 	if not shields then
 		local ok, result = pcall(function()
 			return Remotes.getFunction("GetShieldState"):InvokeServer()
@@ -602,7 +632,7 @@ local function open(tab: Tab?)
 	currentTab = tab or currentTab
 	panel.Visible = true
 	render()
-	if not vault or not gear or not shields then
+	if not vault or not gear or not shields or credits == nil or not reputation then
 		task.spawn(function()
 			fetchMissing()
 			render()
@@ -636,6 +666,14 @@ Remotes.getEvent("VaultChanged").OnClientEvent:Connect(function(state: Types.Vau
 end)
 Remotes.getEvent("GearChanged").OnClientEvent:Connect(function(state: Types.GearState)
 	gear = state
+	render()
+end)
+Remotes.getEvent("CreditsChanged").OnClientEvent:Connect(function(amount: number)
+	credits = amount
+	render()
+end)
+Remotes.getEvent("ReputationChanged").OnClientEvent:Connect(function(state: Types.ReputationState)
+	reputation = state
 	render()
 end)
 Remotes.getEvent("ShieldState").OnClientEvent:Connect(function(state: Types.ShieldState)

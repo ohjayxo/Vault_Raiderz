@@ -225,6 +225,88 @@ function VaultService.grant(player: Player, amounts: { [string]: number }): bool
 	return ok
 end
 
+-- ── Exact-unit moves (step 9: NPC selling + direct trade) ────────────────
+
+export type UnitRequest = { Resource: string, Grade: string, Amount: number }
+-- Where the units came from, so they can be put back exactly (a failed trade).
+export type Receipt = { Exposed: Types.ResourceStore, Banked: Types.ResourceStore }
+
+-- Units of one resource + Grade the player holds, Exposed + Banked.
+function VaultService.countUnits(player: Player, resource: string, grade: string): number
+	local resources: Types.ResourceSnapshot? = PlayerDataService.get(player, "Resources")
+	if not resources or not resources.Exposed[resource] then
+		return 0
+	end
+	return (resources.Exposed[resource][grade] or 0) + (resources.Banked[resource][grade] or 0)
+end
+
+-- Takes exact units, Exposed first then Banked (Josh's call, step 9). All or
+-- nothing: returns nil and takes nothing if any request can't be met. Bad
+-- arguments assert (server bug, never player input: callers validate first).
+function VaultService.takeUnits(player: Player, requests: { UnitRequest }): Receipt?
+	for _, request in requests do
+		assert(isResource[request.Resource], `VaultService.takeUnits: unknown resource "{request.Resource}"`)
+		assert(isGrade[request.Grade], `VaultService.takeUnits: unknown grade "{request.Grade}"`)
+		assert(request.Amount > 0 and request.Amount == math.floor(request.Amount), `VaultService.takeUnits: bad amount {request.Amount}`)
+	end
+	local receipt: Receipt = { Exposed = {}, Banked = {} }
+	local taken = false
+	local ok = PlayerDataService.update(player, "Resources", OWNER, function(resources: Types.ResourceSnapshot)
+		-- Two lines for the same pile must add up, so tally first.
+		local need: { [string]: { [string]: number } } = {}
+		for _, request in requests do
+			need[request.Resource] = need[request.Resource] or {}
+			need[request.Resource][request.Grade] = (need[request.Resource][request.Grade] or 0) + request.Amount
+		end
+		for resource, grades in need do
+			for grade, amount in grades do
+				if (resources.Exposed[resource][grade] or 0) + (resources.Banked[resource][grade] or 0) < amount then
+					return resources -- unchanged
+				end
+			end
+		end
+		for resource, grades in need do
+			for grade, amount in grades do
+				local fromExposed = math.min(resources.Exposed[resource][grade] or 0, amount)
+				local fromBanked = amount - fromExposed
+				resources.Exposed[resource][grade] = (resources.Exposed[resource][grade] or 0) - fromExposed
+				resources.Banked[resource][grade] = (resources.Banked[resource][grade] or 0) - fromBanked
+				receipt.Exposed[resource] = receipt.Exposed[resource] or {}
+				receipt.Exposed[resource][grade] = fromExposed
+				receipt.Banked[resource] = receipt.Banked[resource] or {}
+				receipt.Banked[resource][grade] = fromBanked
+			end
+		end
+		taken = true
+		return resources
+	end)
+	if ok and taken then
+		VaultService.refresh(player)
+		return receipt
+	end
+	return nil
+end
+
+-- Puts a takeUnits receipt back exactly where it came from.
+function VaultService.restoreUnits(player: Player, receipt: Receipt): boolean
+	local ok = PlayerDataService.update(player, "Resources", OWNER, function(resources: Types.ResourceSnapshot)
+		local snapshot: any = resources
+		local saved: any = receipt
+		for _, side in { "Exposed", "Banked" } do
+			for resource, grades in saved[side] do
+				for grade, amount in grades do
+					snapshot[side][resource][grade] = (snapshot[side][resource][grade] or 0) + amount
+				end
+			end
+		end
+		return resources
+	end)
+	if ok then
+		VaultService.refresh(player)
+	end
+	return ok
+end
+
 -- Removes `share` (0..1) of every Exposed pile, resources and Scrap, rounded
 -- down per pile. Banked is never touched (02 § Bank vs Exposed). Used when a
 -- Scav gets away (04 § Scav Waves: "failing one costs Exposed resources");

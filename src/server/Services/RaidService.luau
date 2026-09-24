@@ -59,6 +59,7 @@ local PickaxeService = require(script.Parent.PickaxeService)
 local InventoryService = require(script.Parent.InventoryService)
 local ArmorService = require(script.Parent.ArmorService)
 local BroadcastQueue = require(script.Parent.BroadcastQueue)
+local ReputationService = require(script.Parent.ReputationService)
 local RaidProtectionService = require(script.Parent.RaidProtectionService)
 
 local OWNER = "RaidService"
@@ -155,6 +156,12 @@ function RaidService.consumeBreach(raider: Player, _base: PlotService.BaseInfo):
 	end
 	RaidProtectionService.forfeit(raider)
 	return true
+end
+
+-- True while the player is a raider, escort or victim of a raid (or their
+-- base is being set up for one). Direct trade refuses these players.
+function RaidService.isInRaid(player: Player): boolean
+	return raidOf[player] ~= nil or raidOnVictim[player.UserId] ~= nil
 end
 
 -- ── Small helpers ────────────────────────────────────────────────────────
@@ -617,6 +624,11 @@ local function escape(raid: Raid)
 	end
 	if raid.raider.Parent and PlayerDataService.isLoaded(raid.raider) then
 		VaultService.depositLoot(raid.raider, credit)
+		-- 03 § Reputation tracks: Raider XP for getting away with loot. Not if the
+		-- victim had already banked/spent it all: the raid took nothing.
+		if credit.Scrap > 0 or next(credit.Resources) ~= nil or takenArmor ~= nil then
+			ReputationService.grant(raid.raider, "Raider", Config.Progression.XP.RaiderPerEscape, "raid escape")
+		end
 		-- A single piece arrives whole (no in-transit destruction).
 		if takenArmor then
 			ArmorService.grant(raid.raider, takenArmor.Tier, takenArmor.Slot)

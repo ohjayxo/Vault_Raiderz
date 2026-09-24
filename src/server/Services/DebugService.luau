@@ -50,6 +50,8 @@ local CosmeticService = require(script.Parent.CosmeticService)
 local OfflineBaseService = require(script.Parent.OfflineBaseService)
 local RaidProtectionService = require(script.Parent.RaidProtectionService)
 local Clock = require(ServerScriptService.Util.Clock)
+local ReputationService = require(script.Parent.ReputationService)
+local EconomyService = require(script.Parent.EconomyService)
 
 -- Key B: more items than MaxPending (6), mixed priorities, all at once.
 -- Expected with the step 2 Config: flex 1 goes out at once; Vaultborn 2
@@ -87,15 +89,22 @@ local commands: { [string]: (Player, any) -> () } = {
 		print(PlayerDataService.debugDescribe(player))
 	end,
 	GrantCredits = function(player)
-		local ok = PlayerDataService.debugUpdate(player, "Credits", function(credits: number)
-			return credits + Config.Data.DebugCreditGrant
-		end)
+		local ok = EconomyService.add(player, Config.Data.DebugCreditGrant)
 		print(`[Debug] +{Config.Data.DebugCreditGrant} Credits for {player.Name}: {if ok then "ok" else "FAILED"}, now {PlayerDataService.get(player, "Credits")}`)
 	end,
 	GrantMinerXP = function(player)
 		local current = PlayerDataService.getPacked(player, "MinerXP") or 0
 		local ok = PlayerDataService.debugSetPacked(player, "MinerXP", current + Config.Data.DebugXPGrant)
-		print(`[Debug] +{Config.Data.DebugXPGrant} Miner XP for {player.Name}: {if ok then "ok" else "FAILED"}, now {PlayerDataService.getPacked(player, "MinerXP")} (press P for levels)`)
+		ReputationService.refresh(player)
+		print(`[Debug] +{Config.Data.DebugXPGrant} Miner XP for {player.Name}: {if ok then "ok" else "FAILED"}, now {PlayerDataService.getPacked(player, "MinerXP")} (Bag shows Level)`)
+	end,
+	-- Step 9: jump to Level 10 (trading unlocks) without playing for hours.
+	GrantLevel10 = function(player)
+		local split: { [string]: number } = Config.Progression.DebugLevelSplit :: any
+		for track, level in split do
+			ReputationService.debugSetTrackLevel(player, track, level)
+		end
+		print(`[Debug] {player.Name} is now Level {ReputationService.getLevel(player)}`)
 	end,
 	PrintPresence = function(player)
 		local presence, jobId = PresenceService.getPresence(player.UserId)

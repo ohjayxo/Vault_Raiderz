@@ -83,6 +83,24 @@ local definitions: { [string]: RemoteKind } = {
 	Craft = "Function", -- (itemId) -> (ok, reason?) the server owns every recipe
 	ShieldState = "Event", -- server -> owner: (ShieldState) their own shields
 	GetShieldState = "Function", -- () -> ShieldState? (Bag start-up)
+
+	-- Step 9: NPC selling, Level/Reputation, direct trade.
+	GetSellQuote = "Function", -- () -> SellQuote? (you must be at the buyer)
+	SellUnits = "Function", -- (resource, grade, count) -> (ok, reason?, credits earned?, SellQuote?)
+	OpenNpcShop = "Event", -- server -> client: () the buyer's Sell prompt was used
+	CreditsChanged = "Event", -- server -> owner: (credits: number)
+	ReputationChanged = "Event", -- server -> owner: (ReputationState)
+	GetProgressState = "Function", -- () -> (credits, ReputationState)?: Bag / Trade button start-up
+	GetNearbyTraders = "Function", -- () -> { { UserId, Name } } Level-10 players in invite range
+	TradeInvite = "Function", -- (targetUserId) -> (ok, reason?)
+	TradeInviteOffer = "Event", -- server -> target: (inviteId, fromName, seconds)
+	TradeRespond = "Function", -- (inviteId, accept) -> (ok, reason?)
+	TradeSetOffer = "Function", -- (kind, id, grade, amount) -> (ok, reason?): sets that line's amount, 0 removes
+	TradeSetCredits = "Function", -- (amount) -> (ok, reason?)
+	TradeConfirm = "Function", -- (version) -> (ok, reason?)
+	TradeCancel = "Function", -- () -> (ok, reason?)
+	TradeState = "Event", -- server -> both: (TradeView?, reason?) nil = window closed
+	GetTradeHistory = "Function", -- () -> { TradeRecord }
 }
 
 local Remotes = {}

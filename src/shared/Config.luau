@@ -39,6 +39,8 @@ local Config = {
 			Resources = "VaultService", -- step 3 (02-core-loop.md § Bank vs Exposed)
 			Scrap = "VaultService", -- step 3 (separate small Scrap cap)
 			Credits = "EconomyService", -- step 9 (06-economy.md § Currencies)
+			NpcSales = "EconomyService", -- step 9: units sold to the NPC today, per resource (D94)
+			TradeHistory = "TradeService", -- step 9: newest direct trades (06 § Trade Safety)
 			Items = "InventoryService", -- charges, gadgets, components (05-items.md § Taxonomy)
 			Base = "PlotService", -- step 4 (02-core-loop.md § Base / Home; named in 14 § Prompt 4)
 			Gear = "PickaxeService", -- step 5 (02-core-loop.md § Pickaxe upgrade tree)
@@ -94,7 +96,7 @@ local Config = {
 		MessagePullTimeoutSeconds = 10, -- [PH] invented
 		-- Studio-only debug commands.
 		DebugCooldownSeconds = 0.5, -- [PH] invented
-		DebugCreditGrant = 10, -- [PH] invented
+		DebugCreditGrant = 1000, -- [PH] invented (step 9: enough to test trades)
 		DebugXPGrant = 500, -- [PH] invented: 7 presses = Miner level 10 (3,162 XP)
 		DebugSprintSerumGrant = 999, -- Studio key 0: to EVERY player on the server (Josh's test request)
 	},
@@ -753,7 +755,7 @@ local Config = {
 		-- Config.Gadgets.Names; others are named here.
 		ItemOrder = { "BreachCharge", "Lockpick", "SmokeBomb", "SprintSerum", "ShockTrap", "Disruptor" },
 		ItemNames = { BreachCharge = "Breach Charges", Lockpick = "Lockpicks" },
-		ShowCredits = false, -- step 9 (FTUE hard rule 5 hides 06 until then)
+		ShowCredits = true, -- step 9: Credits + Level in the Bag. TEMPORARY until step 14 (FTUE hard rule 5 hides 06)
 		ShieldColor = Color3.fromRGB(120, 200, 255), -- look only [PH], REVISIT with real UI
 	},
 	Cosmetics = {
@@ -900,7 +902,7 @@ local Config = {
 		MaxConcurrent = 3, -- [PH] invented
 		QueueCheckSeconds = 1,
 		-- "Successful defense yields resources + Reputation": resources x tier.
-		-- Reputation arrives with ReputationService (step 9): logged for now.
+		-- Reputation: Config.Progression.XP.RaiderPerWaveDefended (step 9).
 		SuccessRewardPerTier = { Stone = 30, Ore = 10 }, -- [PH] invented
 		-- Captain Guaranteed bucket: "materials scaled to tier" (x tier).
 		CaptainMaterialsPerTier = { Stone = 60, Ore = 25, Riftsalt = 3 }, -- [PH] invented
@@ -1173,9 +1175,92 @@ local Config = {
 
 	-- ── Step 9 ── NPC selling, direct trade, Level/Reputation ──────────
 	-- 06-economy.md § Two tiers of selling, § NPC price decay (D94).
-	NpcSelling = {},
+	-- Josh's calls (step 9): the NPC buys from Exposed first, then Banked, in
+	-- the Grade the player picks; the decay counts units per RESOURCE per UTC
+	-- day (one shared counter was the rejected option).
+	NpcSelling = {
+		BuyerTag = "NpcBuyer", -- the tagged Model (Hitbox + Visual) in the plaza
+		-- Credits for ONE Standard-grade unit at full price. The Grade
+		-- multiplier (server-only) scales it. [PH] invented.
+		BasePrice = { Stone = 2, Ore = 6, Riftsalt = 25 },
+		-- D94: every unit sold that day multiplies that resource's price by
+		-- this, down to PriceFloor of full price. [PH] invented: 100 units
+		-- sold leaves ~37% (floor 25% reached after ~138 units).
+		DecayPerUnit = 0.99,
+		PriceFloor = 0.25,
+		DaySeconds = 24 * 3600, -- the day boundary is UTC midnight (D94 "resets daily")
+		MaxUnitsPerSale = 500, -- [PH] invented: one Sell request
+		SellRangeStuds = 16, -- [PH] invented: how close you must stand to the buyer
+		SellCooldownSeconds = 0.25, -- [PH] invented: rate limit on Sell (not gameplay)
+		QuoteCooldownSeconds = 0.5, -- [PH] invented: rate limit on GetSellQuote
+		PromptText = "Sell",
+		PromptHoldSeconds = 0,
+		Ui = {
+			DisplayOrder = 12,
+			MessageSeconds = 2.5, -- [PH] invented: toast time
+			CloseCheckSeconds = 0.5, -- [PH] invented: how often the open panel checks you're still near
+			PanelMaxSize = Vector2.new(560, 380), -- look only [PH]
+			RowHeight = 34,
+			CloseDistanceStuds = 24, -- the panel closes if you walk this far away
+		},
+	},
 	-- 06-economy.md § Zero-chat trade (D61), § Trade Safety, § Access gating (D82).
-	Trade = {},
+	-- Same-server only in the slice (the estimate's assumption). Josh's calls,
+	-- step 9: Credits can go in an offer; resources, Breach Charges, gadgets,
+	-- Lockpicks and pickaxe skins trade; never Scrap, pickaxes or armor
+	-- (05 § Taxonomy, D111, D112); the D98 trade hold is NOT built (below).
+	Trade = {
+		-- Counted Items (Config.Inventory.ItemOrder) that may be offered.
+		TradeableItems = { "BreachCharge", "Lockpick", "SmokeBomb", "SprintSerum", "ShockTrap", "Disruptor" },
+		-- D98 (value-threshold trade holds) is out of this step: it isn't in the
+		-- step 9 prompt and non-resource items have no value yet. When built,
+		-- the hold check goes in TradeService.validateOffer.
+		HoldsBuilt = false,
+		InviteRangeStuds = 30, -- [PH] invented: who shows in the Nearby list / can be invited
+		WindowRangeStuds = 45, -- [PH] invented: the window closes if you drift this far apart
+		InviteSeconds = 20, -- [PH] invented: an invite lapses
+		IdleSeconds = 180, -- [PH] invented: a window with no change closes
+		ConfirmLockSeconds = 5, -- 06 § Trade Safety: "5-second lock before Confirm becomes clickable"
+		CheckSeconds = 1, -- how often open windows are checked (range, death, raid)
+		MaxOfferLines = 12, -- [PH] invented: distinct lines per side
+		MaxUnitsPerLine = 100000, -- [PH] invented
+		MaxCreditsPerOffer = 10000000, -- [PH] invented
+		InviteCooldownSeconds = 2, -- [PH] invented: rate limit on inviting
+		NearbyCooldownSeconds = 0.5, -- [PH] invented: rate limit on the Nearby list
+		HistoryCooldownSeconds = 0.6, -- [PH] invented: rate limit on GetTradeHistory
+		-- After a decline or a lapsed invite, the same player can't invite the
+		-- same target again for this long (stops re-invite spam; step 9 review).
+		ReinviteCooldownSeconds = 30, -- [PH] invented
+		RequestCooldownSeconds = 0.15, -- [PH] invented: rate limit on offer/confirm/cancel/respond
+		HistoryMax = 20, -- [PH] invented: newest trades kept per player (06 § Trade Safety: history log)
+		-- Below-market warning (06 § Trade Safety). Josh's call: the reference
+		-- price is the NPC base price (undecayed, x Grade multiplier). It only
+		-- prices resources and Credits; charges, gadgets and skins have no
+		-- reference, so a trade that receives one never warns.
+		BelowMarketRatio = 0.5, -- [PH] invented: warn if you'd get < 50% of what you give
+		-- Trader XP from trades (03 § Reputation tracks): only when BOTH sides
+		-- offer something, and only the first N trades each UTC day, so two
+		-- Level-10 accounts can't farm it.
+		XPPerTrade = 10, -- [PH] invented
+		XPTradesPerDay = 10, -- [PH] invented
+		Ui = {
+			ButtonLabel = "Trade",
+			ShowBeforeFtue = true, -- TEMPORARY until step 14
+			VisibleAttribute = "HudTradeButton",
+			DisplayOrder = 13,
+			PanelMaxSize = Vector2.new(720, 420), -- look only [PH]
+			NearbyPanelMaxSize = Vector2.new(460, 420), -- look only [PH]
+			HistoryRowsShown = 8, -- [PH] invented: recent trades listed in the Nearby panel
+			FooterRefreshSeconds = 0.25, -- [PH] invented: lock countdown tick
+			RowHeight = 30,
+			MessageSeconds = 2.5,
+			Colors = {
+				Give = Color3.fromRGB(255, 190, 110),
+				Get = Color3.fromRGB(120, 220, 140),
+				Warn = Color3.fromRGB(255, 110, 90),
+			},
+		},
+	},
 	-- 03-progression.md § Reputation tracks, § Level (D81, D82).
 	Progression = {
 		-- Level = sum of the three track levels (D82). Each track
@@ -1194,6 +1279,28 @@ local Config = {
 			Exponent = 1.5, -- [PH] invented
 		},
 		TradeUnlockLevel = 10, -- 06-economy.md § Access gating (D82) [PH]
+		-- XP grants (server-validated actions only, R5). Sized for ~15-30 XP
+		-- per minute of active play (see above). All [PH] invented.
+		-- Josh's call, step 9: a defended Scav Wave feeds the Raider track.
+		XP = {
+			MinerPerNodeFinished = 3, -- the hit that finishes a node
+			TraderPerTenCredits = 1, -- NPC sales: 1 XP per 10 Credits earned (the price decay throttles it)
+			RaiderPerEscape = 40, -- a raider who gets away with loot
+			RaiderPerWaveDefended = 20, -- a Scav Wave beaten with no Scav escaping
+		},
+		-- Stub (step 9 prompt: "cosmetic/title rewards stubbed"): nothing is
+		-- granted yet. ReputationService logs the reward a track level WOULD
+		-- give. Titles are identity, never lootable (R1) and never stats (D81).
+		-- [PH] invented names.
+		TrackRewards = {
+			Miner = { [5] = "Prospector", [10] = "Deep Miner" },
+			Trader = { [5] = "Peddler", [10] = "Merchant" },
+			Raider = { [5] = "Scrapper", [10] = "Raider" },
+		},
+		Tracks = { "Miner", "Trader", "Raider" }, -- Config.Data.Packed "<Track>XP" words
+		-- Studio key ` (backtick; O/I are camera zoom): track levels that add up to Level 10 (4 + 3 + 3).
+		DebugLevelSplit = { Miner = 4, Trader = 3, Raider = 3 },
+		StateCooldownSeconds = 0.5, -- [PH] invented: GetProgressState rate limit
 	},
 
 	-- ── Step 10 ── Workshop I, Tech Path T1, Research, Blueprints ──────

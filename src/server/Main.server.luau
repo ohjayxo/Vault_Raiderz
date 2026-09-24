@@ -49,6 +49,12 @@ require(Services.OfflineBaseService).start()
 require(Services.RaidProtectionService).start()
 require(Services.CraftingService).start()
 
+-- Step 9: Reputation/Level, Credits + NPC buyer, direct trade. Reputation
+-- first: the other two grant Trader XP through it.
+require(Services.ReputationService).start()
+require(Services.EconomyService).start()
+require(Services.TradeService).start()
+
 require(Services.DebugService).start() -- ignores commands outside Studio
 
 -- THROWAWAY build step 0B (mobile perf spike). Delete with src/server/PerfSpike.

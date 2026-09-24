@@ -50,6 +50,8 @@ local Template: Types.ProfileData = {
 	Resources = { Banked = emptyResourceStore(), Exposed = emptyResourceStore() },
 	Scrap = { Banked = 0, Exposed = 0 },
 	Credits = 0,
+	NpcSales = { Day = 0, Units = {} },
+	TradeHistory = {},
 	Items = {},
 	Base = { VaultTier = 0, Archived = false, Pieces = {} },
 	Gear = { PickaxeTier = Config.Combat.StartingPickaxeTier, Upgrades = emptyUpgrades() },

@@ -204,6 +204,15 @@ local function saveAndWait(profile: any): boolean
 	return done
 end
 
+-- Asks ProfileStore to save this player's profile now (does not wait). Used
+-- right after a direct trade so both sides reach the datastore back to back.
+function PlayerDataService.saveNow(player: Player)
+	local profile = activeProfile(player)
+	if profile then
+		profile:Save()
+	end
+end
+
 -- Handles profile messages whose Kind is `kind`. The handler gets an
 -- `update` that works before the profile is loaded (same owner rules as
 -- update()). Return true once the message is applied or safely ignored;

@@ -123,6 +123,63 @@ export type GearState = {
 	Items: { [string]: number }, -- every counted item you own (gadgets, lockpicks...): the Bag shows them
 }
 
+-- One line of a trade offer (TradeService). Kind: "Resource" (Id = resource,
+-- Grade set), "Item" (a counted item), "Skin" (a pickaxe skin). Credits are a
+-- separate number, not a line.
+export type TradeLine = { Kind: string, Id: string, Grade: string?, Amount: number }
+
+-- What one side puts in the window: Credits plus lines.
+export type TradeOffer = { Credits: number, Lines: { TradeLine } }
+
+-- One finished trade in your history (06 § Trade Safety: dispute log).
+-- Gave/Got are from YOUR side. Id is shared by both players' entries.
+export type TradeRecord = {
+	Id: string,
+	At: number,
+	WithName: string,
+	-- A string: Studio "Clients and Servers" players have NEGATIVE UserIds,
+	-- which a profile can't hold as a number (PlayerDataService.validate).
+	WithUserId: string,
+	Gave: TradeOffer,
+	Got: TradeOffer,
+}
+
+-- What each trade window client gets (TradeState). Times are
+-- workspace:GetServerTimeNow(). BelowMarket is per viewer: true when YOU
+-- would get far less than you give by the NPC reference price.
+export type TradeView = {
+	Id: string,
+	Version: number,
+	YourName: string,
+	TheirName: string,
+	Yours: TradeOffer,
+	Theirs: TradeOffer,
+	YouConfirmed: boolean,
+	TheyConfirmed: boolean,
+	LockEndsAt: number,
+	BelowMarket: boolean,
+}
+
+-- The three Reputation tracks (D81) and the Level (D82), all derived from
+-- the packed XP. Prev/Next = XP at this track level / the next one.
+export type TrackState = { Level: number, XP: number, Prev: number, Next: number }
+export type ReputationState = {
+	Level: number,
+	Tracks: { [string]: TrackState },
+	TradeUnlocked: boolean,
+}
+
+-- The NPC buyer's panel (GetSellQuote / SellUnits). Price = Credits for the
+-- NEXT unit of that Grade; Percent = today's price as a share of full.
+export type SellQuote = {
+	Resources: {
+		[string]: {
+			Percent: number,
+			Grades: { [string]: { Have: number, Price: number } },
+		},
+	},
+}
+
 export type ProfileData = {
 	-- Owned by PlayerDataService. Times are Unix seconds from Util/Clock.
 	Meta: { Version: number, FirstLoginAt: number, LastActiveAt: number },
@@ -131,6 +188,11 @@ export type ProfileData = {
 	-- Research Scrap has its own separate small bank cap (§ Special cases).
 	Scrap: { Banked: number, Exposed: number },
 	Credits: number,
+	-- D94: NPC units sold on UTC day `Day` (Clock.now() // 86400), per
+	-- resource. A new day starts a fresh count (EconomyService).
+	NpcSales: { Day: number, Units: { [string]: number } },
+	-- Newest first, capped at Config.Trade.HistoryMax (TradeService).
+	TradeHistory: { TradeRecord },
 	-- Breach Charges, gadgets, components: item id -> count.
 	Items: { [string]: number },
 	-- VaultTier 0 = no Vault Core built yet (FTUE builds it). Archived = D55.
@@ -171,6 +233,8 @@ export type SectionName =
 	| "Resources"
 	| "Scrap"
 	| "Credits"
+	| "NpcSales"
+	| "TradeHistory"
 	| "Items"
 	| "Base"
 	| "Gear"

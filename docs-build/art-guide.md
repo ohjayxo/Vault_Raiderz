@@ -71,6 +71,7 @@ files live.
 |---|---|---|---|
 | Homestead street (spawn island, "Main Street", D113) | Workspace › World › Homestead | `src/world/Homestead/` | `Hitbox` = the walkable slab (96 × 10 × 320). Also keep `SpawnLocation` and `NodeSpawns`. |
 | South plaza (NPC buyer + FTUE vault spots) | Workspace › World › Plaza | `src/world/Plaza/` | `Hitbox` (176 × 10 × 96), `NpcBuyerSlot`, `DerelictVaultSlot` (invisible markers) |
+| NPC buyer stall (step 9) | Workspace › World › Plaza › NpcBuyer | `src/world/Plaza/NpcBuyer/` | `Hitbox` (8 × 6 × 4, solid: carries the "Sell" prompt). Tag `NpcBuyer`. `Visual` = the stall + vendor look |
 | Reaches island (danger zone) | Workspace › World › Reaches | `src/world/Reaches/` | `Hitbox` (150 × 10 × 150), `NodeSpawns` |
 | Bridge street → Reaches | Workspace › World › Bridge | `src/world/Bridge/` | `Hitbox` = the deck (12 × 75) |
 | Player plots 1-8 (west row 1-4, east row 5-8) | Workspace › World › Plots › Plot1… | `src/world/Plots/Plot1/` … | `Hitbox` = build surface (48 × 2 × 48), rotated so its front faces its bridge. The build grid is on its top face. |

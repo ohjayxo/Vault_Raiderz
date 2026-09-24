@@ -55,16 +55,51 @@ function CosmeticService.equippedTemplate(player: Player): Model?
 end
 
 -- Gives one skin (Captain drop, FTUE reward in step 14, ...).
-function CosmeticService.grantSkin(player: Player, skinId: string): boolean
+function CosmeticService.grantSkin(player: Player, skinId: string, amount: number?): boolean
 	assert(skinCfgs[skinId], `CosmeticService.grantSkin: unknown skin "{skinId}"`)
+	local copies = amount or 1
+	assert(copies > 0 and copies == math.floor(copies), `CosmeticService.grantSkin: bad amount {copies}`)
 	local ok = PlayerDataService.update(player, "Cosmetics", OWNER, function(data: CosmeticsData)
-		data.PickaxeSkins[skinId] = (data.PickaxeSkins[skinId] or 0) + 1
+		data.PickaxeSkins[skinId] = (data.PickaxeSkins[skinId] or 0) + copies
 		return data
 	end)
 	if ok then
 		changedEvent:Fire(player)
 	end
 	return ok
+end
+
+-- Removes `amount` copies of a skin (a direct trade, step 9). All or nothing.
+-- Giving away the last copy of the equipped skin unequips it. Raids and
+-- death never call this (R1); only TradeService does.
+function CosmeticService.takeSkin(player: Player, skinId: string, amount: number): boolean
+	assert(skinCfgs[skinId], `CosmeticService.takeSkin: unknown skin "{skinId}"`)
+	assert(amount > 0 and amount == math.floor(amount), `CosmeticService.takeSkin: bad amount {amount}`)
+	local taken = false
+	local ok = PlayerDataService.update(player, "Cosmetics", OWNER, function(data: CosmeticsData)
+		local have = data.PickaxeSkins[skinId] or 0
+		if have < amount then
+			return data
+		end
+		local skins: { [string]: number? } = data.PickaxeSkins
+		skins[skinId] = if have == amount then nil else have - amount
+		if have == amount and data.EquippedPickaxeSkin == skinId then
+			data.EquippedPickaxeSkin = ""
+		end
+		taken = true
+		return data
+	end)
+	if ok and taken then
+		changedEvent:Fire(player)
+		return true
+	end
+	return false
+end
+
+-- Copies of a skin the player owns.
+function CosmeticService.count(player: Player, skinId: string): number
+	local data = CosmeticService.get(player)
+	return if data then data.PickaxeSkins[skinId] or 0 else 0
 end
 
 local function equip(player: Player, skinArg: unknown): (boolean, string?)

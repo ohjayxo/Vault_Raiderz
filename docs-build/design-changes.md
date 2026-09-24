@@ -308,6 +308,37 @@ Also built as documented: both shields block online AND offline raids; the
 30-min shield starts at the login that applies an offline theft (#13);
 offline bases are only shown if someone on the server can raid them.
 
+## Step 9 gap answers (2026-09-24) — NOT yet in `docs/`
+
+Josh took all of Claude's picks:
+1. **NPC buys from** Exposed first, then Banked, in the Grade the player picks
+   (same precedence as the step 4 spend rule). 06 § Two tiers of selling is silent.
+2. **NPC decay is per resource per day** (units of that resource sold today;
+   Grade doesn't change the count). Each unit multiplies that resource's price
+   by 0.99 [PH], floor 25% [PH]. The day resets at UTC midnight and the counter
+   is saved in the profile, so rejoining can't reset it. D94 only says "per
+   sale within a day".
+3. **XP tracks:** Miner = finishing a node; Trader = NPC sales (1 XP per 10
+   Credits earned, so the decay throttles it) + completed two-way trades (first
+   10 per UTC day); Raider = a raid escape with loot **and a defended Scav
+   Wave** (04 § Scav Waves says only "Reputation"). All amounts [PH].
+4. **Credits can go in a trade offer.** The docs never say whether direct
+   trades may include Credits.
+5. **Tradeable in the direct window:** resources (any Grade), Breach Charges,
+   gadgets, Lockpicks, pickaxe skins, Credits. Never Scrap (05), pickaxes
+   (D111) or armor (D112). Received goods land in Exposed (Prismatic /
+   Vaultborn auto-bank if room).
+6. **D98 trade holds are NOT built** (not in the step 9 prompt; no value
+   model for non-resource items). `Config.Trade.HoldsBuilt = false` marks it.
+Earlier decision now built: the below-market reference price is the NPC base
+price x Grade multiplier (undecayed). It only prices resources and Credits, so
+a trade that receives a charge, gadget or skin never warns. Needs a line in
+`06-economy.md § Trade Safety` (see estimate.md "To sync back" #2).
+Also built as a Claude call (Josh may change): trading needs BOTH players at
+Level 10; both must be alive, near each other (invite 30 studs, window closes
+past 45 studs) and NOT in a raid / carrying loot; the window closes on idle
+(180 s); any change restarts the 5-second lock and clears both Confirms.
+
 ## Chase grip + raid-time respawn (2026-09-23) — D115, APPLIED to `docs/` + built (design project still owed)
 
 Found in step 8 testing: one hit knocks the loot loose (02 § The Chase point

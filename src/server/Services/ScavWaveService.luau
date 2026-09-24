@@ -32,6 +32,7 @@ local InventoryService = require(script.Parent.InventoryService)
 local CosmeticService = require(script.Parent.CosmeticService)
 local PlotService = require(script.Parent.PlotService)
 local ScavService = require(script.Parent.ScavService)
+local ReputationService = require(script.Parent.ReputationService)
 
 local waveCfg = Config.ScavWaves
 local scavCfg = Config.Scavs
@@ -156,8 +157,9 @@ local function finish(wave: Wave, reason: string?)
 	elseif wave.escaped == 0 then
 		local reward = scaled(waveCfg.SuccessRewardPerTier, wave.tier)
 		VaultService.grant(owner, reward)
-		-- 04 § Scav Waves: "+ Reputation". ReputationService arrives in step 9.
-		print(`[Waves] {owner.Name} defended a tier {wave.tier} wave: +{describe(reward)} (Reputation: step 9)`)
+		-- 04 § Scav Waves: "+ Reputation" (Josh's call, step 9: Raider track).
+		ReputationService.grant(owner, "Raider", Config.Progression.XP.RaiderPerWaveDefended, "wave defended")
+		print(`[Waves] {owner.Name} defended a tier {wave.tier} wave: +{describe(reward)} (+{Config.Progression.XP.RaiderPerWaveDefended} Raider XP)`)
 		alert(owner, "WaveWon", `Scav Wave defeated! +{describe(reward)}`)
 	else
 		print(`[Waves] {owner.Name} lost a wave: {wave.escaped} Scav(s) took {wave.lostResources} resources, {wave.lostScrap} Scrap`)

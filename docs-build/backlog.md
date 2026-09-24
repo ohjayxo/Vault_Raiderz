@@ -204,3 +204,27 @@ rules + layout) and 1 skeptic that tried to refute each finding.
   carrying over to another target is intended (it's consent to lose your own
   shield); the Studio clock skip is server-wide on purpose; the Craft row fits
   the Bag.
+
+## From step 9 (2026-09-24)
+
+- **Trade saves aren't atomic across the two profiles.** The swap itself is
+  one non-yielding run with undo, and both profiles are saved back to back
+  (`PlayerDataService.saveNow`), but a server crash between the two DataStore
+  writes could lose or duplicate one side. Both histories carry the same trade
+  id for disputes. A journaled two-phase commit is the fix if playtests care.
+- **D98 trade holds** are not built (`Config.Trade.HoldsBuilt = false`). The
+  hook point is `TradeService` before the commit's `canCover` check.
+- **D69 "market-acquired" flag (step 10):** items are counts, so a per-unit
+  flag can't be stored yet. Step 10's recycling must decide whether goods
+  gained by direct trade count as market-acquired, and how to track that.
+- **Step 14 (FTUE):** hide the NPC buyer's stall + prompt until the FTUE ends
+  (06 is hidden by hard rule 5); set `Config.Inventory.ShowCredits = false`
+  and `Config.Trade.Ui.ShowBeforeFtue = false` (then set the Player attribute
+  `Config.Trade.Ui.VisibleAttribute` from FTUEService). The trade/sell panels
+  contain text: check them against rule 1 (no text before 2:30).
+- **Cross-server trade** is out (same-server only). Nothing in the window
+  assumes it, but the commit relies on both profiles being live on this server.
+- **Raider XP has no daily cap** (escapes cost 3 Riftsalt + a lockpick run, so
+  farming with an alt is expensive). Add one if playtests show abuse.
+- **Trade UI is greybox** (one scrolling column). A proper layout + the UI
+  templates pass come before step 14, like the other menus.

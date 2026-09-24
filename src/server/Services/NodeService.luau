@@ -33,6 +33,7 @@ local VaultService = require(script.Parent.VaultService)
 local PickaxeService = require(script.Parent.PickaxeService)
 local CombatService = require(script.Parent.CombatService)
 local BroadcastQueue = require(script.Parent.BroadcastQueue)
+local ReputationService = require(script.Parent.ReputationService)
 
 local nodeCfg = Config.Nodes
 type TypeConfig = { Hits: number, YieldPerHit: number }
@@ -262,6 +263,8 @@ strike = function(player: Player, node: Node): boolean
 
 	if node.hitsLeft <= 0 then
 		deplete(node)
+		-- 03 § Reputation tracks: Miner XP for the hit that finishes a node.
+		ReputationService.grant(player, "Miner", Config.Progression.XP.MinerPerNodeFinished, "node finished")
 	end
 	return true
 end
