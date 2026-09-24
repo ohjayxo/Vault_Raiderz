@@ -50,7 +50,7 @@ local Template: Types.ProfileData = {
 	Resources = { Banked = emptyResourceStore(), Exposed = emptyResourceStore() },
 	Scrap = { Banked = 0, Exposed = 0 },
 	Credits = 0,
-	NpcSales = { Day = 0, Units = {} },
+	NpcSales = { Day = 0, Units = {}, EverSold = false },
 	TradeHistory = {},
 	Items = {},
 	Base = { VaultTier = 0, Archived = false, Pieces = {} },

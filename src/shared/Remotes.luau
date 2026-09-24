@@ -86,9 +86,9 @@ local definitions: { [string]: RemoteKind } = {
 
 	-- Step 9: NPC selling, Level/Reputation, direct trade.
 	GetSellQuote = "Function", -- () -> SellQuote? (you must be at the buyer)
-	SellUnits = "Function", -- (resource, grade, count) -> (ok, reason?, credits earned?, SellQuote?)
+	SellUnits = "Function", -- (resource, grade, count) -> (ok, reason?, credits earned?, SellQuote?, units sold?)
 	OpenNpcShop = "Event", -- server -> client: () the buyer's Sell prompt was used
-	CreditsChanged = "Event", -- server -> owner: (credits: number)
+	CreditsChanged = "Event", -- server -> owner: (credits: number, soldToNpc: boolean) soldToNpc = made a first NPC sale (HUD shows Credits after that)
 	ReputationChanged = "Event", -- server -> owner: (ReputationState)
 	GetProgressState = "Function", -- () -> (credits, ReputationState)?: Bag / Trade button start-up
 	GetNearbyTraders = "Function", -- () -> { { UserId, Name } } Level-10 players in invite range

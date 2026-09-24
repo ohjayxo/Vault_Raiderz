@@ -27,7 +27,6 @@ local tradeCfg = Config.Trade
 local ui = tradeCfg.Ui
 local style = Config.UiStyle
 local colors = style.Colors
-local SIZE = Config.Combat.Ui.ButtonSize
 local TAP = style.MinTap
 local money = UiStyle.money
 
@@ -64,6 +63,8 @@ local busy = false
 
 -- ── Shells ───────────────────────────────────────────────────────────────
 
+local playerGui = player:WaitForChild("PlayerGui")
+
 local windowGui = Instance.new("ScreenGui")
 windowGui.Name = "TradeWindow"
 windowGui.ResetOnSpawn = false
@@ -73,41 +74,14 @@ windowGui.ResetOnSpawn = false
 windowGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 windowGui.DisplayOrder = ui.DisplayOrder
 
-local buttonGui = Instance.new("ScreenGui")
-buttonGui.Name = "TradeButton"
-buttonGui.ResetOnSpawn = false
-buttonGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-buttonGui.DisplayOrder = Config.Inventory.ButtonDisplayOrder
-
--- HUD button in the same row as Raids (12, 170) and Bag (next to it), one
--- more slot along, so it stays clear of the bottom-left thumbstick zone.
-local tradeButton = UiStyle.button(buttonGui, ui.ButtonLabel, "neutral", SIZE * 1.2, math.max(SIZE * 0.5, TAP))
-tradeButton.Position = UDim2.fromOffset(12 + 2 * (SIZE * 1.2 + 8), 170 - (math.max(SIZE * 0.5, TAP) - SIZE * 0.5) / 2)
+-- HUD button: one slot in the shared dock (Raids / Bag / Trade / Gear).
+local tradeButton = UiStyle.dockButton(playerGui, ui.ButtonLabel, "neutral", style.Dock.Order.Trade)
 tradeButton.Visible = false
 
--- Toast for short messages (declines, timeouts, "Trade complete!"), always on screen.
-local toast = UiStyle.pill(windowGui, "", colors.Text, Color3.new(0, 0, 0))
-toast.AnchorPoint = Vector2.new(0.5, 0)
-toast.Position = UDim2.new(0.5, 0, 0, 16)
-toast.TextWrapped = true
-toast.TextSize = style.TextSize.Body
-toast.Visible = false
-toast.ZIndex = 20
-local toastLimit = Instance.new("UISizeConstraint")
-toastLimit.MaxSize = Vector2.new(360, math.huge)
-toastLimit.Parent = toast
-
-local toastToken = 0
+-- Short messages (declines, timeouts), always on screen: the shared HUD toast spot.
+local hudToast = UiStyle.toast(windowGui)
 local function showToast(text: string, seconds: number?)
-	toastToken += 1
-	local token = toastToken
-	toast.Text = text
-	toast.Visible = true
-	task.delay(seconds or ui.MessageSeconds, function()
-		if toastToken == token then
-			toast.Visible = false
-		end
-	end)
+	hudToast.show(text, seconds or ui.MessageSeconds)
 end
 
 -- ── Names, avatars ───────────────────────────────────────────────────────
@@ -234,17 +208,6 @@ local function ask(remote: string, ...: any): (boolean, string?)
 	return true, nil
 end
 
--- A row of equal-width chips (the "+1 / +10 / All" buttons).
-type Chip = { text: string, run: () -> () }
-local function chipRow(parent: Instance, order: number, chips: { Chip })
-	local row = UiStyle.row(parent, TAP, order)
-	for _, entry in chips do
-		local button = UiStyle.button(row, entry.text, "chip", 0, TAP)
-		button.Size = UDim2.new(1 / #chips, -6, 1, 0)
-		button.Activated:Connect(entry.run)
-	end
-end
-
 -- A one-line "name .... value" row inside a card.
 local function twoCol(parent: Instance, order: number, left: string, leftColor: Color3, right: string?, rightColor: Color3?): Frame
 	local row = UiStyle.row(parent, 24, order)
@@ -266,17 +229,13 @@ end
 
 -- ── Nearby list + history ────────────────────────────────────────────────
 
-local nearbyPanel = UiStyle.panel(windowGui, 0.92, 0.85, ui.NearbyPanelMaxSize)
-local nearbyTitle = UiStyle.title(nearbyPanel, "Trade with a nearby player")
-nearbyTitle.Position = UDim2.fromOffset(14, 10)
-nearbyTitle.Size = UDim2.new(1, -28 - TAP - 8, 0, TAP)
-nearbyTitle.AutomaticSize = Enum.AutomaticSize.None
-nearbyTitle.TextWrapped = false
-nearbyTitle.TextTruncate = Enum.TextTruncate.AtEnd
-local nearbyClose = UiStyle.button(nearbyPanel, "X", "neutral", TAP, TAP)
-nearbyClose.AnchorPoint = Vector2.new(1, 0)
-nearbyClose.Position = UDim2.new(1, -12, 0, 10)
-local nearbyList = UiStyle.scroller(nearbyPanel, UDim2.fromOffset(10, 10 + TAP + 8), UDim2.new(1, -20, 1, -(10 + TAP + 8 + 10)))
+local nearbyWin = UiStyle.window(windowGui, "Trade", 0.92, 0.85, ui.NearbyPanelMaxSize)
+local nearbyPanel = nearbyWin.panel
+local nearbyClose = nearbyWin.close
+local nearbyList = nearbyWin.content
+-- Refresh sits in the header, so it doesn't split the two lists.
+local nearbyRefresh = UiStyle.button(nearbyWin.header, "Refresh", "chip", 88, TAP)
+nearbyRefresh.LayoutOrder = 2
 
 local renderNearby: () -> ()
 
@@ -323,6 +282,7 @@ renderNearby = function()
 	end
 
 	UiStyle.label(nearbyList, "Walk close to a player who has reached Level 10, then tap Invite.", style.TextSize.Small, colors.TextDim, false).LayoutOrder = nextOrder()
+	UiStyle.sectionHeader(nearbyList, "Nearby", nextOrder(), nil, tostring(#people))
 
 	if #people == 0 then
 		local empty = UiStyle.card(nearbyList, nextOrder())
@@ -345,15 +305,9 @@ renderNearby = function()
 			end
 		end)
 	end
-	local refresh = UiStyle.button(nearbyList, "Refresh", "chip", 0, TAP)
-	refresh.Size = UDim2.new(1, 0, 0, TAP)
-	refresh.LayoutOrder = nextOrder()
-	refresh.Activated:Connect(function()
-		renderNearby()
-	end)
 
 	-- 06 § Trade Safety: your saved trade history (newest first).
-	UiStyle.label(nearbyList, "RECENT TRADES (UTC)", style.TextSize.Small, colors.TextDim, true).LayoutOrder = nextOrder()
+	UiStyle.sectionHeader(nearbyList, "Recent trades", nextOrder(), nil, `last {math.min(#records, ui.HistoryRowsShown)} (UTC)`)
 	if #records == 0 then
 		local none = UiStyle.card(nearbyList, nextOrder())
 		UiStyle.label(none, "No trades yet.", style.TextSize.Body, colors.TextDim, false)
@@ -465,21 +419,23 @@ end
 
 -- ── The trade window ─────────────────────────────────────────────────────
 
-local window = UiStyle.panel(windowGui, 0.96, 0.94, ui.PanelMaxSize)
-local HEADER_BOTTOM = 10 + style.AvatarSize + 4 + 8 -- where the body starts with no warning strip
+local tradeWin = UiStyle.window(windowGui, "Trade", 0.96, 0.94, ui.PanelMaxSize)
+local window = tradeWin.panel
+local HEADER_BOTTOM = style.Window.HeaderPad * 2 + TAP + style.Window.BodyGap -- where the body starts with no warning strip
+-- No X on this window: a trade ends with Cancel or Confirm, never by hiding it.
+tradeWin.close.Visible = false
 
-local windowHeader = UiStyle.row(window, style.AvatarSize + 4, 0)
-windowHeader.Position = UDim2.fromOffset(14, 10)
-windowHeader.Size = UDim2.new(1, -28, 0, style.AvatarSize + 4)
+local windowHeader = tradeWin.header
 local headerAvatarHolder = Instance.new("Frame")
-headerAvatarHolder.LayoutOrder = 1
+headerAvatarHolder.LayoutOrder = 0
 headerAvatarHolder.Size = UDim2.fromOffset(style.AvatarSize, style.AvatarSize)
 headerAvatarHolder.BackgroundTransparency = 1
 headerAvatarHolder.Parent = windowHeader
-local windowTitle = UiStyle.title(windowHeader, "Trade")
-windowTitle.LayoutOrder = 2
-windowTitle.Size = UDim2.new(1, -(style.AvatarSize + 6), 1, 0)
+local windowTitle = tradeWin.title
+windowTitle.Size = UDim2.new(1, -(style.AvatarSize + style.Window.HeaderGap), 1, 0)
 windowTitle.AutomaticSize = Enum.AutomaticSize.None
+windowTitle.TextWrapped = false
+windowTitle.TextTruncate = Enum.TextTruncate.AtEnd
 
 -- The below-market warning is a FIXED strip under the header (not inside the
 -- scrolling list), so it can't scroll out of sight while Confirm is on screen.
@@ -498,7 +454,7 @@ warningText.Size = UDim2.fromScale(1, 1)
 warningText.AutomaticSize = Enum.AutomaticSize.None
 warningText.TextTruncate = Enum.TextTruncate.AtEnd
 
-local windowBody = UiStyle.scroller(window, UDim2.fromOffset(10, HEADER_BOTTOM), UDim2.new(1, -20, 1, -HEADER_BOTTOM))
+local windowBody = tradeWin.content
 
 local footer = Instance.new("Frame")
 footer.AnchorPoint = Vector2.new(0, 1)
@@ -532,8 +488,12 @@ local function layoutWindow()
 	footer.Size = UDim2.new(1, -28, 0, footerHeight)
 	local warning = warningStrip.Visible
 	local bodyTop = HEADER_BOTTOM + (if warning then style.WarningStripHeight + 6 else 0)
-	windowBody.Position = UDim2.fromOffset(10, bodyTop)
-	windowBody.Size = UDim2.new(1, -20, 1, -(bodyTop + footerHeight + 12 + 6))
+	local bodyPos = UDim2.fromOffset(10, bodyTop)
+	local bodySize = UDim2.new(1, -20, 1, -(bodyTop + footerHeight + 12 + 6))
+	windowBody.Position = bodyPos
+	windowBody.Size = bodySize
+	tradeWin.well.Position = bodyPos
+	tradeWin.well.Size = bodySize
 end
 layoutWindow()
 
@@ -585,6 +545,27 @@ end
 
 local lastWide = false
 local headerAvatarFor = "" -- whose avatar the header currently shows
+
+-- One thing you can offer: an item row (Grade stripe, name, "You have N ·
+-- Offering M") with its -/+ buttons on the right. A row that is already in the
+-- offer gets a green outline. A greyed button can't do anything right now.
+type Step = { text: string, width: number, off: boolean, run: () -> () }
+local function pickerRow(parent: Instance, order: number, title: string, titleColor: Color3, stripe: Color3?, have: number, offered: number, steps: { Step })
+	local row = UiStyle.itemRow(parent, title, `You have {money(have)} · Offering {money(offered)}`, order, false, stripe)
+	row.title.TextColor3 = titleColor
+	if offered > 0 then
+		local stroke = row.root:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Color = colors.Good
+			stroke.Thickness = 2
+		end
+	end
+	for index, step in steps do
+		local button = UiStyle.button(row.trailing, step.text, if step.off then "disabled" else "chip", step.width, TAP)
+		button.LayoutOrder = index
+		button.Activated:Connect(step.run)
+	end
+end
 
 -- One side of the trade: a titled card listing exactly what that side gives.
 -- `mine` = your side (lines get a Remove button); otherwise read-only.
@@ -666,34 +647,60 @@ renderWindow = function()
 	sideCard(sides, 1, wide, "YOU GIVE", ui.Colors.Give, v.Yours, v.YouConfirmed, true)
 	sideCard(sides, 2, wide, `YOU GET (from {v.TheirName})`, ui.Colors.Get, v.Theirs, v.TheyConfirmed, false)
 
-	-- Add from your stuff.
-	order += 1
-	local picker = UiStyle.card(windowBody, order)
-	UiStyle.label(picker, "ADD FROM YOUR STUFF", style.TextSize.Small, colors.TextDim, true).LayoutOrder = 1
-	local pickOrder = 1
+	-- Add from your stuff, grouped: Credits / Resources / Items / Skins. Each row
+	-- says what you have and how much of it is already in the offer.
 	local function nextPick(): number
-		pickOrder += 1
-		return pickOrder
+		order += 1
+		return order
 	end
-
 	local creditsOffered = v.Yours.Credits
-	twoCol(picker, nextPick(), "Credits", colors.Accent, money(credits), colors.TextDim)
-	chipRow(picker, nextPick(), {
-		{ text = "+100", run = function() ask("TradeSetCredits", math.min(credits, creditsOffered + 100)) end },
-		{ text = "+1,000", run = function() ask("TradeSetCredits", math.min(credits, creditsOffered + 1000)) end },
-		{ text = "All", run = function() ask("TradeSetCredits", credits) end },
-	})
-	for _, h in holdings() do
-		local offered = offeredAmount(v.Yours, h.kind, h.id, h.grade)
-		local color = if h.kind == "Resource" and h.grade then UiStyle.gradeColor(h.grade) else colors.Text
-		twoCol(picker, nextPick(), h.label, color, `x{money(h.have)}`, colors.TextDim)
-		chipRow(picker, nextPick(), {
-			{ text = "+1", run = function() setLine(h.kind, h.id, h.grade, math.min(h.have, offered + 1)) end },
-			{ text = "+10", run = function() setLine(h.kind, h.id, h.grade, math.min(h.have, offered + 10)) end },
-			{ text = "All", run = function() setLine(h.kind, h.id, h.grade, h.have) end },
+	local held = holdings()
+	local buckets: { [string]: { Holding } } = { Resource = {}, Item = {}, Skin = {} }
+	for _, h in held do
+		table.insert(buckets[h.kind], h)
+	end
+	local anythingToOffer = credits > 0 or #held > 0
+
+	if credits > 0 then
+		UiStyle.sectionHeader(windowBody, "Credits", nextPick(), nil, if creditsOffered > 0 then `{money(creditsOffered)} in offer` else nil)
+		pickerRow(windowBody, nextPick(), "Credits", colors.Accent, nil, credits, creditsOffered, {
+			{ text = "-100", width = 60, off = creditsOffered <= 0, run = function() ask("TradeSetCredits", math.max(0, creditsOffered - 100)) end },
+			{ text = "+100", width = 60, off = creditsOffered >= credits, run = function() ask("TradeSetCredits", math.min(credits, creditsOffered + 100)) end },
+			{ text = "+1,000", width = 72, off = creditsOffered >= credits, run = function() ask("TradeSetCredits", math.min(credits, creditsOffered + 1000)) end },
+			{ text = "All", width = 56, off = creditsOffered >= credits, run = function() ask("TradeSetCredits", credits) end },
 		})
 	end
-	UiStyle.label(picker, "Resources come from your at-risk pile first, then your bank. Everything you get lands at risk until you bank it.", style.TextSize.Small, colors.TextDim, false).LayoutOrder = nextPick()
+	for _, group in { { kind = "Resource", heading = "Resources" }, { kind = "Item", heading = "Items" }, { kind = "Skin", heading = "Skins" } } do
+		local list = buckets[group.kind]
+		if #list == 0 then
+			continue
+		end
+		local inOffer = 0
+		for _, line in v.Yours.Lines do
+			if line.Kind == group.kind then
+				inOffer += 1
+			end
+		end
+		UiStyle.sectionHeader(windowBody, group.heading, nextPick(), nil, if inOffer > 0 then `{inOffer} in offer` else nil)
+		for _, h in list do
+			local offered = offeredAmount(v.Yours, h.kind, h.id, h.grade)
+			local isGrade = h.kind == "Resource" and h.grade ~= nil
+			local color = if isGrade then UiStyle.gradeColor(h.grade :: string) else colors.Text
+			local steps: { Step } = {
+				{ text = "-1", width = 48, off = offered <= 0, run = function() setLine(h.kind, h.id, h.grade, math.max(0, offered - 1)) end },
+				{ text = "+1", width = 48, off = offered >= h.have, run = function() setLine(h.kind, h.id, h.grade, math.min(h.have, offered + 1)) end },
+			}
+			if h.have > 10 then
+				table.insert(steps, { text = "+10", width = 52, off = offered >= h.have, run = function() setLine(h.kind, h.id, h.grade, math.min(h.have, offered + 10)) end })
+			end
+			table.insert(steps, { text = "All", width = 56, off = offered >= h.have, run = function() setLine(h.kind, h.id, h.grade, h.have) end })
+			pickerRow(windowBody, nextPick(), h.label, color, if isGrade then color else nil, h.have, offered, steps)
+		end
+	end
+	if not anythingToOffer then
+		UiStyle.emptyState(windowBody, "Nothing to offer yet", "Mine something, then come back.", nextPick())
+	end
+	UiStyle.label(windowBody, "Resources come from your at-risk pile first, then your bank. Everything you get lands at risk until you bank it.", style.TextSize.Small, colors.TextDim, false).LayoutOrder = nextPick()
 end
 
 -- Status text, lock bar and Confirm button, refreshed every FooterRefreshSeconds.
@@ -751,26 +758,63 @@ window:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
 	end
 end)
 
--- "Trade complete!" with what you received listed underneath, in the same bubble.
-local function completeText(text: string, received: Types.TradeOffer): string
-	local lines: { string } = { text, "You received:" }
-	if received.Credits > 0 then
-		table.insert(lines, `- {money(received.Credits)} Credits`)
+-- The receipt after a completed trade: what you gave and what you got, in the
+-- same colours as the trade window, until you tap OK (a toast was easy to miss).
+local receipt = UiStyle.card(windowGui, 0)
+receipt.AnchorPoint = Vector2.new(0.5, 0.5)
+receipt.Position = UDim2.fromScale(0.5, 0.5)
+receipt.Size = UDim2.new(0.8, 0, 0, 0)
+receipt.BackgroundColor3 = colors.Panel
+receipt.Visible = false
+receipt.ZIndex = 12
+local receiptLimit = Instance.new("UISizeConstraint")
+receiptLimit.MaxSize = Vector2.new(380, math.huge)
+receiptLimit.Parent = receipt
+
+local function offerLines(parent: Instance, order: number, heading: string, headingColor: Color3, offer: Types.TradeOffer): number
+	UiStyle.sectionHeader(parent, heading, order, headingColor)
+	local n = order
+	local function line(text: string, color: Color3)
+		n += 1
+		UiStyle.label(parent, text, style.TextSize.Body, color, true).LayoutOrder = n
 	end
-	for _, line in received.Lines do
-		table.insert(lines, `- {lineText(line)}`)
+	if offer.Credits > 0 then
+		line(`{money(offer.Credits)} Credits`, colors.Accent)
 	end
-	if #lines == 2 then
-		table.insert(lines, "- nothing this time")
+	for _, entry in offer.Lines do
+		line(lineText(entry), if entry.Kind == "Resource" and entry.Grade then UiStyle.gradeColor(entry.Grade) else colors.Text)
 	end
-	return table.concat(lines, "\n")
+	if n == order then
+		line("nothing", colors.TextDim)
+	end
+	return n
+end
+
+local function showReceipt(text: string, gave: Types.TradeOffer?, got: Types.TradeOffer)
+	clear(receipt)
+	local head = UiStyle.label(receipt, text, style.TextSize.Title, colors.Good, true)
+	head.LayoutOrder = 1
+	local n = 1
+	if gave then
+		n = offerLines(receipt, n + 1, "YOU GAVE", ui.Colors.Give, gave)
+	end
+	n = offerLines(receipt, n + 1, "YOU GOT", ui.Colors.Get, got)
+	local ok = UiStyle.button(receipt, "OK", "primary", 0, TAP)
+	ok.Size = UDim2.new(1, 0, 0, TAP)
+	ok.LayoutOrder = n + 1
+	ok.Activated:Connect(function()
+		receipt.Visible = false
+	end)
+	receipt.Visible = true
 end
 
 Remotes.getEvent("TradeState").OnClientEvent:Connect(function(state: Types.TradeView?, text: string?, received: Types.TradeOffer?)
+	local finished = view -- the last offers you saw: what you gave
 	view = state
 	if state then
 		nearbyPanel.Visible = false
 		invitePanel.Visible = false
+		receipt.Visible = false
 		window.Visible = true
 		renderWindow()
 		refreshFooter()
@@ -786,7 +830,7 @@ Remotes.getEvent("TradeState").OnClientEvent:Connect(function(state: Types.Trade
 		headerAvatarFor = ""
 		warningStrip.Visible = false
 		if text and received then
-			showToast(completeText(text, received), ui.CompleteMessageSeconds)
+			showReceipt(text, if finished then finished.Yours else nil, received)
 		elseif text then
 			showToast(text)
 		end
@@ -851,9 +895,11 @@ end)
 nearbyClose.Activated:Connect(function()
 	nearbyPanel.Visible = false
 end)
+nearbyRefresh.Activated:Connect(function()
+	renderNearby()
+end)
 
-windowGui.Parent = player:WaitForChild("PlayerGui")
-buttonGui.Parent = player:WaitForChild("PlayerGui")
+windowGui.Parent = playerGui
 
 -- Start-up snapshots, in case the pushes were missed (rate limited: once).
 task.spawn(function()

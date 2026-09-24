@@ -171,11 +171,15 @@ export type ReputationState = {
 
 -- The NPC buyer's panel (GetSellQuote / SellUnits). Price = Credits for the
 -- NEXT unit of that Grade; Percent = today's price as a share of full.
+-- PayoutOne / PayoutTen / PayoutAll = what the server would pay right now for
+-- 1 / 10 / all of that Grade (price decay included, so the Sell chips can show
+-- the real number). ResetsIn = seconds until prices reset (D94, UTC midnight).
 export type SellQuote = {
+	ResetsIn: number,
 	Resources: {
 		[string]: {
 			Percent: number,
-			Grades: { [string]: { Have: number, Price: number } },
+			Grades: { [string]: { Have: number, Price: number, PayoutOne: number, PayoutTen: number, PayoutAll: number } },
 		},
 	},
 }
@@ -190,7 +194,9 @@ export type ProfileData = {
 	Credits: number,
 	-- D94: NPC units sold on UTC day `Day` (Clock.now() // 86400), per
 	-- resource. A new day starts a fresh count (EconomyService).
-	NpcSales: { Day: number, Units: { [string]: number } },
+	-- EverSold: the player has made at least one NPC sale (the HUD shows the
+	-- Credits line only after that: FTUE hard rule 5 hides 06-economy at first).
+	NpcSales: { Day: number, Units: { [string]: number }, EverSold: boolean },
 	-- Newest first, capped at Config.Trade.HistoryMax (TradeService).
 	TradeHistory: { TradeRecord },
 	-- Breach Charges, gadgets, components: item id -> count.

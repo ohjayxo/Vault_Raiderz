@@ -677,21 +677,22 @@ local Config = {
 		--   rank (was "Sprint recovery"; the docs have no sprint - Josh's call).
 		--   CarrySpeed / SilentMovement: Silent movement shrinks tripwire range
 		--   (step 6); Carry speed arrives with the Chase (step 7).
+		-- Desc: one plain line shown under the name in the Gear menu (look only, [PH] invented copy; never numbers, and Grade odds stay hidden).
 		Upgrades = {
 			Extraction = {
-				{ Id = "MineSpeed", Name = "Mine speed", Ranks = 3, PerRank = 0.1 },
-				{ Id = "GradeOdds", Name = "Grade odds", Ranks = 3, PerRank = 0 }, -- value is server-only
-				{ Id = "MultiStrike", Name = "Multi-node strike", Ranks = 3, PerRank = 0.15 },
+				{ Id = "MineSpeed", Name = "Mine speed", Ranks = 3, PerRank = 0.1, Desc = "Mine nodes faster" },
+				{ Id = "GradeOdds", Name = "Grade odds", Ranks = 3, PerRank = 0, Desc = "Better chances at higher Grades" }, -- value is server-only
+				{ Id = "MultiStrike", Name = "Multi-node strike", Ranks = 3, PerRank = 0.15, Desc = "A hit can also mine a nearby node" },
 			},
 			Combat = {
-				{ Id = "SwingSpeed", Name = "Swing speed", Ranks = 3, PerRank = 0.08 },
-				{ Id = "Damage", Name = "Damage", Ranks = 3, PerRank = 2 },
-				{ Id = "Knockback", Name = "Knockback", Ranks = 3, PerRank = 0.2 },
+				{ Id = "SwingSpeed", Name = "Swing speed", Ranks = 3, PerRank = 0.08, Desc = "Swing your pickaxe faster" },
+				{ Id = "Damage", Name = "Damage", Ranks = 3, PerRank = 2, Desc = "Hit harder" },
+				{ Id = "Knockback", Name = "Knockback", Ranks = 3, PerRank = 0.2, Desc = "Knock enemies back further" },
 			},
 			Mobility = {
-				{ Id = "CarrySpeed", Name = "Carry speed", Ranks = 3, PerRank = 0.1 },
-				{ Id = "StunRecovery", Name = "Stun recovery", Ranks = 3, PerRank = 0.15 }, -- [PH] invented
-				{ Id = "SilentMovement", Name = "Silent movement", Ranks = 3, PerRank = 0.2 },
+				{ Id = "CarrySpeed", Name = "Carry speed", Ranks = 3, PerRank = 0.1, Desc = "Move faster while carrying loot" },
+				{ Id = "StunRecovery", Name = "Stun recovery", Ranks = 3, PerRank = 0.15, Desc = "Recover faster from stuns and slows" }, -- [PH] invented
+				{ Id = "SilentMovement", Name = "Silent movement", Ranks = 3, PerRank = 0.2, Desc = "Tripwires spot you from a shorter range" },
 			},
 		},
 		MultiStrikeRadius = 12, -- [PH] invented: studs from the struck node
@@ -757,7 +758,6 @@ local Config = {
 		PanelMaxSize = Vector2.new(640, 340), -- px; the panel also shrinks to 90% of small screens
 		RowHeight = 30,
 		DisplayOrder = 11, -- the open Bag: above the Gear menu (10) and the raid UI (8)
-		ButtonDisplayOrder = 8, -- the Bag BUTTON: HUD level with Raids, under open menus
 		-- Counted items on the Items tab, in this order. Gadgets use
 		-- Config.Gadgets.Names; others are named here.
 		ItemOrder = { "BreachCharge", "Lockpick", "SmokeBomb", "SprintSerum", "ShockTrap", "Disruptor" },
@@ -1108,8 +1108,11 @@ local Config = {
 		Ui = {
 			RaidLogVisibleAttribute = "HudRaidLog",
 			-- D115 grip bar under the raid banner (carrier + owner only).
-			-- Look only [PH], REVISIT with real UI.
-			GripBarHeight = 8,
+			-- Look only [PH], REVISIT with real UI. Tall enough to hold its "Grip 2/5" label.
+			GripBarHeight = 14,
+			ChaseBarHeight = 14, -- [PH] invented: the labelled chase-distance bar under the banner
+			HowToSeconds = 5, -- [PH] invented: how long "Drag to aim, hold TURN" shows when a pick starts
+			ConfirmSeconds = 4, -- [PH] invented: how long the Breach button says "Confirm: ends shield"
 			GripColor = Color3.fromRGB(255, 200, 60),
 			ShowBeforeFtue = true, -- TEMPORARY until step 14
 			MessageSeconds = 2, -- [PH] invented: raid UI toasts
@@ -1261,7 +1264,6 @@ local Config = {
 			FooterRefreshSeconds = 0.25, -- [PH] invented: lock countdown tick
 			RowHeight = 30,
 			MessageSeconds = 2.5,
-			CompleteMessageSeconds = 7, -- [PH] invented: the "Trade complete!" bubble stays up longer, it lists what you received
 			Colors = {
 				Give = Color3.fromRGB(255, 190, 110),
 				Get = Color3.fromRGB(120, 220, 140),
@@ -1317,7 +1319,7 @@ local Config = {
 	UiStyle = {
 		Font = Enum.Font.GothamMedium,
 		FontBold = Enum.Font.GothamBold,
-		TextSize = { Title = 20, Body = 15, Small = 13, Tiny = 11, Huge = 30 }, -- Tiny: text inside bars; Huge: big numbers (Level badge)
+		TextSize = { Title = 20, Body = 16, Small = 14, Tiny = 12, Huge = 30 }, -- Tiny: text inside bars; Huge: big numbers (Level badge). Up 1px each for phone readability (UI review 2026-09-24)
 		MinTap = 44, -- px: the smallest button height (thumb friendly, phones)
 		Corner = 12, -- panels
 		CardCorner = 10, -- cards and buttons
@@ -1344,6 +1346,13 @@ local Config = {
 			ButtonChip = Color3.fromRGB(40, 43, 66),
 			ButtonInfo = Color3.fromRGB(40, 110, 170), -- escort offer and other "join / info" actions
 			ButtonSpecial = Color3.fromRGB(110, 60, 150), -- sabotage and other one-off actions
+			-- UI review 2026-09-24 [PH]: "selected" must not look like a "do this"
+			-- button, so the active tab is a light fill and a selected tile is an
+			-- Accent outline. Green stays for actions only.
+			TabActive = Color3.fromRGB(226, 230, 246),
+			TabActiveText = Color3.fromRGB(20, 22, 34),
+			HeaderFill = Color3.fromRGB(34, 38, 66), -- window header strip
+			ButtonClose = Color3.fromRGB(176, 52, 52), -- the window X, always red so it is easy to find
 			-- Banner / alert fills (white text on top): one set for every
 			-- alert, announcement and raid banner. Look only, [PH] invented.
 			Tones = {
@@ -1375,15 +1384,27 @@ local Config = {
 		-- Everything below was added for the all-screens look pass (Bag, Gear,
 		-- Build, Raid, HUD). LOOK ONLY, [PH] invented.
 		-- UiStyle.window: title row + close button + scrolling body (the NPC buyer's layout).
-		Window = { EdgePad = 10, HeaderInset = 12, HeaderGap = 10, BodyGap = 8 },
+		-- HeaderPad: space above/below the title row inside the header strip. WellTransparency: the darker inset behind the body.
+		Window = { EdgePad = 10, HeaderInset = 12, HeaderGap = 10, BodyGap = 8, HeaderPad = 6, WellTransparency = 0.4 },
 		Tab = { PadX = 14, MinWidth = 72 }, -- UiStyle.tabBar buttons (height is MinTap)
 		Section = { Height = 28 }, -- UiStyle.sectionHeader
 		Item = { RowHeight = 56 }, -- UiStyle.itemRow: MinTap plus its 6px top and bottom padding
 		Tile = { Width = 116, Height = 60 }, -- UiStyle.tile / tileGrid cell
-		Toast = { MaxWidth = 360, TopOffset = 16, Fill = Color3.fromRGB(10, 11, 18), FillTransparency = 0.08, ZIndex = 20 },
+		-- HudTopOffset sits just under a one-line banner stack; UiStyle.toast(parent, true) pins to the bottom of its window instead.
+		Toast = { MaxWidth = 360, HudTopOffset = 64, Fill = Color3.fromRGB(10, 11, 18), FillTransparency = 0.08, ZIndex = 20 },
 		Banner = { WidthScale = 0.9, MaxWidth = 520, MinHeight = 40, Transparency = 0.08 }, -- UiStyle.banner
+		-- One shared top stack for every banner (UiStyle.topStack). Lower Order = higher up
+		-- (D58 priority: raid, then base alerts, then announcements). Y = px from the top edge.
+		TopStack = { Y = 10, Gap = 4, Order = { Raid = 1, BaseAlerts = 2, Announcement = 3 }, DisplayOrder = 8 }, -- 8 = the raid UI's level: above the HUD, below every menu
 		Meter = { BarHeight = 12, LabelHeight = 20 }, -- UiStyle.meter (labeled bar)
 		Hud = { Transparency = 0.1, PanelTransparency = 0.2, PanelGap = 4 }, -- HUD buttons and panels sit over the 3D world
+		-- One dock for the menu buttons (Raids / Bag / Trade / Gear): a row at the left edge,
+		-- above Roblox's thumbstick. Hidden buttons leave no gap (R4 reveals them one by one).
+		Dock = { X = 12, Y = 170, Gap = 6, ButtonWidth = 88, DisplayOrder = 5, Order = { Raids = 1, Bag = 2, Trade = 3, Gear = 4 } },
+		RowStripe = 4, -- px: the Grade-colour stripe down the left of an item row
+		-- The right-thumb button column (Attack, Build, Breach, Sabotage): one place, so they can never overlap.
+		-- JumpClearance x Combat.Ui.ButtonSize keeps it above Roblox's jump button.
+		Thumb = { Margin = 16, Gap = 16, JumpClearance = 1.6, DisplayOrder = 6 },
 	},
 
 	-- ── Step 10 ── Workshop I, Tech Path T1, Research, Blueprints ──────

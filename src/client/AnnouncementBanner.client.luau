@@ -18,12 +18,8 @@ local function colorFor(kind: string): Color3
 	return bannerColors[kind] or Config.Broadcast.DefaultBannerColor
 end
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "AnnouncementBanner"
-gui.ResetOnSpawn = false
-
-local banner = UiStyle.banner(gui)
-gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+-- One slot in the shared top stack (lowest priority: raid status and base alerts sit above it).
+local banner = UiStyle.banner(UiStyle.topStack(Players.LocalPlayer:WaitForChild("PlayerGui")), nil, Config.UiStyle.TopStack.Order.Announcement)
 
 local showToken = 0
 Remotes.getEvent("Announcement").OnClientEvent:Connect(function(kind: string, text: string)

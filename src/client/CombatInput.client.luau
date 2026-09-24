@@ -133,20 +133,20 @@ end
 
 -- ── Context button (big, bottom right, above Jump) ──────────────────────
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "CombatUi"
-gui.ResetOnSpawn = false
-
 local size = combatCfg.Ui.ButtonSize * 1.3
-local attackButton = UiStyle.hudButton(gui, "Attack", "danger", size, size, true)
+-- The bottom row of the shared right-thumb column, left of the Build button, so the thumb reaches both.
+local attackButton = UiStyle.hudButton(UiStyle.thumbColumn(player:WaitForChild("PlayerGui")).main, "Attack", "danger", size, size, true)
 attackButton.Name = "Attack"
-attackButton.AnchorPoint = Vector2.new(1, 1)
--- Left of the Build button, same height, so the thumb reaches both.
-attackButton.Position = UDim2.new(1, -32 - size, 1, -16 - combatCfg.Ui.ButtonSize * 1.6)
+attackButton.LayoutOrder = 1
 attackButton.TextSize = Config.UiStyle.TextSize.Title
--- PC players click instead; the button only appears on touch screens.
-attackButton.Visible = UserInputService.TouchEnabled
-gui.Parent = player:WaitForChild("PlayerGui")
+-- PC players click instead; the button only appears on touch screens. In build
+-- mode a tap means "put it here", so the button hides rather than sit there doing nothing.
+local touchScreen = UserInputService.TouchEnabled
+local function updateAttackVisible()
+	attackButton.Visible = touchScreen and not player:GetAttribute(Config.Base.BuildUi.ClientModeAttribute)
+end
+updateAttackVisible()
+player:GetAttributeChangedSignal(Config.Base.BuildUi.ClientModeAttribute):Connect(updateAttackVisible)
 
 type Action = "Attack" | "Mine"
 local shown: Action = "Attack" -- what the label says; a press does the same

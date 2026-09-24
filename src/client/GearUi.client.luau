@@ -28,17 +28,12 @@ local style = Config.UiStyle
 local colors = style.Colors
 local SIZE = combatCfg.Ui.ButtonSize
 
--- [PH] invented look-only: widths of the Gear menu (its height comes from its
--- content). Two columns of GEAR_COLUMN_WIDTH when the window is wide, one
--- GEAR_NARROW_CONTENT column on a phone in portrait.
-local GEAR_COLUMN_WIDTH = 240
-local GEAR_NARROW_CONTENT = 300
--- [PH] invented look-only: the ">" on the Armor / Skin rows, and the message's
--- distance from the top (it sat at 70 before, clear of the vault meter).
+-- [PH] invented look-only: the Gear window's largest size (a phone gets 90% of the screen instead),
+-- the ">" on the Armor / Skin rows, and the width of the upgrade buy button.
+local GEAR_MAX_SIZE = Vector2.new(480, 440)
 local ARROW_WIDTH = 16
-local MESSAGE_TOP = 70
-local GEAR_SCREEN_MARGIN = 12 -- [PH] invented look-only: air kept above and below the open menu
-local HUD_MARGIN = 16 -- gap between the Gear button / gadget bar and the screen edge
+local BUY_WIDTH = 104
+local HUD_MARGIN = 16 -- gap between the gadget bar and the screen edge
 
 local buyRemote = Remotes.getFunction("BuyUpgrade")
 local respecRemote = Remotes.getFunction("RespecUpgrades")
@@ -61,8 +56,8 @@ local REASON_TEXT: { [string]: string } = {
 	NoneLeft = "None left",
 }
 
-type UpgradeConfig = { Id: string, Name: string, Ranks: number, PerRank: number }
-type UpgradeRow = { row: UiStyle.ItemRow, rank: TextLabel }
+type UpgradeConfig = { Id: string, Name: string, Ranks: number, PerRank: number, Desc: string }
+type UpgradeRow = { row: UiStyle.ItemRow, rank: TextLabel, buy: TextButton }
 
 local state: Types.GearState? = nil
 local busy = false
@@ -90,15 +85,18 @@ local function wearRow(parent: Instance, name: string, order: number): (UiStyle.
 	return row, row.root :: TextButton
 end
 
--- ── Layout ───────────────────────────────────────────────────────────────
+-- ── Layout ──────────────────────────────────────────────────────────────
+
+local playerGui = player:WaitForChild("PlayerGui")
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "GearUi"
 gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 10 -- menus draw above HUD (the vault meter was covering this)
 
--- Invisible full-screen frame, only so UiStyle.isWide / isShort can read the
--- window size. It takes no input.
+-- Invisible full-screen frame, only so UiStyle.isShort can read the window
+-- size. It takes no input.
 local screen = Instance.new("Frame")
 screen.Name = "Screen"
 screen.Size = UDim2.fromScale(1, 1)
@@ -108,75 +106,60 @@ screen.Active = false
 screen.Selectable = false
 screen.Parent = gui
 
-local gearButton = UiStyle.hudButton(gui, "Gear", "neutral", SIZE, SIZE * 0.6)
-gearButton.AnchorPoint = Vector2.new(1, 0)
-gearButton.Position = UDim2.new(1, -HUD_MARGIN, 0, HUD_MARGIN)
+-- One slot in the shared dock (Raids / Bag / Trade / Gear).
+local gearButton = UiStyle.dockButton(playerGui, "Gear", "neutral", style.Dock.Order.Gear)
 gearButton.Visible = false
 
-local panel = UiStyle.dockPanel(gui)
-panel.AnchorPoint = Vector2.new(0.5, 0.5)
-panel.Position = UDim2.fromScale(0.5, 0.5)
-panel.AutomaticSize = Enum.AutomaticSize.Y -- fixed width (set by applyLayout), height follows the content
-
--- Header: pickaxe name, Points pill, close.
-local header = UiStyle.row(panel, style.MinTap, 1)
-local titleLabel = UiStyle.title(header, "")
-titleLabel.LayoutOrder = 1
-titleLabel.AutomaticSize = Enum.AutomaticSize.None
-titleLabel.Size = UDim2.fromScale(0, 1)
-titleLabel.TextWrapped = false
-titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
-local titleFlex = Instance.new("UIFlexItem")
-titleFlex.FlexMode = Enum.UIFlexMode.Fill
-titleFlex.Parent = titleLabel
-local pointsPill = UiStyle.pill(header, "", colors.Accent)
+-- The shared window frame: pickaxe name, Points pill, red X, scrolling body.
+local win = UiStyle.window(gui, "", 0.9, 0.9, GEAR_MAX_SIZE)
+local panel = win.panel
+local titleLabel = win.title
+local pointsPill = UiStyle.pill(win.header, "", colors.Accent)
 pointsPill.LayoutOrder = 2
 pointsPill.Visible = false
-local closeButton = UiStyle.button(header, "X", "neutral", style.MinTap, style.MinTap)
-closeButton.LayoutOrder = 3
+local closeButton = win.close
+local body = win.content
 
-local headerDivider = UiStyle.divider(panel, 2)
-
--- Everything under the header scrolls, so a short screen gets a shorter body
--- instead of a shrunken (tiny-tap-target) menu. fitPanel sets its height.
-local body = UiStyle.scroller(panel, UDim2.new(), UDim2.new(1, 0, 0, 0))
-body.LayoutOrder = 3
-
--- The three upgrade branches split over two columns (one column when narrow);
--- the worn Armor / Skin rows fill the right column under the last branch.
-local cols = UiStyle.columns(body, 1)
+-- One column: each upgrade is a row with what it does, its rank, and ONE
+-- button that says what tapping it costs (or "MAX" / "No points").
 local upgradeButtons: { [string]: TextButton } = {}
 local upgradeConfigs: { [string]: UpgradeConfig } = {}
 local upgradeRows: { [string]: UpgradeRow } = {}
-local leftBranches = math.ceil(#combatCfg.PickaxeBranches / 2)
+local branchHeaders: { [string]: TextLabel } = {}
+local branchUpgrades: { [string]: { UpgradeConfig } } = {}
 for index, branch in combatCfg.PickaxeBranches do
-	local side = if index <= leftBranches then cols.left else cols.right
 	local base = index * 100
-	UiStyle.sectionHeader(side, branch, base)
-	for i, cfg in (combatCfg.Upgrades :: any)[branch] :: { UpgradeConfig } do
+	branchHeaders[branch] = UiStyle.sectionHeader(body, branch, base)
+	local list = (combatCfg.Upgrades :: any)[branch] :: { UpgradeConfig }
+	branchUpgrades[branch] = list
+	for i, cfg in list do
 		upgradeConfigs[cfg.Id] = cfg
-		local row = UiStyle.itemRow(side, cfg.Name, "", base + i, true)
+		local row = UiStyle.itemRow(body, cfg.Name, cfg.Desc, base + i, false)
 		local rank = UiStyle.pill(row.trailing, "", colors.Text)
-		upgradeRows[cfg.Id] = { row = row, rank = rank }
-		upgradeButtons[cfg.Id] = row.root :: TextButton
+		rank.LayoutOrder = 1
+		local buy = UiStyle.button(row.trailing, "", "primary", BUY_WIDTH, style.MinTap)
+		buy.LayoutOrder = 2
+		buy.TextSize = style.TextSize.Small
+		buy.TextWrapped = true
+		upgradeRows[cfg.Id] = { row = row, rank = rank, buy = buy }
+		upgradeButtons[cfg.Id] = buy
 	end
 end
 
 local WORN_ORDER = 1000
-local wornHeader = UiStyle.sectionHeader(cols.right, "Worn", WORN_ORDER)
-local armorRow, armorButton = wearRow(cols.right, "Armor", WORN_ORDER + 1)
-local skinRow, skinButton = wearRow(cols.right, "Skin", WORN_ORDER + 2)
+local wornHeader = UiStyle.sectionHeader(body, "Worn", WORN_ORDER)
+local armorRow, armorButton = wearRow(body, "Armor", WORN_ORDER + 1)
+local skinRow, skinButton = wearRow(body, "Skin", WORN_ORDER + 2)
 
 local respecButton = UiStyle.button(body, "Respec", "neutral", 0, style.MinTap)
-respecButton.LayoutOrder = 2
+respecButton.LayoutOrder = 2000
 respecButton.Size = UDim2.new(1, 0, 0, style.MinTap)
 respecButton.TextWrapped = true
 
--- Gadget bar: a column on the right edge, under the Gear button. Buttons
--- only for gadgets you own.
+-- Gadget bar: a column on the right edge. Buttons only for gadgets you own.
 local gadgetBar = Instance.new("Frame")
 gadgetBar.AnchorPoint = Vector2.new(1, 0)
-gadgetBar.Position = UDim2.new(1, -HUD_MARGIN, 0, HUD_MARGIN + math.max(SIZE * 0.6, style.MinTap) + style.Gap)
+gadgetBar.Position = UDim2.new(1, -HUD_MARGIN, 0, HUD_MARGIN)
 gadgetBar.AutomaticSize = Enum.AutomaticSize.XY
 gadgetBar.Size = UDim2.fromOffset(0, 0)
 gadgetBar.BackgroundTransparency = 1
@@ -190,12 +173,15 @@ for order, gadgetId in gadgetCfg.Order do
 	gadgetButtons[gadgetId] = button
 end
 
-local toast = UiStyle.toast(gui)
-toast.frame.Position = UDim2.new(0.5, 0, 0, MESSAGE_TOP)
+-- Messages: at the bottom of the window while it is open, else the HUD spot
+-- (gadget use works with the menu closed).
+local windowToast = UiStyle.toast(panel, true)
+local hudToast = UiStyle.toast(gui)
 
-gui.Parent = player:WaitForChild("PlayerGui")
+gui.Parent = playerGui
 
 local function showMessage(text: string, tone: UiStyle.ToastTone?)
+	local toast = if panel.Visible then windowToast else hudToast
 	toast.show(text, Config.Base.BuildUi.MessageSeconds, tone)
 end
 
@@ -241,15 +227,22 @@ local function render()
 		local rank = current.Ranks[upgradeId] or 0
 		local nextCost = combatCfg.NodeCostByRank[rank + 1]
 		local maxed = rank >= cfg.Ranks
-		entry.row.title.Text = cfg.Name
-		entry.row.detail.Text = if maxed then "MAX" else costText(nextCost)
-		entry.row.detail.Visible = true
-		entry.rank.Text = `{rank}/{cfg.Ranks}`
-		-- Maxed = green card, no points left = sunken and dim, otherwise a normal card.
 		local locked = not maxed and pointsLeft <= 0
-		entry.row.root.BackgroundColor3 = if maxed then colors.ButtonPrimary elseif locked then colors.BarTrack else colors.Card
-		entry.row.title.TextColor3 = if locked then colors.TextDim else colors.Text
-		entry.row.detail.TextColor3 = if maxed then colors.Text else colors.TextDim
+		entry.row.title.Text = cfg.Name
+		entry.rank.Text = `{rank}/{cfg.Ranks}`
+		entry.rank.TextColor3 = if maxed then colors.Good else colors.Text
+		-- The state is on the button: what it costs, "No points", or "MAX". Green
+		-- is only for a button that would do something.
+		entry.buy.Text = if maxed then "MAX" elseif locked then "No points" else costText(nextCost)
+		UiStyle.setButtonKind(entry.buy, if maxed or locked then "disabled" else "primary")
+	end
+	for branch, header in branchHeaders do
+		local got, total = 0, 0
+		for _, cfg in branchUpgrades[branch] do
+			got += current.Ranks[cfg.Id] or 0
+			total += cfg.Ranks
+		end
+		UiStyle.setSectionSummary(header, `{got}/{total} ranks`)
 	end
 	respecButton.Text = `Respec (all points back): {costText(combatCfg.RespecCost)}`
 	respecButton.Visible = current.PointsUsed > 0
@@ -299,36 +292,12 @@ end)
 skinButton.Activated:Connect(function()
 	openBag("Skins")
 end)
--- Cap the body height to what is left of the screen under the header. Early on
--- Roblox can report a tiny viewport: ignore that reading.
-local function fitPanel()
-	local view = screen.AbsoluteSize
-	if view.Y < 200 then
-		return
-	end
-	local chrome = header.AbsoluteSize.Y + 2 * style.Pad + 2 * style.Gap + 2 * GEAR_SCREEN_MARGIN
-	local room = math.max(view.Y - chrome, style.MinTap * 2)
-	body.Size = UDim2.new(1, 0, 0, math.min(body.AbsoluteCanvasSize.Y, room))
-end
-
--- Two columns on a wide window, one on a phone in portrait. A short window
--- (phone landscape) drops the extra headings and divider so the menu stays low.
+-- A short window (phone landscape) drops the "Worn" heading so the menu stays low.
 local function applyLayout()
-	local wide = UiStyle.isWide(screen)
-	local short = UiStyle.isShort(screen)
-	UiStyle.setColumns(cols, wide)
-	local content = if wide then 2 * GEAR_COLUMN_WIDTH + style.Gap else GEAR_NARROW_CONTENT
-	panel.Size = UDim2.fromOffset(content + 2 * style.Pad, 0)
-	wornHeader.Visible = not short
-	headerDivider.Visible = not short
-	task.defer(fitPanel) -- after the layout has re-sized it
+	wornHeader.Visible = not UiStyle.isShort(screen)
 end
 screen:GetPropertyChangedSignal("AbsoluteSize"):Connect(applyLayout)
 applyLayout()
-body:GetPropertyChangedSignal("AbsoluteCanvasSize"):Connect(fitPanel)
-panel:GetPropertyChangedSignal("Visible"):Connect(function()
-	task.defer(fitPanel)
-end)
 closeButton.Activated:Connect(function()
 	panel.Visible = false
 end)

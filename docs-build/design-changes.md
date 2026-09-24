@@ -412,3 +412,21 @@ out of date; live values are in `docs-build/worldgen/gen_world.py`.
 - Original: `STREET_SIZE = (96, 320)`, `PLAZA_SIZE = (176, 96)`.
 - Nothing else: plot rows follow the street width, so bridges stay 64, and
   the scenery re-scatters to fit.
+
+## UI review calls (2026-09-24, not yet in docs/, NOT BUILT)
+
+From the reference-game UI comparison. Josh picked the recommended option on all six:
+- **Credits on the HUD:** a Credits line appears on the vault meter card after
+  the player's first NPC sale, then stays. Hidden before that (FTUE hard rule 5).
+- **Gear upgrade rows:** each gets a short plain description (no numbers).
+  Grade odds stay fully hidden.
+- **Raid actions on mobile:** Breach / Pick lock / Grab / Sabotage stay separate
+  buttons, laid out in one fixed right-thumb column so they can't overlap.
+  They are not merged into the Mine/Attack context button.
+- **Top banners:** announcements, base alerts and raid status share one
+  vertical stack. All stay visible; this changes presentation only.
+- **Trade value:** no per-side Credits estimate. The below-market warning stays
+  the only value signal.
+- **NPC buyer reset:** a dim line under the title reads "At-risk pile sells
+  first · prices reset in Xh". The server sends the reset time; the client
+  only counts down (D94).

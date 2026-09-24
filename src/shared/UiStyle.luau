@@ -311,25 +311,41 @@ end
 
 -- ── Windows ──────────────────────────────────────────────────────────────
 
--- The close "X": a MinTap square in the panel's top-right corner. The caller
--- connects Activated.
+-- The close "X": a red MinTap square in the panel's top-right corner (always
+-- red, so it is easy to find). The caller connects Activated.
 function UiStyle.closeButton(parent: Instance): TextButton
 	local close = UiStyle.button(parent, "X", "neutral", style.MinTap, style.MinTap)
+	close.BackgroundColor3 = colors.ButtonClose
 	close.AnchorPoint = Vector2.new(1, 0)
-	close.Position = UDim2.new(1, -style.Window.HeaderInset, 0, style.Window.EdgePad)
+	close.Position = UDim2.new(1, -style.Window.HeaderInset, 0, style.Window.HeaderPad)
 	return close
 end
 
--- A full menu window: panel (hidden), a header row for the title (and pills),
--- a close button in the corner (outside the row, so a narrow phone can never
--- push it off) and a scrolling body under them. Same layout as the NPC buyer.
-export type Window = { panel: Frame, header: Frame, title: TextLabel, close: TextButton, content: ScrollingFrame }
+-- A full menu window: panel (hidden), a filled header strip with the title (and
+-- pills), a red close button in the corner (outside the row, so a narrow phone
+-- can never push it off) and a scrolling body sitting in a darker inset "well".
+export type Window = { panel: Frame, header: Frame, title: TextLabel, close: TextButton, content: ScrollingFrame, well: Frame }
 
 function UiStyle.window(parent: Instance, titleText: string, widthScale: number, heightScale: number, maxSize: Vector2?): Window
 	local w = style.Window
 	local panel = UiStyle.panel(parent, widthScale, heightScale, maxSize)
+	local stripHeight = style.MinTap + 2 * w.HeaderPad
+	-- Header strip: rounded on top only (the square filler covers its bottom corners).
+	local strip = Instance.new("Frame")
+	strip.Name = "HeaderStrip"
+	strip.Size = UDim2.new(1, 0, 0, stripHeight)
+	strip.BackgroundColor3 = colors.HeaderFill
+	strip.BorderSizePixel = 0
+	strip.Parent = panel
+	UiStyle.corner(strip, style.Corner)
+	local filler = Instance.new("Frame")
+	filler.Position = UDim2.new(0, 0, 1, -style.Corner)
+	filler.Size = UDim2.new(1, 0, 0, style.Corner)
+	filler.BackgroundColor3 = colors.HeaderFill
+	filler.BorderSizePixel = 0
+	filler.Parent = strip
 	local header = Instance.new("Frame")
-	header.Position = UDim2.fromOffset(w.HeaderInset, w.EdgePad)
+	header.Position = UDim2.fromOffset(w.HeaderInset, w.HeaderPad)
 	header.Size = UDim2.new(1, -2 * w.HeaderInset - style.MinTap - w.BodyGap, 0, style.MinTap)
 	header.BackgroundTransparency = 1
 	header.Parent = panel
@@ -339,9 +355,20 @@ function UiStyle.window(parent: Instance, titleText: string, widthScale: number,
 	title.Size = UDim2.fromOffset(0, 0)
 	title.LayoutOrder = 1
 	local close = UiStyle.closeButton(panel)
-	local top = w.EdgePad + style.MinTap + w.BodyGap
-	local content = UiStyle.scroller(panel, UDim2.fromOffset(w.EdgePad, top), UDim2.new(1, -2 * w.EdgePad, 1, -(top + w.EdgePad)))
-	return { panel = panel, header = header, title = title, close = close, content = content }
+	local top = stripHeight + w.BodyGap
+	local bodyPos = UDim2.fromOffset(w.EdgePad, top)
+	local bodySize = UDim2.new(1, -2 * w.EdgePad, 1, -(top + w.EdgePad))
+	local well = Instance.new("Frame") -- made before the scroller so it draws behind it
+	well.Name = "Well"
+	well.Position = bodyPos
+	well.Size = bodySize
+	well.BackgroundColor3 = colors.BarTrack
+	well.BackgroundTransparency = w.WellTransparency
+	well.BorderSizePixel = 0
+	well.Parent = panel
+	UiStyle.corner(well, style.CardCorner)
+	local content = UiStyle.scroller(panel, bodyPos, bodySize)
+	return { panel = panel, header = header, title = title, close = close, content = content, well = well }
 end
 
 -- A menu that sizes itself to what's inside (Gear menu, Build panel): rounded
@@ -394,14 +421,23 @@ function UiStyle.tabBar(parent: Instance, names: { string }, order: number?): Ta
 	return { frame = frame, buttons = buttons }
 end
 
+-- The active tab is a light fill with dark text, never the green of an action
+-- button, so "selected" and "tap to do this" look different.
 function UiStyle.setActiveTab(bar: TabBar, active: string)
 	for name, button in bar.buttons do
-		UiStyle.setButtonKind(button, if name == active then "primary" else "chip")
+		if name == active then
+			button.BackgroundColor3 = colors.TabActive
+			button.TextColor3 = colors.TabActiveText
+		else
+			UiStyle.setButtonKind(button, "chip")
+		end
 	end
 end
 
--- Small dim ALL-CAPS heading over a group of rows ("SAFE", "ARMOR", "CRAFT").
-function UiStyle.sectionHeader(parent: Instance, text: string, order: number?, color: Color3?): TextLabel
+-- Small dim ALL-CAPS heading over a group of rows ("SAFE", "ARMOR", "CRAFT"),
+-- with an optional dim summary on the right ("3 pieces"). Only summarise what
+-- the player already has (never "x/total": that would reveal locked content, R4).
+function UiStyle.sectionHeader(parent: Instance, text: string, order: number?, color: Color3?, summary: string?): TextLabel
 	local header = UiStyle.label(parent, string.upper(text), style.TextSize.Small, color or colors.TextDim, true)
 	header.LayoutOrder = order or 0
 	header.Size = UDim2.new(1, 0, 0, style.Section.Height)
@@ -409,16 +445,33 @@ function UiStyle.sectionHeader(parent: Instance, text: string, order: number?, c
 	header.TextYAlignment = Enum.TextYAlignment.Bottom
 	header.TextWrapped = false
 	header.TextTruncate = Enum.TextTruncate.AtEnd
+	local right = UiStyle.label(header, summary or "", style.TextSize.Small, colors.TextDim, false)
+	right.Name = "Summary"
+	right.Size = UDim2.fromScale(1, 1)
+	right.AutomaticSize = Enum.AutomaticSize.None
+	right.TextXAlignment = Enum.TextXAlignment.Right
+	right.TextYAlignment = Enum.TextYAlignment.Bottom
+	right.TextWrapped = false
+	right.Visible = summary ~= nil and summary ~= ""
 	return header
+end
+
+function UiStyle.setSectionSummary(header: TextLabel, text: string)
+	local right = header:FindFirstChild("Summary")
+	if right and right:IsA("TextLabel") then
+		right.Text = text
+		right.Visible = text ~= ""
+	end
 end
 
 -- One list row: a name (with an optional dim detail line under it) that takes
 -- all the spare width, and a `trailing` frame on the right for pills, counts
 -- and buttons (add them there; they sit MinTap tall inside the row). Tappable
--- rows are a TextButton (the caller connects Activated on `root`).
+-- rows are a TextButton (the caller connects Activated on `root`). `stripe`
+-- adds a thin colour strip on the left.
 export type ItemRow = { root: GuiObject, title: TextLabel, detail: TextLabel, trailing: Frame }
 
-function UiStyle.itemRow(parent: Instance, titleText: string, detailText: string?, order: number?, tappable: boolean?): ItemRow
+function UiStyle.itemRow(parent: Instance, titleText: string, detailText: string?, order: number?, tappable: boolean?, stripe: Color3?): ItemRow
 	local root: GuiObject
 	if tappable then
 		local button = Instance.new("TextButton")
@@ -442,6 +495,17 @@ function UiStyle.itemRow(parent: Instance, titleText: string, detailText: string
 	pad.PaddingRight = UDim.new(0, style.Pad)
 	pad.Parent = root
 	UiStyle.list(root, true, style.Gap)
+
+	if stripe then -- a thin colour strip down the left edge (Grade colour)
+		local bar = Instance.new("Frame")
+		bar.Name = "Stripe"
+		bar.LayoutOrder = 0
+		bar.Size = UDim2.new(0, style.RowStripe, 1, 0)
+		bar.BackgroundColor3 = stripe
+		bar.BorderSizePixel = 0
+		bar.Parent = root
+		UiStyle.corner(bar, 2)
+	end
 
 	local info = Instance.new("Frame")
 	info.LayoutOrder = 1
@@ -518,13 +582,15 @@ end
 
 function UiStyle.setTileState(tile: Tile, state: TileState)
 	local stroke = tile.button:FindFirstChild("Stroke")
+	-- Selected = a thick Accent outline (green is only for buttons that do something).
 	tile.button.BackgroundColor3 = if state == "selected"
-		then colors.ButtonPrimary
+		then colors.ButtonNeutral
 		elseif state == "disabled" then colors.ButtonDisabled
 		else colors.ButtonChip
 	tile.title.TextColor3 = if state == "disabled" then colors.TextDim else colors.Text
 	if stroke and stroke:IsA("UIStroke") then
-		stroke.Color = if state == "selected" then colors.Good else colors.CardStroke
+		stroke.Color = if state == "selected" then colors.Accent else colors.CardStroke
+		stroke.Thickness = if state == "selected" then 2.5 else 1
 	end
 end
 
@@ -566,6 +632,89 @@ function UiStyle.hudButton(parent: Instance, text: string, kind: ButtonKind, wid
 	if kind ~= "chip" then -- chip buttons already have their stroke
 		UiStyle.stroke(button, colors.PanelStroke, 1)
 	end
+	return button
+end
+
+-- The one row of menu buttons on the left edge (Raids / Bag / Trade / Gear).
+-- Any script may call this; the first creates it. A hidden button
+-- (Visible = false) leaves no gap, so the new-player reveal (R4) still works.
+function UiStyle.dock(playerGui: Instance): Frame
+	local existing = playerGui:FindFirstChild("HudDock")
+	if existing then
+		return existing:FindFirstChild("Row") :: Frame
+	end
+	local cfg = style.Dock
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "HudDock"
+	gui.ResetOnSpawn = false
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	gui.DisplayOrder = cfg.DisplayOrder
+	local row = Instance.new("Frame")
+	row.Name = "Row"
+	row.Position = UDim2.fromOffset(cfg.X, cfg.Y)
+	row.AutomaticSize = Enum.AutomaticSize.XY
+	row.Size = UDim2.fromOffset(0, 0)
+	row.BackgroundTransparency = 1
+	row.Parent = gui
+	UiStyle.list(row, true, cfg.Gap)
+	gui.Parent = playerGui
+	return row
+end
+
+-- The right-thumb column (bottom right, above Roblox's jump button). `main` is
+-- the bottom row (Attack, Build/Done); `context` sits above it (Breach, Sabotage)
+-- and its list can be flipped to a row on a short window. Any script may call
+-- this; the first creates it. Hidden buttons leave no gap.
+export type ThumbColumn = { context: Frame, contextList: UIListLayout, main: Frame }
+
+function UiStyle.thumbColumn(playerGui: Instance): ThumbColumn
+	local existing = playerGui:FindFirstChild("ThumbColumn")
+	if existing then
+		local root = existing:FindFirstChild("Root") :: Frame
+		local context = root:FindFirstChild("Context") :: Frame
+		return { context = context, contextList = context:FindFirstChildOfClass("UIListLayout") :: UIListLayout, main = root:FindFirstChild("Main") :: Frame }
+	end
+	local cfg = style.Thumb
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "ThumbColumn"
+	gui.ResetOnSpawn = false
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	gui.DisplayOrder = cfg.DisplayOrder
+	local root = Instance.new("Frame")
+	root.Name = "Root"
+	root.AnchorPoint = Vector2.new(1, 1)
+	root.Position = UDim2.new(1, -cfg.Margin, 1, -(cfg.Margin + Config.Combat.Ui.ButtonSize * cfg.JumpClearance))
+	root.AutomaticSize = Enum.AutomaticSize.XY
+	root.Size = UDim2.fromOffset(0, 0)
+	root.BackgroundTransparency = 1
+	root.Parent = gui
+	UiStyle.list(root, false, cfg.Gap).HorizontalAlignment = Enum.HorizontalAlignment.Right
+	local context = Instance.new("Frame")
+	context.Name = "Context"
+	context.LayoutOrder = 1
+	context.AutomaticSize = Enum.AutomaticSize.XY
+	context.Size = UDim2.fromOffset(0, 0)
+	context.BackgroundTransparency = 1
+	context.Parent = root
+	local contextList = UiStyle.list(context, false)
+	contextList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	contextList.VerticalAlignment = Enum.VerticalAlignment.Bottom
+	local main = Instance.new("Frame")
+	main.Name = "Main"
+	main.LayoutOrder = 2
+	main.AutomaticSize = Enum.AutomaticSize.XY
+	main.Size = UDim2.fromOffset(0, 0)
+	main.BackgroundTransparency = 1
+	main.Parent = root
+	UiStyle.list(main, true, cfg.Gap)
+	gui.Parent = playerGui
+	return { context = context, contextList = contextList, main = main }
+end
+
+-- A dock button: same size and look for every menu button. `order` sets its slot.
+function UiStyle.dockButton(playerGui: Instance, text: string, kind: ButtonKind, order: number): TextButton
+	local button = UiStyle.hudButton(UiStyle.dock(playerGui), text, kind, style.Dock.ButtonWidth, style.MinTap)
+	button.LayoutOrder = order
 	return button
 end
 
@@ -615,16 +764,22 @@ function UiStyle.tone(tone: Tone): Color3
 end
 
 -- A short message that hides itself. show(text, seconds, tone?): the newest
--- message wins; the old one's timer can't hide it. Position it if the default
--- (top centre) isn't right.
+-- message wins; the old one's timer can't hide it. One spot for the HUD (just
+-- under the banner stack) and one inside a window (`inWindow`: bottom centre of
+-- the window frame you pass as `parent`).
 export type ToastTone = "neutral" | "good" | "warn" | "bad"
 export type Toast = { frame: TextLabel, show: (text: string, seconds: number, tone: ToastTone?) -> () }
 
-function UiStyle.toast(parent: Instance): Toast
+function UiStyle.toast(parent: Instance, inWindow: boolean?): Toast
 	local toastCfg = style.Toast
 	local frame = UiStyle.pill(parent, "", colors.Text, toastCfg.Fill)
-	frame.AnchorPoint = Vector2.new(0.5, 0)
-	frame.Position = UDim2.new(0.5, 0, 0, toastCfg.TopOffset)
+	if inWindow then
+		frame.AnchorPoint = Vector2.new(0.5, 1)
+		frame.Position = UDim2.new(0.5, 0, 1, -style.Window.EdgePad)
+	else
+		frame.AnchorPoint = Vector2.new(0.5, 0)
+		frame.Position = UDim2.new(0.5, 0, 0, toastCfg.HudTopOffset)
+	end
 	frame.BackgroundTransparency = toastCfg.FillTransparency
 	frame.TextWrapped = true
 	frame.TextSize = style.TextSize.Body
@@ -660,7 +815,7 @@ end
 -- A coloured status bar across the top (announcements, base alerts, raid
 -- status): wrapped bold text on a tone fill. The caller sets Position, Text and
 -- BackgroundColor3 (UiStyle.tone or a Config colour) and toggles Visible.
-function UiStyle.banner(parent: Instance, widthScale: number?): TextLabel
+function UiStyle.banner(parent: Instance, widthScale: number?, order: number?): TextLabel
 	local cfg = style.Banner
 	local banner = UiStyle.label(parent, "", style.TextSize.Body, colors.Text, true)
 	banner.AnchorPoint = Vector2.new(0.5, 0)
@@ -671,6 +826,7 @@ function UiStyle.banner(parent: Instance, widthScale: number?): TextLabel
 	banner.BackgroundColor3 = UiStyle.tone("muted")
 	banner.BorderSizePixel = 0
 	banner.Visible = false
+	banner.LayoutOrder = order or 0
 	local limit = Instance.new("UISizeConstraint")
 	limit.MinSize = Vector2.new(0, cfg.MinHeight)
 	limit.MaxSize = Vector2.new(cfg.MaxWidth, math.huge)
@@ -684,6 +840,33 @@ function UiStyle.banner(parent: Instance, widthScale: number?): TextLabel
 	pad.PaddingRight = UDim.new(0, style.Pad)
 	pad.Parent = banner
 	return banner
+end
+
+-- The one shared column every top banner goes in (raid status, base alerts,
+-- announcements): they push each other down instead of overlapping. Any script
+-- may call this; the first creates it, the rest get the same frame. Pass it to
+-- UiStyle.banner as the parent, with an order from Config.UiStyle.TopStack.Order.
+function UiStyle.topStack(playerGui: Instance): Frame
+	local existing = playerGui:FindFirstChild("TopStack")
+	if existing then
+		return existing:FindFirstChild("Stack") :: Frame
+	end
+	local cfg = style.TopStack
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "TopStack"
+	gui.ResetOnSpawn = false
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	gui.DisplayOrder = cfg.DisplayOrder
+	local stack = Instance.new("Frame")
+	stack.Name = "Stack"
+	stack.Position = UDim2.fromOffset(0, cfg.Y)
+	stack.Size = UDim2.new(1, 0, 0, 0)
+	stack.AutomaticSize = Enum.AutomaticSize.Y
+	stack.BackgroundTransparency = 1
+	stack.Parent = gui
+	UiStyle.list(stack, false, cfg.Gap).HorizontalAlignment = Enum.HorizontalAlignment.Center
+	gui.Parent = playerGui
+	return stack
 end
 
 -- ── Meters, empty states ─────────────────────────────────────────────────

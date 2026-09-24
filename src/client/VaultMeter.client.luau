@@ -69,6 +69,10 @@ end
 
 local exposedRow, exposedValue = statRow(2, "Exposed", meterCfg.ExposedColor, colors.Text)
 local scrapRow, scrapValue = statRow(3, "Scrap", colors.TextDim, colors.TextDim)
+-- Credits: hidden until the player has made a first NPC sale (FTUE hard rule 5
+-- hides 06-economy at first; the server says when via CreditsChanged).
+local creditsRow, creditsValue = statRow(4, "Credits", colors.Accent, colors.Accent)
+creditsRow.Visible = false
 
 gui.Parent = player:WaitForChild("PlayerGui")
 
@@ -107,6 +111,22 @@ local function render(state: Types.VaultState?)
 	exposedValue.Text = money(totalUnits(state.Exposed))
 	scrapValue.Text = `{money(state.ScrapBanked)} / {money(state.ScrapCapacity)}  ·  {money(state.ScrapExposed)} exposed`
 end
+
+-- The server sends (credits, soldToNpc) on join and after every change. Holding
+-- any Credits also counts, in case the join message came before this script started.
+local function showCredits(amount: number, soldToNpc: boolean)
+	creditsRow.Visible = soldToNpc or amount > 0
+	creditsValue.Text = money(amount)
+end
+Remotes.getEvent("CreditsChanged").OnClientEvent:Connect(showCredits)
+task.spawn(function()
+	local ok, amount = pcall(function()
+		return Remotes.getFunction("GetProgressState"):InvokeServer()
+	end)
+	if ok and type(amount) == "number" and not creditsRow.Visible then
+		showCredits(amount, false)
+	end
+end)
 
 -- ── Visibility (server-controlled) ───────────────────────────────────────
 

@@ -8,9 +8,11 @@
 -- attribute (Config.Base.BuildUi.VisibleAttribute), so the FTUE controls it.
 --
 -- How it works:
---   Build -> pick a piece -> a green ghost follows the centre of the screen
---   (PC: the mouse; phone: the last spot you tapped) -> Rotate / Place.
---   Edit -> tap one of your pieces -> Move or Remove.
+--   Build -> Place tab: pick a piece -> a green ghost follows the centre of the
+--   screen (PC: the mouse; phone: the last spot you tapped) -> Rotate / Place.
+--   Edit tab: tap one of your pieces -> Move or Remove.
+--   A tile you can't build right now is greyed and says why ("Built", "No slot",
+--   "Over budget", or its cost in red); the server still decides.
 -- Greybox contract: raycasts only hit Hitbox parts; Visual is never touched.
 
 local CollectionService = game:GetService("CollectionService")
@@ -71,6 +73,8 @@ local selected: Model? = nil
 local aimTap: Vector2? = nil -- last tap on a phone (GUI coordinates)
 local targetX: number?, targetZ: number? = nil, nil
 local baseState: Types.BaseState? = nil
+local vaultState: Types.VaultState? = nil -- for "can I afford it" hints on the tiles
+local shortScreen = false -- phone landscape: keep the panel low
 local busy = false
 
 -- ── UI ───────────────────────────────────────────────────────────────────
@@ -87,12 +91,11 @@ local BUTTON_SIZE = SIZE * 1.3
 -- and panel sit where they did (above the jump button, clear of the right column).
 local BUTTON_MARGIN = 16 -- px: Build/Done from the screen edge
 local BOTTOM_GAP = 12 -- px: panel from the bottom edge
-local MESSAGE_Y = 0.3 -- screen fraction: result messages sit above the panel
 
-local buildButton = UiStyle.hudButton(gui, "Build", "primary", BUTTON_SIZE, BUTTON_SIZE, true)
-buildButton.AnchorPoint = Vector2.new(1, 1)
-buildButton.Position = UDim2.new(1, -BUTTON_MARGIN, 1, -BUTTON_MARGIN - SIZE * 1.6) -- above the jump button
-buildButton.ZIndex = 10 -- Build/Done always stays tappable, above the panel
+-- Right end of the shared right-thumb column's bottom row (Attack sits to its left).
+local buildButton = UiStyle.hudButton(UiStyle.thumbColumn(player:WaitForChild("PlayerGui")).main, "Build", "primary", BUTTON_SIZE, BUTTON_SIZE, true)
+buildButton.LayoutOrder = 2
+buildButton.Visible = false
 
 local panel = UiStyle.dockPanel(gui)
 panel.AutomaticSize = Enum.AutomaticSize.Y -- fixed width (set by layoutPanel) so rows can wrap on a phone
@@ -110,6 +113,16 @@ local function wrapRow(order: number): Frame
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	layout.Wraps = true
 	return row
+end
+
+-- Place | Edit: a two-way switch at the top of the panel, so the mode is obvious
+-- and the buttons below only show what belongs to it.
+local modeBar = UiStyle.tabBar(panel, { "Place", "Edit" }, 0)
+do
+	local layout = modeBar.frame:FindFirstChildOfClass("UIListLayout")
+	if layout then
+		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	end
 end
 
 local infoRow = wrapRow(1)
@@ -172,6 +185,12 @@ for order, pieceKind in Config.Base.PieceOrder do
 	pieceTiles[pieceKind] = UiStyle.tile(pieceGrid, displayName(pieceKind), costText(cfg.Cost), order)
 end
 
+-- Edit mode with nothing picked: say what to do.
+local editHint = UiStyle.label(panel, "Tap one of your pieces", style.TextSize.Small, style.Colors.TextDim, false)
+editHint.LayoutOrder = 3
+editHint.TextXAlignment = Enum.TextXAlignment.Center
+editHint.Visible = false
+
 local actionRow = wrapRow(4)
 
 -- Chip-width action button: sizes to its text, never under MinTap tall.
@@ -196,15 +215,12 @@ end
 
 local rotateButton = actionButton("Rotate", "neutral", 1)
 local placeButton = actionButton("Place", "primary", 2)
-local editButton = actionButton("Edit", "chip", 3)
 local moveButton = actionButton("Move", "neutral", 4)
 local removeButton = actionButton("Remove", "danger", 5)
 local upgradeButton = actionButton("Upgrade", "info", 6, true)
 local refillButton = actionButton("Refill", "neutral", 7, true)
 
-local toast = UiStyle.toast(gui)
-toast.frame.AnchorPoint = Vector2.new(0.5, 1)
-toast.frame.Position = UDim2.fromScale(0.5, MESSAGE_Y)
+local toast = UiStyle.toast(gui) -- the shared HUD spot
 
 gui.Parent = player:WaitForChild("PlayerGui")
 
@@ -237,9 +253,9 @@ local function layoutPanel()
 		grid.CellSize = UDim2.fromOffset(cellWidth, style.Tile.Height)
 	end
 	panel.Position = UDim2.new(0, style.Window.EdgePad + (region - width) / 2, 1, -BOTTOM_GAP)
-	infoRow.Visible = screen.Y >= style.ShortWindowHeight
+	-- Phone landscape keeps only the budget pill (and Upgrade stays in the action row).
+	shortScreen = screen.Y < style.ShortWindowHeight
 end
-gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(layoutPanel)
 
 -- ── Ghost preview + selection highlight (client-only) ────────────────────
 
@@ -331,14 +347,62 @@ end
 
 -- ── Refreshing the panel ─────────────────────────────────────────────────
 
+local function unitsOf(store: Types.ResourceStore, resource: string): number
+	local sum = 0
+	local grades = store[resource]
+	if grades then
+		for _, count in grades do
+			sum += count
+		end
+	end
+	return sum
+end
+
+-- Why a piece can't be built right now, or nil. A hint only: the server checks
+-- every rule itself when you press Place (R5).
+local function blockedReason(pieceKind: string): (string?, boolean)
+	local state = baseState
+	if not state then
+		return nil, false
+	end
+	local cfg = PlotGrid.pieceConfig(pieceKind) :: any
+	if pieceKind == "VaultCore" and state.HasVaultCore then
+		return "Built", false
+	end
+	if (Config.Defenses.Kinds :: any)[pieceKind] and state.DefenseSlotsUsed >= state.DefenseSlots then
+		return "No slot", false
+	end
+	if state.BudgetUsed + cfg.BudgetCost > state.Budget then
+		return "Over budget", false
+	end
+	local vault = vaultState
+	if vault then
+		for resource, amount in cfg.Cost do
+			if unitsOf(vault.Banked, resource) + unitsOf(vault.Exposed, resource) < amount then
+				return costText(cfg.Cost), true -- the cost itself, in red
+			end
+		end
+	end
+	return nil, false
+end
+
 local function refreshPanel()
 	layoutPanel()
 	panel.Visible = active
 	buildButton.Text = if active then "Done" else "Build"
 	UiStyle.setButtonKind(buildButton, if active then "neutral" else "primary")
+	local placing = mode == "place"
+	UiStyle.setActiveTab(modeBar, if placing then "Place" else "Edit")
+	tabBar.frame.Visible = placing
+	pieceGrid.Visible = placing
+	editHint.Visible = not placing and selected == nil
 	for pieceKind, tile in pieceTiles do
-		local chosen = mode == "place" and movingId == nil and pieceKind == kind
-		UiStyle.setTileState(tile, if chosen then "selected" else "normal")
+		local chosen = placing and movingId == nil and pieceKind == kind
+		local reason, isCost = blockedReason(pieceKind)
+		local cfg = PlotGrid.pieceConfig(pieceKind) :: any
+		tile.sub.Text = if reason then reason else costText(cfg.Cost)
+		tile.sub.TextColor3 = if reason and isCost then style.Colors.Bad else style.Colors.TextDim
+		UiStyle.setTileState(tile, if chosen then "selected" elseif reason then "disabled" else "normal")
 		tile.button.Visible = groupOf[pieceKind] == currentGroup
 	end
 	UiStyle.setActiveTab(tabBar, groupNames[currentGroup])
@@ -352,7 +416,6 @@ local function refreshPanel()
 	if refillButton.Visible and defenseCfg then
 		refillButton.Text = `Refill {charges}/{maxCharges}\n{costText(defenseCfg.RefillCost)}`
 	end
-	UiStyle.setButtonKind(editButton, if mode == "select" then "primary" else "chip")
 	placeButton.Text = if movingId then "Put here" else "Place"
 	rotateButton.Visible = mode == "place"
 	placeButton.Visible = mode == "place"
@@ -367,19 +430,35 @@ local function refreshPanel()
 		-- Amber when a limit is reached: that's what OverBudget / NoDefenseSlot answer.
 		budgetPill.TextColor3 = if state.BudgetUsed >= state.Budget then style.Colors.Warn else style.Colors.Text
 		defensePill.TextColor3 = if state.DefenseSlotsUsed >= state.DefenseSlots then style.Colors.Warn else style.Colors.Text
+		-- The budget always shows (it is what "Over budget" answers); the tier and the
+		-- defense count only where there is room, and the defense count only on the Defenses tab.
+		local defenseTab = false
+		for _, groupKind in Config.Base.PieceGroups[currentGroup].Kinds do
+			if (Config.Defenses.Kinds :: any)[groupKind] then
+				defenseTab = true
+			end
+		end
+		tierPill.Visible = not shortScreen
 		budgetPill.Visible = true
-		defensePill.Visible = true
+		defensePill.Visible = defenseTab and not shortScreen
 		upgradeButton.Visible = state.UpgradeCost ~= nil
+		-- Upgrade sits by the tier info; on a short screen it stays in the action row (room).
+		upgradeButton.Parent = if shortScreen then actionRow else infoRow
+		upgradeButton.LayoutOrder = if shortScreen then 6 else 4
 		if state.UpgradeCost then
 			upgradeButton.Text = `Upgrade Vault\n{costText(state.UpgradeCost)}`
 		end
 	else
 		tierPill.Text = "..."
+		tierPill.Visible = not shortScreen
 		budgetPill.Visible = false
 		defensePill.Visible = false
 		upgradeButton.Visible = false
 	end
 end
+
+-- Rotating or resizing re-applies the short-screen layout (pills, Upgrade button), not just the panel size.
+gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(refreshPanel)
 
 local chargesConnection: RBXScriptConnection? = nil
 local function select(model: Model?)
@@ -480,11 +559,13 @@ end)
 
 placeButton.Activated:Connect(doPlace)
 
-editButton.Activated:Connect(function()
-	mode = if mode == "select" then "place" else "select"
-	movingId = nil
-	select(nil)
-end)
+for name, button in modeBar.buttons do
+	button.Activated:Connect(function()
+		mode = if name == "Edit" then "select" else "place"
+		movingId = nil
+		select(nil)
+	end)
+end
 
 moveButton.Activated:Connect(function()
 	local model = selected
@@ -572,7 +653,7 @@ RunService.RenderStepped:Connect(function()
 	if active and not onPlot then
 		setActive(false) -- walked off your plot
 	end
-	buildButton.Visible = onPlot
+	buildButton.Visible = onPlot and player:GetAttribute(uiCfg.VisibleAttribute) == true
 	if active then
 		updateGhost()
 	end
@@ -589,6 +670,20 @@ local function applyVisibility()
 end
 player:GetAttributeChangedSignal(uiCfg.VisibleAttribute):Connect(applyVisibility)
 applyVisibility()
+
+Remotes.getEvent("VaultChanged").OnClientEvent:Connect(function(state: Types.VaultState)
+	vaultState = state
+	refreshPanel()
+end)
+task.spawn(function()
+	local ok, result = pcall(function()
+		return Remotes.getFunction("GetVaultState"):InvokeServer()
+	end)
+	if ok and result and not vaultState then
+		vaultState = result
+		refreshPanel()
+	end
+end)
 
 local received = false
 Remotes.getEvent("BaseChanged").OnClientEvent:Connect(function(state: Types.BaseState)

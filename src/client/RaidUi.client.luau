@@ -19,6 +19,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
@@ -36,15 +37,14 @@ local style = Config.UiStyle
 local colors = style.Colors
 
 -- Layout numbers the raid screens already used (unchanged positions).
-local SCREEN_MARGIN = 16 -- px: context buttons from the screen edge
-local STACK_TOP = 104 -- px: raid banner stack sits under the announcement (12) and base-alert (60) banners
 local DIAL_SIZE = 200 -- px: the lock plate
 local DIAL_BUTTON_GAP = 12 -- px: between the plate and the Turn / Cancel buttons
 -- [PH] invented look-only: landscape phones (short window) shrink the plate and
 -- move the toast so nothing covers the lock.
 local DIAL_SHORT_SCALE = 0.8
-local TOAST_Y_TALL = 0.62 -- as before
-local TOAST_Y_SHORT = 0.4 -- [PH] invented look-only
+local PIN_DOT = 14 -- px: one lockpick pin dot
+local OFFER_BAR_HEIGHT = 6 -- px: the escort offer's countdown bar
+local TIMER_PAD = 76 -- px kept clear on the banner's right for the timer pill
 -- Raid log window: [PH] invented look-only.
 local LOG_MAX_SIZE = Vector2.new(720, 460)
 local LOG_HEIGHT_SHORT = 0.96 -- share of the screen (the normal height is 0.88)
@@ -111,48 +111,69 @@ local function contextButton(parent: Instance, text: string, kind: UiStyle.Butto
 	return b
 end
 
--- Context buttons stack above the Attack/Build buttons (bottom right); on a
--- short window they sit side by side instead so they can't leave the screen.
-local contextStack = Instance.new("Frame")
-contextStack.AnchorPoint = Vector2.new(1, 1)
-contextStack.Position = UDim2.new(1, -SCREEN_MARGIN, 1, -SCREEN_MARGIN - SIZE * 3.1)
-contextStack.Size = UDim2.fromOffset(0, 0)
-contextStack.AutomaticSize = Enum.AutomaticSize.XY
-contextStack.BackgroundTransparency = 1
-contextStack.Parent = gui
-local contextList = UiStyle.list(contextStack, false)
-contextList.HorizontalAlignment = Enum.HorizontalAlignment.Right
-contextList.VerticalAlignment = Enum.VerticalAlignment.Bottom
-local actionButton = contextButton(contextStack, "Breach", "danger", SIZE * 1.8, SIZE * 0.9)
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Context buttons (Breach, Sabotage) sit in the shared right-thumb column,
+-- above Attack / Build; on a short window they sit side by side instead so they
+-- can't leave the screen.
+local thumb = UiStyle.thumbColumn(playerGui)
+local contextList = thumb.contextList
+local actionButton = contextButton(thumb.context, "Breach", "danger", SIZE * 1.8, SIZE * 0.9)
 actionButton.LayoutOrder = 2
-local sabotageButton = contextButton(contextStack, "Sabotage", "special", SIZE * 1.8, SIZE * 0.9)
+local sabotageButton = contextButton(thumb.context, "Sabotage", "special", SIZE * 1.8, SIZE * 0.9)
 sabotageButton.LayoutOrder = 1
 
--- Banner, grip bar and escort offer stack down from the top centre, so a
--- two-line banner pushes the rest down instead of covering it.
-local topStack = Instance.new("Frame")
-topStack.AnchorPoint = Vector2.new(0.5, 0)
-topStack.Position = UDim2.new(0.5, 0, 0, STACK_TOP)
-topStack.Size = UDim2.fromScale(style.Banner.WidthScale, 0)
-topStack.AutomaticSize = Enum.AutomaticSize.Y
-topStack.BackgroundTransparency = 1
-topStack.Parent = gui
+-- Raid status is one block in the shared top stack (above base alerts and
+-- announcements): a short headline with the timer on its right, one dim line
+-- for the loot / what to do, the chase-distance bar, the grip bar, and the
+-- escort offer. A taller block pushes the others down instead of covering them.
+local raidStack = Instance.new("Frame")
+raidStack.LayoutOrder = style.TopStack.Order.Raid
+raidStack.Size = UDim2.fromScale(style.Banner.WidthScale, 0)
+raidStack.AutomaticSize = Enum.AutomaticSize.Y
+raidStack.BackgroundTransparency = 1
+raidStack.Parent = UiStyle.topStack(playerGui)
 local topLimit = Instance.new("UISizeConstraint")
 topLimit.MaxSize = Vector2.new(style.Banner.MaxWidth, math.huge)
-topLimit.Parent = topStack
-UiStyle.list(topStack, false).HorizontalAlignment = Enum.HorizontalAlignment.Center
+topLimit.Parent = raidStack
+UiStyle.list(raidStack, false, 4).HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local banner = UiStyle.banner(topStack, 1)
-banner.LayoutOrder = 1
--- D115 grip bar, right under the banner (carrier + owner only: the server
--- only sends Grip to them).
-local gripBack = UiStyle.bar(topStack, raidCfg.Ui.GripBarHeight, 1, raidCfg.Ui.GripColor)
-gripBack.LayoutOrder = 2
+local banner = UiStyle.banner(raidStack, 1, 1)
+local bannerPad = banner:FindFirstChildOfClass("UIPadding")
+if bannerPad then
+	bannerPad.PaddingRight = UDim.new(0, TIMER_PAD) -- room for the timer, so a long headline can't run under it
+end
+local timerPill = UiStyle.pill(banner, "", colors.Text, colors.BarTrack)
+timerPill.AnchorPoint = Vector2.new(1, 0.5)
+timerPill.Position = UDim2.new(1, -8, 0.5, 0)
+local raidNote = UiStyle.label(raidStack, "", style.TextSize.Small, colors.TextDim, false)
+raidNote.LayoutOrder = 2
+raidNote.TextXAlignment = Enum.TextXAlignment.Center
+raidNote.Visible = false
+-- How far the loot has been carried (the server's number) out of the escape distance.
+local chaseBar = UiStyle.bar(raidStack, raidCfg.Ui.ChaseBarHeight, 0, colors.Good)
+chaseBar.LayoutOrder = 3
+chaseBar.Visible = false
+local chaseLabel = UiStyle.barLabel(chaseBar, "")
+-- D115 grip bar (carrier + owner only: the server only sends Grip to them).
+local gripBack = UiStyle.bar(raidStack, raidCfg.Ui.GripBarHeight, 1, raidCfg.Ui.GripColor)
+gripBack.LayoutOrder = 4
 gripBack.Visible = false
--- Escort offer.
-local offer = contextButton(topStack, "Join as escort", "info", SIZE * 4, SIZE * 0.9)
-offer.LayoutOrder = 3
--- Short refusals and confirmations (longer ones wrap onto a second line).
+local gripLabel = UiStyle.barLabel(gripBack, "")
+-- Escort offer: who is raiding, a Join button, and a bar that shrinks to show
+-- how long the offer lasts.
+local offerCard = UiStyle.card(raidStack, 5)
+offerCard.Visible = false
+local offerRow = UiStyle.row(offerCard, style.MinTap, 1)
+local offerText = UiStyle.label(offerRow, "", style.TextSize.Body, colors.Text, true)
+offerText.Size = UDim2.new(1, -(88 + 6), 1, 0)
+offerText.AutomaticSize = Enum.AutomaticSize.None
+offerText.TextWrapped = false
+offerText.TextTruncate = Enum.TextTruncate.AtEnd
+local offer = UiStyle.button(offerRow, "Join", "info", 88, style.MinTap)
+local offerBar = UiStyle.bar(offerCard, OFFER_BAR_HEIGHT, 1, colors.Accent)
+offerBar.LayoutOrder = 2
+-- Short refusals and confirmations (longer ones wrap onto a second line): the shared HUD toast spot.
 local toast = UiStyle.toast(gui)
 
 -- Lockpick dial (Skyrim-style, Josh's call + his LOCKPICKING GUIDE): point
@@ -233,11 +254,55 @@ pickTip.BorderSizePixel = 0
 pickTip.ZIndex = 3
 pickTip.Parent = pickArm
 
--- "Pin 1/3 · Picks 4": a pill sitting on the plate's top edge.
-local pinsLabel = UiStyle.pill(dial, "", colors.Text)
-pinsLabel.AnchorPoint = Vector2.new(0.5, 1)
-pinsLabel.Position = UDim2.new(0.5, 0, 0, -style.Gap)
+-- On the plate's top edge: the pins as dots (filled = set) and the picks left.
+local pinRow = Instance.new("Frame")
+pinRow.AnchorPoint = Vector2.new(0.5, 1)
+pinRow.Position = UDim2.new(0.5, 0, 0, -style.Gap)
+pinRow.AutomaticSize = Enum.AutomaticSize.XY
+pinRow.Size = UDim2.fromOffset(0, 0)
+pinRow.BackgroundTransparency = 1
+pinRow.Parent = dial
+UiStyle.list(pinRow, true, 8)
+local pinDots = Instance.new("Frame")
+pinDots.LayoutOrder = 1
+pinDots.AutomaticSize = Enum.AutomaticSize.XY
+pinDots.Size = UDim2.fromOffset(0, 0)
+pinDots.BackgroundTransparency = 1
+pinDots.Parent = pinRow
+UiStyle.list(pinDots, true, 6)
+local pinsLabel = UiStyle.pill(pinRow, "", colors.Text)
+pinsLabel.LayoutOrder = 2
 pinsLabel.TextSize = style.TextSize.Body
+local dotList: { Frame } = {}
+
+-- Pins before `stage` are set (stage counts from 1).
+local function setPins(stage: number, stages: number)
+	while #dotList < stages do
+		local dotFrame = Instance.new("Frame")
+		dotFrame.LayoutOrder = #dotList + 1
+		dotFrame.Size = UDim2.fromOffset(PIN_DOT, PIN_DOT)
+		dotFrame.BorderSizePixel = 0
+		dotFrame.Parent = pinDots
+		UiStyle.corner(dotFrame, 999)
+		UiStyle.stroke(dotFrame, colors.PanelStroke, 1)
+		table.insert(dotList, dotFrame)
+	end
+	while #dotList > stages do
+		local last = table.remove(dotList)
+		if last then
+			last:Destroy()
+		end
+	end
+	for index, dotFrame in dotList do
+		dotFrame.BackgroundColor3 = if index < stage then colors.Good else colors.BarTrack
+	end
+end
+
+-- A short how-to inside the plate's bottom edge for the first few seconds of a pick.
+local howTo = UiStyle.pill(dial, "Drag to aim · hold TURN", colors.TextDim)
+howTo.AnchorPoint = Vector2.new(0.5, 1)
+howTo.Position = UDim2.new(0.5, 0, 1, -6)
+howTo.Visible = false
 
 -- Studio only (guide §7): tick marks round the plate tint the sweet spot
 -- (green) and partial zones (yellow), for tuning. Live servers never send
@@ -297,9 +362,9 @@ grindSound.Looped = true
 
 -- Raid log button + window: entries on one side, the path map on the other
 -- (stacked, map first, on a narrow phone).
-local logButton = contextButton(gui, "Raids", "chip", SIZE * 1.2, SIZE * 0.5)
--- Same row as the Bag and Trade buttons, which centre themselves on this y.
-logButton.Position = UDim2.fromOffset(12, 170 - (math.max(SIZE * 0.5, style.MinTap) - SIZE * 0.5) / 2)
+-- One slot in the shared dock (Raids / Bag / Trade / Gear).
+local logButton = UiStyle.dockButton(playerGui, "Raids", "chip", style.Dock.Order.Raids)
+logButton.Visible = false
 -- The log is a full menu like the Bag: its own ScreenGui at the Bag's level,
 -- above the Gear button and gadget bar (10) that would otherwise cover its
 -- close button, and below the buyer / trade windows (12, 13).
@@ -318,11 +383,15 @@ if mapLayout then
 	mapLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 end
 local map = Instance.new("Frame") -- the map itself; sized in applyLogLayout
+map.LayoutOrder = 1
 map.BackgroundColor3 = colors.BarTrack
 map.BorderSizePixel = 0
 map.ClipsDescendants = true
 map.Parent = mapCard
 UiStyle.corner(map, style.CardCorner)
+local mapKey = UiStyle.label(mapCard, "", style.TextSize.Small, colors.TextDim, false)
+mapKey.LayoutOrder = 2
+mapKey.TextXAlignment = Enum.TextXAlignment.Center
 -- Dots live in their own layer so drawMap can wipe them without touching the map's styling.
 local mapDots = Instance.new("Frame")
 mapDots.Size = UDim2.fromScale(1, 1)
@@ -441,16 +510,10 @@ local function lootText(loot: { [string]: number }?): string
 	return table.concat(parts, ", ")
 end
 
--- "70/140 studs · " while someone's carrying loot (the server's number).
-local function chaseText(view: Types.RaidView): string
-	if view.Phase ~= "Carrying" or not view.ChaseStuds then
-		return ""
-	end
-	local grip = if view.Grip then `grip {view.Grip}/{raidCfg.GripDamage} · ` else ""
-	return `{view.ChaseStuds}/{raidCfg.EscapeRadiusStuds} studs · {grip}`
-end
-
 local actionKind = "" -- what actionButton does right now
+local confirmUntil = 0 -- os.clock(): the Breach button asks "Confirm: ends shield" until then
+local dialShownAt = 0 -- os.clock() when the lockpick plate came up
+local wasDial = false
 
 RunService.RenderStepped:Connect(function(dt: number)
 	local root = myRoot()
@@ -460,28 +523,51 @@ RunService.RenderStepped:Connect(function(dt: number)
 
 	if current then
 		local left = math.max(0, math.ceil(current.EndsAt - t))
+		timerPill.Text = string.format("%d:%02d", left // 60, left % 60)
+		local carrying = current.Phase == "Carrying"
+		local loot = lootText(current.Loot)
+		local headline: string
+		local note = ""
 		if current.Role == "Victim" then
-			banner.Text = if current.Phase == "Carrying"
-				then `{current.RaiderName} has your loot ({lootText(current.Loot)})! {chaseText(current)}Hit them to break their grip - {left}s`
-				else `RAID! {current.RaiderName} is at your base - {left}s`
+			if carrying then
+				headline = `{current.RaiderName} took your loot!`
+				note = (if loot ~= "" then loot .. " · " else "") .. "Hit them to break their grip"
+			else
+				headline = `RAID! {current.RaiderName} is at your base`
+			end
 		elseif current.Role == "Escort" then
-			banner.Text = `Escorting {current.RaiderName}: body-block anyone chasing them - {chaseText(current)}{left}s`
-		elseif current.Phase == "Carrying" then
-			banner.Text = `Escape! {chaseText(current)}{left}s   ({lootText(current.Loot)})`
+			headline = `Escorting {current.RaiderName}`
+			note = (if carrying and loot ~= "" then loot .. " · " else "") .. "Body-block anyone chasing them"
+		elseif carrying then
+			headline = "Escape!"
+			note = if loot ~= "" then `You carry: {loot}` else ""
 		elseif current.Phase == "Unlocked" then
-			banner.Text = `Lock open: grab the loot - {left}s`
+			headline = "Lock open: grab the loot"
 		else
-			banner.Text = `Raiding {current.VictimName}: pick the vault lock - {left}s`
+			headline = `Raiding {current.VictimName}: pick the vault lock`
 		end
+		banner.Text = headline
 		banner.BackgroundColor3 = UiStyle.tone(if current.Role == "Victim" then "critical" else "warn")
 		banner.Visible = true
-		local grip = if current.Phase == "Carrying" then current.Grip else nil
+		raidNote.Text = note
+		raidNote.Visible = note ~= ""
+		-- Chase distance: how far the loot has been carried, out of the escape distance.
+		local chase = if carrying then current.ChaseStuds else nil
+		chaseBar.Visible = chase ~= nil
+		if chase then
+			UiStyle.setBar(chaseBar, chase / raidCfg.EscapeRadiusStuds, if current.Role == "Victim" then colors.Bad else colors.Good)
+			chaseLabel.Text = `{chase}/{raidCfg.EscapeRadiusStuds} studs`
+		end
+		local grip = if carrying then current.Grip else nil
 		gripBack.Visible = grip ~= nil
 		if grip then
 			UiStyle.setBar(gripBack, grip / raidCfg.GripDamage)
+			gripLabel.Text = `Grip {grip}/{raidCfg.GripDamage}`
 		end
 	else
 		banner.Visible = false
+		raidNote.Visible = false
+		chaseBar.Visible = false
 		gripBack.Visible = false
 	end
 
@@ -493,6 +579,11 @@ RunService.RenderStepped:Connect(function(dt: number)
 		turnButton.Visible = true
 		cancelPick.Visible = true
 		local clock = os.clock()
+		if not wasDial then
+			dialShownAt = clock
+		end
+		wasDial = true
+		howTo.Visible = clock - dialShownAt < raidCfg.Ui.HowToSeconds
 		local f = feel
 		local held = holdingTurn()
 		local refitting = clock < lockoutUntil
@@ -547,11 +638,14 @@ RunService.RenderStepped:Connect(function(dt: number)
 		local picks = if f then f.Picks else lockpick.Picks
 		local stageNumber = if f then f.Stage else lockpick.Stage
 		local stages = if f then f.Stages else lockpick.Stages
+		setPins(stageNumber, stages)
 		pinsLabel.Text = if refitting
 			then (if picks > 0 then "Pick snapped: fitting another..." else "No picks: improvising...")
 			elseif clock < stageFlashUntil then "Pin set!"
-			else `Pin {stageNumber}/{stages}   ·   Picks {picks}` .. (if picks <= 0 then "  (improvising: slow)" else "")
+			else `Picks {picks}` .. (if picks <= 0 then "  (improvising: slow)" else "")
 	else
+		wasDial = false
+		howTo.Visible = false
 		dial.Visible = false
 		turnButton.Visible = false
 		cancelPick.Visible = false
@@ -562,9 +656,16 @@ RunService.RenderStepped:Connect(function(dt: number)
 	end
 
 	-- The context button.
+	UiStyle.setButtonKind(actionButton, "danger")
 	if root and not current and not player:GetAttribute(Config.Base.BuildUi.ClientModeAttribute) and raidablePlotNear(root) then
 		actionKind = "Breach"
-		actionButton.Text = "Breach"
+		if os.clock() < confirmUntil then
+			-- The server said breaching ends your own shield: the button itself now asks for the second tap.
+			actionButton.Text = "Confirm: ends shield"
+			actionButton.BackgroundColor3 = UiStyle.tone("warn")
+		else
+			actionButton.Text = "Breach"
+		end
 	elseif current and current.Role == "Raider" and current.Phase == "Unlocked" and core then
 		actionKind = "Grab"
 		actionButton.Text = "GRAB"
@@ -583,7 +684,10 @@ end)
 
 actionButton.Activated:Connect(function()
 	if actionKind == "Breach" then
-		ask(Remotes.getFunction("Breach"))
+		local _, reason = ask(Remotes.getFunction("Breach"))
+		if reason == "ConfirmShield" then
+			confirmUntil = os.clock() + raidCfg.Ui.ConfirmSeconds
+		end
 	elseif actionKind == "Pick" then
 		if ask(Remotes.getFunction("StartLockpick")) then
 			showMessage("Both hands on the lock: you can't move until it opens", "warn")
@@ -777,18 +881,24 @@ Remotes.getEvent("EscortOffer").OnClientEvent:Connect(function(raidId: string, r
 	offerToken += 1
 	local token = offerToken
 	offerId = raidId
-	offer.Text = `{raiderName} is raiding: join as escort?`
-	offer.Visible = true
+	offerText.Text = `{raiderName} is raiding`
+	offerCard.Visible = true
+	-- The bar drains over the offer's lifetime, so it is clear it is about to go.
+	UiStyle.setBar(offerBar, 1)
+	local fill = offerBar:FindFirstChild("Fill")
+	if fill and fill:IsA("Frame") then
+		TweenService:Create(fill, TweenInfo.new(seconds, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 1, 0) }):Play()
+	end
 	task.delay(seconds, function()
 		if offerToken == token then
-			offer.Visible = false
+			offerCard.Visible = false
 			offerId = nil
 		end
 	end)
 end)
 offer.Activated:Connect(function()
 	local raidId = offerId
-	offer.Visible = false
+	offerCard.Visible = false
 	offerId = nil
 	if raidId and ask(Remotes.getFunction("JoinEscort"), raidId) then
 		showMessage("You're escorting: stay close and block chasers", "good")
@@ -830,9 +940,32 @@ local function drawMap(entry: Types.RaidLogEntry)
 		local fade = i / math.max(1, #entry.Path)
 		dot(point[1] - raidCfg.LogCoordOffset, point[2] - raidCfg.LogCoordOffset, colors.Accent:Lerp(colors.Bad, fade), 4, nil)
 	end
+	-- Each trap kind gets a letter (two if another kind here starts with the same one), listed in the key.
+	local kinds: { string } = {}
 	for _, trigger in entry.Triggers do
 		local kind = tostring(trigger[3] or "?")
-		dot(trigger[1] - raidCfg.LogCoordOffset, trigger[2] - raidCfg.LogCoordOffset, colors.Bad, 14, kind:sub(1, 1))
+		if not table.find(kinds, kind) then
+			table.insert(kinds, kind)
+		end
+	end
+	local marks: { [string]: string } = {}
+	for _, kind in kinds do
+		local clash = false
+		for _, other in kinds do
+			if other ~= kind and other:sub(1, 1) == kind:sub(1, 1) then
+				clash = true
+			end
+		end
+		marks[kind] = kind:sub(1, if clash then 2 else 1)
+	end
+	local keyParts = { "Line: the raider's path" }
+	for _, kind in kinds do
+		table.insert(keyParts, `{marks[kind]} = {kind}`)
+	end
+	mapKey.Text = table.concat(keyParts, " · ")
+	for _, trigger in entry.Triggers do
+		local kind = tostring(trigger[3] or "?")
+		dot(trigger[1] - raidCfg.LogCoordOffset, trigger[2] - raidCfg.LogCoordOffset, colors.Bad, 18, marks[kind])
 	end
 end
 
@@ -864,6 +997,7 @@ local function refreshLog()
 	end
 	if #entries == 0 then
 		mapDots:ClearAllChildren()
+		mapKey.Text = ""
 		table.insert(logRows, UiStyle.emptyState(logCols.left, "No raids yet", "Raids on your base, and raids you run, show up here.", 1))
 	end
 	for i, entry: Types.RaidLogEntry in entries do
@@ -959,7 +1093,6 @@ local function applyLayout()
 	end
 	contextList.FillDirection = if short then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical
 	contextList.VerticalAlignment = Enum.VerticalAlignment.Bottom
-	toast.frame.Position = UDim2.new(0.5, 0, if short then TOAST_Y_SHORT else TOAST_Y_TALL, 0)
 	if logPanel.Visible then
 		applyLogLayout()
 	end

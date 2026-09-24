@@ -44,7 +44,7 @@ end
 
 local logAnomaly = AnomalyLog.new("Economy")
 
-type Sales = { Day: number, Units: { [string]: number } }
+type Sales = { Day: number, Units: { [string]: number }, EverSold: boolean }
 
 local EconomyService = {}
 
@@ -53,7 +53,9 @@ local EconomyService = {}
 local function sendCredits(player: Player)
 	local credits = PlayerDataService.get(player, "Credits")
 	if credits then
-		Remotes.getEvent("CreditsChanged"):FireClient(player, credits)
+		local sales: Sales? = PlayerDataService.get(player, "NpcSales")
+		-- Saves from before EverSold existed have Day > 0 but the Reconcile default false.
+		Remotes.getEvent("CreditsChanged"):FireClient(player, credits, sales ~= nil and (sales.EverSold == true or sales.Day > 0))
 	end
 end
 
@@ -115,7 +117,7 @@ local function salesToday(player: Player): Sales?
 		return nil
 	end
 	if sales.Day ~= today() then
-		return { Day = today(), Units = {} }
+		return { Day = today(), Units = {}, EverSold = sales.EverSold }
 	end
 	return sales
 end
@@ -145,13 +147,29 @@ function EconomyService.getQuote(player: Player): Types.SellQuote?
 	if not sales or not resources then
 		return nil
 	end
-	local quote: Types.SellQuote = { Resources = {} }
+	-- Seconds to the next UTC midnight (D94): the client counts down from this.
+	local quote: Types.SellQuote = { ResetsIn = (today() + 1) * cfg.DaySeconds - Clock.now(), Resources = {} }
 	for _, resource in Config.Resources.Types do
-		local factor = priceFactor(sales.Units[resource] or 0)
-		local grades: { [string]: { Have: number, Price: number } } = {}
+		local sold = sales.Units[resource] or 0
+		local factor = priceFactor(sold)
+		local grades: { [string]: { Have: number, Price: number, PayoutOne: number, PayoutTen: number, PayoutAll: number } } = {}
 		for _, grade in Config.Grade.Names do
 			local have = (resources.Exposed[resource][grade] or 0) + (resources.Banked[resource][grade] or 0)
-			grades[grade] = { Have = have, Price = math.floor(basePrice[resource] * gradeMultiplier[grade] * factor * 100 + 0.5) / 100 }
+			-- The chips show the real payout (decay included), worked out here so
+			-- the client never guesses a price (R5). A sale is capped at MaxUnitsPerSale.
+			local one, ten, all = 0, 0, 0
+			if have > 0 then
+				one = payout(resource, grade, sold, 1)
+				ten = payout(resource, grade, sold, math.min(10, have))
+				all = payout(resource, grade, sold, math.min(have, cfg.MaxUnitsPerSale))
+			end
+			grades[grade] = {
+				Have = have,
+				Price = math.floor(basePrice[resource] * gradeMultiplier[grade] * factor * 100 + 0.5) / 100,
+				PayoutOne = one,
+				PayoutTen = ten,
+				PayoutAll = all,
+			}
 		end
 		quote.Resources[resource] = { Percent = math.floor(factor * 100 + 0.5), Grades = grades }
 	end
@@ -187,7 +205,7 @@ local function atBuyer(player: Player): boolean
 	return position ~= nil and nearestBuyerDistance(position) <= cfg.SellRangeStuds
 end
 
-local function sell(player: Player, resourceArg: unknown, gradeArg: unknown, countArg: unknown): (boolean, string?, number?, Types.SellQuote?)
+local function sell(player: Player, resourceArg: unknown, gradeArg: unknown, countArg: unknown): (boolean, string?, number?, Types.SellQuote?, number?)
 	if typeof(resourceArg) ~= "string" or typeof(gradeArg) ~= "string" or typeof(countArg) ~= "number" then
 		logAnomaly(player, "sent bad Sell arguments")
 		return false, "Invalid"
@@ -226,9 +244,10 @@ local function sell(player: Player, resourceArg: unknown, gradeArg: unknown, cou
 	end
 	local counted = PlayerDataService.update(player, "NpcSales", OWNER, function(current: Sales)
 		if current.Day ~= today() then
-			current = { Day = today(), Units = {} }
+			current = { Day = today(), Units = {}, EverSold = current.EverSold }
 		end
 		current.Units[resource] = (current.Units[resource] or 0) + count
+		current.EverSold = true -- set before the Credits event below, so the HUD sees it with the new balance
 		return current
 	end)
 	if not counted then
@@ -251,7 +270,7 @@ local function sell(player: Player, resourceArg: unknown, gradeArg: unknown, cou
 	if xp > 0 then
 		ReputationService.grant(player, "Trader", xp, "NPC sale")
 	end
-	return true, nil, earned, EconomyService.getQuote(player)
+	return true, nil, earned, EconomyService.getQuote(player), count
 end
 
 local function setUpBuyer(instance: Instance)
@@ -312,7 +331,7 @@ function EconomyService.start()
 	end
 
 	local allowSell = RateLimiter.new("SellUnits", cfg.SellCooldownSeconds)
-	Remotes.getFunction("SellUnits").OnServerInvoke = function(player: Player, resource: unknown, grade: unknown, count: unknown): (boolean, string?, number?, Types.SellQuote?)
+	Remotes.getFunction("SellUnits").OnServerInvoke = function(player: Player, resource: unknown, grade: unknown, count: unknown): (boolean, string?, number?, Types.SellQuote?, number?)
 		if not allowSell(player) then
 			return false, "Busy"
 		end

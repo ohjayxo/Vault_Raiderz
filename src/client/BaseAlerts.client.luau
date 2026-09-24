@@ -43,15 +43,9 @@ local PRIORITY: { [string]: number } = {
 	CaptainLoot = 2,
 }
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "BaseAlerts"
-gui.ResetOnSpawn = false
-
--- Sits below the announcement banner (top of the screen) so both can show at once.
-local BANNER_TOP = 60 -- [PH] invented look-only: px
-local banner = UiStyle.banner(gui)
-banner.Position = UDim2.new(0.5, 0, 0, BANNER_TOP)
-gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+-- One slot in the shared top stack, under the raid status and above announcements,
+-- so all of them can show at once without overlapping.
+local banner = UiStyle.banner(UiStyle.topStack(Players.LocalPlayer:WaitForChild("PlayerGui")), nil, Config.UiStyle.TopStack.Order.BaseAlerts)
 
 -- Alerts queue and show one after another, so a quick follow-up (e.g.
 -- "Scav Wave defeated!" right after the Captain's loot) can't hide one.

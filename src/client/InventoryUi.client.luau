@@ -45,7 +45,6 @@ local style = Config.UiStyle
 local colors = style.Colors
 local windowCfg = style.Window
 local TAP = style.MinTap
-local SIZE = combatCfg.Ui.ButtonSize
 local SAFE = meterCfg.BankedColor
 local RISK = meterCfg.ExposedColor
 local SHIELD = bagCfg.ShieldColor
@@ -101,25 +100,16 @@ local openEvent = Instance.new("BindableEvent")
 openEvent.Name = "Open"
 openEvent.Parent = gui
 
--- Next to the Raids button (RaidUi: 12, 170, SIZE*1.2 x SIZE*0.5). Its own
--- HUD-level ScreenGui, so open menus (Gear) draw over it; the open Bag
+-- One slot in the shared dock (Raids / Bag / Trade / Gear). The dock is its
+-- own HUD-level ScreenGui, so open menus (Gear) draw over it; the open Bag
 -- itself is above them (bagCfg.DisplayOrder).
-local buttonGui = Instance.new("ScreenGui")
-buttonGui.Name = "InventoryButton"
-buttonGui.ResetOnSpawn = false
-buttonGui.DisplayOrder = bagCfg.ButtonDisplayOrder
-local bagButtonHeight = math.max(SIZE * 0.5, TAP)
-local bagButton = UiStyle.hudButton(buttonGui, bagCfg.ButtonLabel, "neutral", SIZE * 1.2, bagButtonHeight)
--- Centered on the Raids button's row even though the tap target is taller.
-bagButton.Position = UDim2.fromOffset(12 + SIZE * 1.2 + 8, 170 - (bagButtonHeight - SIZE * 0.5) / 2) -- matches the Raids button's y
+local playerGui = player:WaitForChild("PlayerGui")
+local bagButton = UiStyle.dockButton(playerGui, bagCfg.ButtonLabel, "neutral", style.Dock.Order.Bag)
 bagButton.Visible = false
 
--- Studio only, goes away with the debug tools: a small button at the top centre
--- that opens the Bag on its Debug tab (wired below, once `open` exists).
-local DEBUG_BUTTON_TOP = 6 -- [PH] invented look-only: px from the top edge
-local debugButton = UiStyle.hudButton(buttonGui, "Debug", "info", 88, TAP)
-debugButton.AnchorPoint = Vector2.new(0.5, 0)
-debugButton.Position = UDim2.new(0.5, 0, 0, DEBUG_BUTTON_TOP)
+-- Studio only, goes away with the debug tools: the last slot in the dock, which
+-- opens the Bag on its Debug tab (wired below, once `open` exists).
+local debugButton = UiStyle.dockButton(playerGui, "Debug", "info", 9)
 debugButton.Visible = STUDIO_DELETE
 
 local win = UiStyle.window(gui, "Bag", 0.9, 0.9, Vector2.new(bagCfg.PanelMaxSize.X, BAG_MAX_HEIGHT))
@@ -132,26 +122,27 @@ local tabs = UiStyle.tabBar(panel, TABS)
 local tabButtons = tabs.buttons
 
 -- Short messages ("Too fast", "Not enough Riftsalt") along the panel's bottom.
-local toast = UiStyle.toast(panel)
-toast.frame.AnchorPoint = Vector2.new(0.5, 1)
-toast.frame.Position = UDim2.new(0.5, 0, 1, -windowCfg.EdgePad)
+local toast = UiStyle.toast(panel, true)
 
-gui.Parent = player:WaitForChild("PlayerGui")
-buttonGui.Parent = player:WaitForChild("PlayerGui")
+gui.Parent = playerGui
 
 -- Wide windows have room for the tabs beside the title; narrow ones give them
 -- their own row and the list starts lower.
 local function layoutChrome()
 	local wide = UiStyle.isWide(panel)
-	local rowTop = windowCfg.EdgePad + TAP + windowCfg.BodyGap
+	local rowTop = windowCfg.HeaderPad * 2 + TAP + windowCfg.BodyGap
 	tabs.frame.Parent = if wide then header else panel
 	tabs.frame.LayoutOrder = 2
 	tabs.frame.AutomaticSize = Enum.AutomaticSize.X
 	tabs.frame.Size = UDim2.fromOffset(0, TAP)
 	tabs.frame.Position = UDim2.fromOffset(windowCfg.HeaderInset, rowTop)
 	local top = if wide then rowTop else rowTop + TAP + windowCfg.BodyGap
-	content.Position = UDim2.fromOffset(windowCfg.EdgePad, top)
-	content.Size = UDim2.new(1, -2 * windowCfg.EdgePad, 1, -(top + windowCfg.EdgePad))
+	local bodyPos = UDim2.fromOffset(windowCfg.EdgePad, top)
+	local bodySize = UDim2.new(1, -2 * windowCfg.EdgePad, 1, -(top + windowCfg.EdgePad))
+	content.Position = bodyPos
+	content.Size = bodySize
+	win.well.Position = bodyPos
+	win.well.Size = bodySize
 end
 layoutChrome()
 
@@ -218,13 +209,14 @@ local function total(grades: Types.GradeCounts?): number
 	return sum
 end
 
--- "Standard 90 · Dense 8" (only Grades you have, best last like the docs).
+-- "Standard 90 · Dense 8" (only Grades you have, best last like the docs), each
+-- Grade in its own colour (rich text) like the buyer and trade screens.
 local function gradeText(grades: Types.GradeCounts?): string
 	local parts = {}
 	for _, grade in Config.Grade.Names do
 		local count = (grades or ({} :: Types.GradeCounts))[grade] or 0
 		if count > 0 then
-			table.insert(parts, `{grade} {money(count)}`)
+			table.insert(parts, `<font color="#{UiStyle.gradeColor(grade):ToHex()}">{grade} {money(count)}</font>`)
 		end
 	end
 	return if #parts > 0 then table.concat(parts, " · ") else "none"
@@ -426,13 +418,22 @@ local function renderResources()
 		note(vaultCard, "At-risk items can be stolen in raids. Bank them at your Vault Core.", 2)
 	end
 
-	UiStyle.sectionHeader(right, "Resources", rightOrder())
+	local exposedAll = 0
+	for _, grades in v.Exposed do
+		exposedAll += total(grades)
+	end
+	UiStyle.sectionHeader(right, "Resources", rightOrder(), nil, if exposedAll > 0 then `{money(exposedAll)} at risk` else nil)
 	for _, resource in Config.Resources.Types do
 		local banked, exposed = total(v.Banked[resource]), total(v.Exposed[resource])
 		if banked > 0 or exposed > 0 or resource == Config.Resources.Types[1] then
 			local open = openResource == resource
 			-- Tap a resource to see its Grades (depth only when asked: R4).
-			local r = UiStyle.itemRow(right, (if open then "v " else "> ") .. resource, "", rightOrder(), true)
+			local r = UiStyle.itemRow(right, resource, "", rightOrder(), true)
+			-- The arrow sits on the right so the names stay lined up when a row opens.
+			local arrow = UiStyle.label(r.trailing, if open then "▼" else "▶", style.TextSize.Body, colors.TextDim, true)
+			arrow.AutomaticSize = Enum.AutomaticSize.None
+			arrow.Size = UDim2.new(0, 20, 1, 0)
+			arrow.TextXAlignment = Enum.TextXAlignment.Center
 			setSafeRisk(r, banked, exposed)
 			local tap = r.root :: TextButton -- tappable => a TextButton
 			tap.Activated:Connect(function()
@@ -451,9 +452,11 @@ local function renderResources()
 				pad.Parent = indent
 				local grades = UiStyle.card(indent, 1)
 				grades.Size = UDim2.new(1, 0, 0, 0)
-				local safeLine = UiStyle.label(grades, "safe: " .. gradeText(v.Banked[resource]), style.TextSize.Small, SAFE, true)
+				local safeLine = UiStyle.label(grades, `<font color="#{SAFE:ToHex()}">safe:</font> {gradeText(v.Banked[resource])}`, style.TextSize.Small, colors.Text, true)
+				safeLine.RichText = true
 				safeLine.LayoutOrder = 1
-				local riskLine = UiStyle.label(grades, "at risk: " .. gradeText(v.Exposed[resource]), style.TextSize.Small, RISK, true)
+				local riskLine = UiStyle.label(grades, `<font color="#{RISK:ToHex()}">at risk:</font> {gradeText(v.Exposed[resource])}`, style.TextSize.Small, colors.Text, true)
+				riskLine.RichText = true
 				riskLine.LayoutOrder = 2
 			end
 		end
@@ -473,8 +476,8 @@ local function renderGear()
 	local skinName = if g.EquippedSkin == "" then Config.Cosmetics.DefaultSkinName else (skinCfgs[g.EquippedSkin] and skinCfgs[g.EquippedSkin].Name or g.EquippedSkin)
 	UiStyle.itemRow(content, `Pickaxe: {tierName(g.PickaxeTier)}`, `Skin: {skinName}`, nextOrder())
 
-	UiStyle.sectionHeader(content, "Armor", nextOrder())
 	if #g.ArmorPieces == 0 then
+		UiStyle.sectionHeader(content, "Armor", nextOrder())
 		UiStyle.emptyState(content, "No armor", nil, nextOrder())
 	end
 	-- The worn piece, then spares grouped by tier + slot ("Wooden chest x3").
@@ -483,8 +486,8 @@ local function renderGear()
 	local groups: { Group } = {}
 	for _, piece in g.ArmorPieces do
 		if piece.Id == g.ArmorEquipped then
-			local r = UiStyle.itemRow(content, `{tierName(piece.Tier)} {piece.Slot:lower()}`, "worn · safe", nextOrder())
-			r.detail.TextColor3 = SAFE
+			UiStyle.sectionHeader(content, "Worn · safe", nextOrder(), SAFE)
+			local r = UiStyle.itemRow(content, `{tierName(piece.Tier)} {piece.Slot:lower()}`, nil, nextOrder())
 			addButton(r, "Take off", "neutral", ROW_BUTTON_WIDTH, 1, function()
 				ask(equipRemote, "")
 			end)
@@ -505,10 +508,16 @@ local function renderGear()
 			end
 		end
 	end
+	local spareCount = 0
+	for _, group in groups do
+		spareCount += #group.ids
+	end
+	if spareCount > 0 then
+		UiStyle.sectionHeader(content, "Spare · can be stolen", nextOrder(), RISK, `{spareCount} {if spareCount == 1 then "piece" else "pieces"}`)
+	end
 	for _, group in groups do
 		local count = #group.ids
-		local r = UiStyle.itemRow(content, `{tierName(group.tier)} {group.slot:lower()}{if count > 1 then ` x{count}` else ""}`, "spare · can be stolen", nextOrder())
-		r.detail.TextColor3 = RISK
+		local r = UiStyle.itemRow(content, `{tierName(group.tier)} {group.slot:lower()}{if count > 1 then ` x{count}` else ""}`, nil, nextOrder())
 		addButton(r, "Wear", "primary", ROW_BUTTON_WIDTH, 1, function()
 			ask(equipRemote, group.ids[1])
 		end)
@@ -528,7 +537,13 @@ local function renderSkins()
 	end
 	local nextOrder = sequence()
 	local skinCfgs: { [string]: { Name: string } } = Config.Cosmetics.PickaxeSkins :: any
-	UiStyle.sectionHeader(content, "Pickaxe skins", nextOrder())
+	local ownedSkins = 1 -- the default skin
+	for _, skinId in Config.Cosmetics.SkinOrder do
+		if (g.Skins[skinId] or 0) > 0 then
+			ownedSkins += 1
+		end
+	end
+	UiStyle.sectionHeader(content, "Pickaxe skins", nextOrder(), nil, `{ownedSkins} owned`)
 	local function skinRow(skinId: string, label: string)
 		local equipped = g.EquippedSkin == skinId
 		local r = UiStyle.itemRow(content, label, nil, nextOrder())
@@ -570,12 +585,30 @@ local function renderItems()
 		for resource, amount in chargeCfg.Cost do
 			table.insert(costParts, `{amount} {resource}`)
 		end
-		local craft = UiStyle.itemRow(cols.left, chargeCfg.Name, table.concat(costParts, " + "), craftOrder())
-		addButton(craft, "Craft", "primary", ROW_BUTTON_WIDTH, 1, function()
+		-- Grey out Craft when you're short, and say by how much. The server still checks the real cost (R5).
+		local shortOf: string? = nil
+		local v = vault
+		if v then
+			for resource, amount in (chargeCfg.Cost :: any) :: { [string]: number } do
+				local have = total(v.Banked[resource]) + total(v.Exposed[resource])
+				if have < amount then
+					shortOf = `Need {table.concat(costParts, " + ")} (have {have})`
+					break
+				end
+			end
+		end
+		local craft = UiStyle.itemRow(cols.left, chargeCfg.Name, shortOf or table.concat(costParts, " + "), craftOrder())
+		addButton(craft, "Craft", if shortOf then "disabled" else "primary", ROW_BUTTON_WIDTH, 1, function()
 			ask(Remotes.getFunction("Craft"), chargeCfg.ItemId)
 		end)
 		itemsParent = cols.right
-		UiStyle.sectionHeader(itemsParent, "Items", itemsOrder())
+		local kinds = 0
+		for _, itemId in bagCfg.ItemOrder do
+			if itemCount(itemId) > 0 then
+				kinds += 1
+			end
+		end
+		UiStyle.sectionHeader(itemsParent, "Items", itemsOrder(), nil, if kinds > 0 then tostring(kinds) else nil)
 	end
 	local shown = false
 	for _, itemId in bagCfg.ItemOrder do
