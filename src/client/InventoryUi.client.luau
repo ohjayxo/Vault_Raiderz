@@ -10,6 +10,10 @@
 -- Shown with the vault meter (Config.Bank.Meter.VisibleAttribute): the FTUE
 -- controls it (R4). The Gear tab follows the Gear button's attribute; the
 -- Items tab only shows once you own an item.
+-- Step 8: the Resources tab shows your raid shields with a countdown (Josh's
+-- call: in the Bag, not on the HUD, so the FTUE's no-text rule holds), and
+-- the Items tab has a Craft row for Breach Charges (shown once you have
+-- Riftsalt or charges). The server owns the recipe; this only asks (R5).
 -- Studio only: a Debug tab with every debug key (Shared/DebugKeyList) and a
 -- Run button for each, plus small X buttons that delete items / armor.
 -- Other scripts open it with the "Open" BindableEvent inside this ScreenGui
@@ -32,6 +36,8 @@ local combatCfg = Config.Combat
 local SIZE = combatCfg.Ui.ButtonSize
 local SAFE = meterCfg.BankedColor
 local RISK = meterCfg.ExposedColor
+local SHIELD = bagCfg.ShieldColor
+local NOTE = Color3.fromRGB(170, 170, 190)
 
 local equipRemote = Remotes.getFunction("EquipArmor")
 -- Studio only (Josh's test request): a small X on item and armor rows that
@@ -46,6 +52,7 @@ local REASON_TEXT: { [string]: string } = {
 	Failed = "Something went wrong, try again",
 	NotFound = "You don't have that any more",
 	NoArt = "That skin's model is missing (see Output)",
+	CantAfford = "Not enough Riftsalt",
 }
 
 type Tab = "Resources" | "Gear" | "Items" | "Debug"
@@ -53,6 +60,9 @@ local TABS: { Tab } = { "Resources", "Gear", "Items", "Debug" }
 
 local vault: Types.VaultState? = nil
 local gear: Types.GearState? = nil
+local shields: Types.ShieldState? = nil
+local shieldsAt = 0 -- os.clock() when `shields` arrived (it counts down from there)
+local shieldLabel: TextLabel? = nil -- the Resources tab's shield row, ticked every second
 local currentTab: Tab = "Resources"
 local openResource: string? = nil -- the resource whose Grades are showing
 local busy = false
@@ -278,6 +288,34 @@ local function anyItem(): boolean
 	return false
 end
 
+-- Riftsalt you hold (safe + at risk): crafting shows up once you have some.
+local function riftsaltHeld(): number
+	if not vault then
+		return 0
+	end
+	return total(vault.Banked.Riftsalt) + total(vault.Exposed.Riftsalt)
+end
+
+-- "Shield 47h 12m" / "Shield 29m 05s", or nil when no shield is up.
+local function shieldText(): string?
+	local s = shields
+	if not s then
+		return nil
+	end
+	local elapsed = os.clock() - shieldsAt
+	local newAccount = math.max(0, s.NewAccountSeconds - elapsed)
+	local postRaid = math.max(0, s.PostRaidSeconds - elapsed)
+	local left = math.floor(math.max(newAccount, postRaid))
+	if left <= 0 then
+		return nil
+	end
+	local why = if newAccount >= postRaid then "new player" else "after a raid"
+	local time = if left >= 3600
+		then string.format("%dh %02dm", left // 3600, (left % 3600) // 60)
+		else string.format("%dm %02ds", left // 60, left % 60)
+	return `SHIELD {time} ({why}): nobody can raid you`
+end
+
 -- ── Messages + intents ───────────────────────────────────────────────────
 
 local messageToken = 0
@@ -316,6 +354,14 @@ local function renderResources()
 	if not v then
 		heading("Loading...")
 		return
+	end
+	-- Your raid shields first (01 R6; D67, D75).
+	local shieldNow = shieldText()
+	shieldLabel = nil
+	if shieldNow then
+		local shieldRow = row({ { text = shieldNow, width = 560, color = SHIELD } })
+		shieldLabel = shieldRow:FindFirstChildOfClass("TextLabel")
+		row({ { text = "Breaching someone's base ends your shield.", width = 560, color = NOTE } }, nil, nil, 20)
 	end
 	row({
 		{ text = "", width = 150 },
@@ -433,6 +479,24 @@ local function renderItems()
 		return
 	end
 	local shown = false
+	-- Breach Charges: crafted from Riftsalt anywhere (Josh's call, step 8;
+	-- Workshop I takes over crafting in step 10).
+	local chargeCfg = Config.BreachCharges
+	if riftsaltHeld() > 0 or itemCount(chargeCfg.ItemId) > 0 then
+		shown = true
+		heading("CRAFT")
+		local costParts = {}
+		for resource, amount in chargeCfg.Cost do
+			table.insert(costParts, `{amount} {resource}`)
+		end
+		row({
+			{ text = chargeCfg.Name, width = 200 },
+			{ text = table.concat(costParts, " + "), width = 120, color = NOTE },
+		}, "Craft", function()
+			ask(Remotes.getFunction("Craft"), chargeCfg.ItemId)
+		end)
+		heading("ITEMS")
+	end
 	for _, itemId in bagCfg.ItemOrder do
 		local count = itemCount(itemId)
 		if count > 0 then
@@ -477,7 +541,7 @@ end
 render = function()
 	-- Tabs you can't use yet stay hidden (R4).
 	tabButtons.Gear.Visible = gearTabAllowed()
-	tabButtons.Items.Visible = anyItem()
+	tabButtons.Items.Visible = anyItem() or riftsaltHeld() > 0
 	tabButtons.Debug.Visible = STUDIO_DELETE
 	if not tabButtons[currentTab].Visible then
 		currentTab = "Resources"
@@ -521,6 +585,14 @@ local function fetchMissing()
 			gear = result
 		end
 	end
+	if not shields then
+		local ok, result = pcall(function()
+			return Remotes.getFunction("GetShieldState"):InvokeServer()
+		end)
+		if ok and result and not shields then
+			shields, shieldsAt = result, os.clock()
+		end
+	end
 end
 
 local function open(tab: Tab?)
@@ -530,7 +602,7 @@ local function open(tab: Tab?)
 	currentTab = tab or currentTab
 	panel.Visible = true
 	render()
-	if not vault or not gear then
+	if not vault or not gear or not shields then
 		task.spawn(function()
 			fetchMissing()
 			render()
@@ -565,6 +637,26 @@ end)
 Remotes.getEvent("GearChanged").OnClientEvent:Connect(function(state: Types.GearState)
 	gear = state
 	render()
+end)
+Remotes.getEvent("ShieldState").OnClientEvent:Connect(function(state: Types.ShieldState)
+	shields, shieldsAt = state, os.clock()
+	render()
+end)
+
+-- Tick the shield countdown while the Bag shows it (no rebuild each second).
+task.spawn(function()
+	while true do
+		task.wait(1)
+		local label = shieldLabel
+		if label and label.Parent and panel.Visible then
+			local text = shieldText()
+			if text then
+				label.Text = text
+			else
+				render() -- it just ran out: drop the row
+			end
+		end
+	end
 end)
 
 -- ── Visibility (server-controlled, R4) ───────────────────────────────────

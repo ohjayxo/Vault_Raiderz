@@ -169,12 +169,6 @@ rules + layout) and 1 skeptic that tried to refute each finding.
 - **Step 10:** Workshop I crafts **lockpicks** from Ore
   (`Config.Raiding.Lockpick.ItemId`, item "Lockpick"); Studio key 9 grants
   them until then.
-- **Step 8:** fill `RaidService.checkBreach` / `consumeBreach` (Breach
-  Charges, raid band, 48-h and post-raid shields). D75's 30-min post-raid
-  shield belongs there (the raid lock's "pending" state is only the
-  no-double-theft guard).
-- **Offline bases** are any recent leaver for now; step 8 adds band
-  matching to `OfflineBaseService.refill`.
 - The raid log map shows path dots + defense trigger markers; greybox.
 - **Step 14:** the "your plot" marker (`PlotMarker.client`) follows the
   Build UI attribute; the FTUE's 0:45 BUILD VAULT beat should turn both on.
@@ -182,3 +176,31 @@ rules + layout) and 1 skeptic that tried to refute each finding.
   pass (Config.Base.BuildUi.PlotMarker, REVISIT).
 - **Launch:** credit the CC-BY pickaxe model in the game description or a
   credits screen (`docs-build/credits.md`).
+
+## From step 8 (2026-09-23)
+
+- **Built:** `RaidService.checkBreach` / `consumeBreach`, RaidProtectionService
+  (band, 48-h + 30-min shields, `dropAllShields` honouring
+  `ExemptFromDropAll`), CraftingService (Breach Charges), band-matched
+  offline bases.
+- **Breach Charges aren't stealable yet** (05 § Taxonomy says they are, like
+  gadgets). Needs a Banked/Exposed split for Items first. Design + build later.
+- **Step 9:** direct trade must move Riftsalt and Breach Charges (both
+  tradeable, D20); the band never shows as a number (D92).
+- **Step 10:** Workshop I recipes go in `CraftingService.recipes` (lockpicks,
+  gadgets, Iron gear); decide whether Breach Charges then need the Workshop.
+- **Step 14:** the FTUE's guided NPC vault raid (4:00) must not need a
+  Breach Charge or end the 48-h shield. `RaidProtectionService.forfeit` is
+  for real players' bases only.
+- **Blackout (post-slice):** call `RaidProtectionService.dropAllShields`;
+  any new shield kind needs its own `ExemptFromDropAll` in Config.
+- **Live-server test:** 48-h shield on a truly new account (the phone), and
+  an offline raid followed by the victim's login (30-min shield starts).
+- **Step 8 review workflow (2026-09-23):** 3 reviewers + 1 skeptic, 7
+  findings. Confirmed and fixed: two rate-limit numbers missing their [PH]
+  tag. Confirmed, then approved by Josh: the escort band check (design-changes.md
+  step 8 item 7). Refuted: forfeit / post-raid shield writes can't fail
+  alone (the handler's writes succeed or fail together); the confirm window
+  carrying over to another target is intended (it's consent to lose your own
+  shield); the Studio clock skip is server-wide on purpose; the Craft row fits
+  the Bag.

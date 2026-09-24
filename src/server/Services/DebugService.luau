@@ -16,6 +16,12 @@
 -- 8 = fill free plots with offline bases now (instead of waiting 30 s),
 -- 9 = +5 lockpicks (crafted at Workshop I from step 10),
 -- 0 = 999 Sprint Serum for EVERY player on the server.
+-- Step 8 (shields + charges): 5 = +3 Breach Charges, [ = fast-forward the
+-- server clock 1 hour, ] = 24 hours, . = undo the fast-forward, ; = restart
+-- your 48-hour shield, ' = start your 30-min post-raid shield, = = simulate
+-- Blackout (drop all shields: yours must stay up), , = reset your lifetime
+-- peak to your current tier (band tests), - = clear your shields now.
+-- N also prints shields.
 -- The Bag's small X buttons (Studio only) send DeleteItem / DeleteArmor
 -- with an argument (item id / armor piece id).
 -- (M = mine-remote spam lives entirely on the client: it fires the real
@@ -42,6 +48,8 @@ local InventoryService = require(script.Parent.InventoryService)
 local ScavWaveService = require(script.Parent.ScavWaveService)
 local CosmeticService = require(script.Parent.CosmeticService)
 local OfflineBaseService = require(script.Parent.OfflineBaseService)
+local RaidProtectionService = require(script.Parent.RaidProtectionService)
+local Clock = require(ServerScriptService.Util.Clock)
 
 -- Key B: more items than MaxPending (6), mixed priorities, all at once.
 -- Expected with the step 2 Config: flex 1 goes out at once; Vaultborn 2
@@ -63,6 +71,16 @@ local BROADCAST_TEST: { { kind: string, text: string } } = {
 }
 
 local DebugService = {}
+
+-- Moves Util/Clock's Studio offset (every shield timer reads it) and
+-- re-sends everyone's shield timers so the Bag updates.
+local function skipClock(seconds: number)
+	Clock.setStudioOffset(Clock.getOffset() + seconds)
+	for _, target in game:GetService("Players"):GetPlayers() do
+		RaidProtectionService.refresh(target)
+		print(`[Debug] {target.Name}: shields {RaidProtectionService.debugDescribe(target)}`)
+	end
+end
 
 local commands: { [string]: (Player, any) -> () } = {
 	PrintProfile = function(player)
@@ -123,6 +141,47 @@ local commands: { [string]: (Player, any) -> () } = {
 		local peak = PlayerDataService.getPacked(player, "LifetimePeakVaultTier")
 		local score = if gear and armor then BandMetric.gearScore(gear, armor) else nil
 		print(`[Debug] {player.Name}: band {ShardService.getBand(player)} = highest of vault tier {base and base.VaultTier}, peak {peak}, gear score {score} / {Config.Sharding.GearScorePerBandTier}`)
+		print(`[Debug] {player.Name}: shields {RaidProtectionService.debugDescribe(player)}`)
+	end,
+	-- ── Step 8: Breach Charges + shields ──
+	GrantBreachCharges = function(player)
+		local amount = Config.BreachCharges.DebugGrant
+		local ok = InventoryService.add(player, Config.BreachCharges.ItemId, amount)
+		print(`[Debug] +{amount} Breach Charges for {player.Name}: {if ok then "ok" else "FAILED"}`)
+	end,
+	SkipHour = function(_player)
+		skipClock(Config.RaidProtection.DebugSkipSeconds.Hour)
+	end,
+	SkipDay = function(_player)
+		skipClock(Config.RaidProtection.DebugSkipSeconds.Day)
+	end,
+	ResetClock = function(_player)
+		skipClock(-Clock.getOffset())
+	end,
+	RestartNewAccountShield = function(player)
+		local ok = RaidProtectionService.debugRestartNewAccount(player)
+		print(`[Debug] {player.Name}: 48-hour shield restarted ({if ok then "ok" else "FAILED"}): {RaidProtectionService.debugDescribe(player)}`)
+	end,
+	StartPostRaidShield = function(player)
+		local ok = RaidProtectionService.debugStartPostRaid(player)
+		print(`[Debug] {player.Name}: 30-min shield started ({if ok then "ok" else "FAILED"}): {RaidProtectionService.debugDescribe(player)}`)
+	end,
+	-- The band uses the LIFETIME peak (D66), which key T never lowers and
+	-- which rejoining raises to your current tier. This resets it to your
+	-- current tier so band tests can be repeated.
+	ResetPeak = function(player)
+		local base = PlayerDataService.get(player, "Base")
+		local tier = if base then base.VaultTier else 0
+		local ok = PlayerDataService.debugSetPacked(player, "LifetimePeakVaultTier", tier)
+		print(`[Debug] {player.Name}: lifetime peak reset to {tier} ({if ok then "ok" else "FAILED"}), band now {ShardService.getBand(player)}`)
+	end,
+	ClearShields = function(player)
+		local ok = RaidProtectionService.debugClear(player)
+		print(`[Debug] {player.Name}: shields cleared ({if ok then "ok" else "FAILED"}): {RaidProtectionService.debugDescribe(player)}`)
+	end,
+	SimulateBlackout = function(player)
+		RaidProtectionService.dropAllShields(Config.RaidProtection.DebugDropAllSeconds, "Simulated Blackout (Studio)")
+		print(`[Debug] {player.Name}'s shields after the drop: {RaidProtectionService.debugDescribe(player)}`)
 	end,
 	-- Pickaxes, armor and gadgets come from Workshop crafting (step 10).
 	NextPickaxeTier = function(player)

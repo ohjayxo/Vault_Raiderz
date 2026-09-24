@@ -97,6 +97,10 @@ export type RaidView = {
 	ChaseStuds: number?,
 }
 
+-- Your own raid shields (ShieldState / GetShieldState), as seconds left
+-- (0 = none), so the client's clock never matters. 01 R6; D67, D75.
+export type ShieldState = { NewAccountSeconds: number, PostRaidSeconds: number }
+
 -- Tier = index into Config.Combat.PickaxeTiers; Slot = one of Config.Combat.ArmorSlots.
 export type ArmorPiece = { Tier: number, Slot: string }
 
@@ -141,8 +145,11 @@ export type ProfileData = {
 	Blueprints: { Common: { [string]: boolean } },
 	-- Id "" = not in a crew. JoinedAt feeds the tenure lockout (D25, D109).
 	Crew: { Id: string, JoinedAt: number },
-	-- The 48-hour new-account shield is derived from Meta.FirstLoginAt.
-	Shields: { PostRaidUntil: number },
+	-- Owned by RaidProtectionService (step 8). The 48-hour new-account shield
+	-- is derived from Meta.FirstLoginAt; NewAccountEnded = the player gave it
+	-- up early by breaching someone (Josh's call). PostRaidUntil = Clock time
+	-- the 30-min post-offline-raid shield ends (0 = none).
+	Shields: { PostRaidUntil: number, NewAccountEnded: boolean },
 	-- Step 6: charges USED per defense piece id (missing = full). Stored as
 	-- "used" so a new defense needs no setup and a refill just deletes the key.
 	DefenseUse: { [string]: number },

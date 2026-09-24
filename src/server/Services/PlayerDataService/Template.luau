@@ -57,7 +57,7 @@ local Template: Types.ProfileData = {
 	TechPath = { T1 = {} },
 	Blueprints = { Common = {} },
 	Crew = { Id = "", JoinedAt = 0 },
-	Shields = { PostRaidUntil = 0 },
+	Shields = { PostRaidUntil = 0, NewAccountEnded = false },
 	DefenseUse = {},
 	Cosmetics = { PickaxeSkins = {}, EquippedPickaxeSkin = "" },
 	RaidLog = { Entries = {}, Applied = {} },

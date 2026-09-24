@@ -302,6 +302,14 @@ function PlayerDataService.getPacked(player: Player, field: string): number?
 	return BitPack.get(profile.Data.Packed[word], packedLayouts[word][field])
 end
 
+-- The same field read from a profile's data table (e.g. an offline view from
+-- viewAsync), so offline raids can compute the victim's band (step 8).
+function PlayerDataService.readPacked(data: Types.ProfileData, field: string): number
+	local word = packedWordOf[field]
+	assert(word, `unknown packed field "{field}"`)
+	return BitPack.get(data.Packed[word] or 0, packedLayouts[word][field])
+end
+
 local function writePacked(player: Player, field: string, value: number, who: string): boolean
 	local word = packedWordOf[field]
 	local slot = packedLayouts[word][field]

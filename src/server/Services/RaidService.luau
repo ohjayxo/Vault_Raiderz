@@ -59,6 +59,7 @@ local PickaxeService = require(script.Parent.PickaxeService)
 local InventoryService = require(script.Parent.InventoryService)
 local ArmorService = require(script.Parent.ArmorService)
 local BroadcastQueue = require(script.Parent.BroadcastQueue)
+local RaidProtectionService = require(script.Parent.RaidProtectionService)
 
 local OWNER = "RaidService"
 local raidCfg = Config.Raiding
@@ -82,6 +83,7 @@ type Raid = {
 	taken: Loot?, -- victim left mid-Chase: what was taken from them as they left
 	view: Types.ProfileData?, -- offline: read-only last save
 	tier: number,
+	targetBand: number, -- the victim's band at breach: an escort must be in band too (R6)
 	plotHitbox: BasePart,
 	phase: string, -- "Breached" | "Unlocked" | "Carrying" | "Over"
 	endsAt: number,
@@ -117,15 +119,42 @@ local logAnomaly = AnomalyLog.new("Raid")
 
 local RaidService = {}
 
--- ── Step 8 fills these in (Breach Charges, band, shields) ────────────────
+-- ── Step 8: Breach Charges, band, shields ────────────────────────────────
 
--- Can `raider` breach this base? Step 8: Breach Charges held, target in the
--- raider's band (R6, D66), no 48-hour / post-raid shield (D67, D75).
-function RaidService.checkBreach(_raider: Player, _base: PlotService.BaseInfo): (boolean, string?)
-	return true, nil
+local chargeCfg = Config.BreachCharges
+
+-- Can `raider` breach this base? Breach Charges held (02 § Preconditions),
+-- target in the raider's band and not shielded (R6; D66, D67, D75), and a
+-- shielded raider has confirmed giving their shield up (Josh's call).
+-- An OFFLINE target's band and shields come from its save, which is only
+-- read after the raid lock is taken: breachInner re-checks them there.
+function RaidService.checkBreach(raider: Player, base: PlotService.BaseInfo): (boolean, string?)
+	if InventoryService.count(raider, chargeCfg.ItemId) < chargeCfg.PerRaid then
+		return false, "NoCharges"
+	end
+	if not base.offline then
+		local victim = Players:GetPlayerByUserId(base.ownerId)
+		if not victim then
+			return false, "NoBase"
+		end
+		local allowed, reason = RaidProtectionService.canRaid(raider, RaidProtectionService.targetOf(victim))
+		if not allowed then
+			return false, reason
+		end
+	end
+	return RaidProtectionService.confirmOwnShield(raider)
 end
--- Spends the Breach Charges (step 8). Called once the raid is certain.
-function RaidService.consumeBreach(_raider: Player, _base: PlotService.BaseInfo) end
+
+-- Spends the Breach Charges and ends the raider's own shields. Called once
+-- the raid is certain; nothing after it can refuse. False = the charges
+-- were gone by now (the breach is then cancelled, nothing spent).
+function RaidService.consumeBreach(raider: Player, _base: PlotService.BaseInfo): boolean
+	if not InventoryService.consume(raider, chargeCfg.ItemId, chargeCfg.PerRaid) then
+		return false
+	end
+	RaidProtectionService.forfeit(raider)
+	return true
+end
 
 -- ── Small helpers ────────────────────────────────────────────────────────
 
@@ -636,7 +665,9 @@ local function offerEscort(raid: Raid)
 				if RunService:IsStudio() then
 					ok, friends = true, true
 				end
-				if ok and friends and raid.phase ~= "Over" then
+				-- R6: an escort is a raider too, so the band applies to them
+				-- (a strong friend can't escort into a beginner's base).
+				if ok and friends and raid.phase ~= "Over" and RaidProtectionService.inBand(other, raid.targetBand) then
 					raid.offered[other] = true
 					Remotes.getEvent("EscortOffer"):FireClient(other, raid.id, raid.raider.Name, Config.RaidEscort.OfferSeconds)
 				end
@@ -728,6 +759,9 @@ breachInner = function(player: Player): (boolean, string?)
 	local raidId = HttpService:GenerateGUID(false)
 	local victim = Players:GetPlayerByUserId(base.ownerId)
 	local view: Types.ProfileData? = nil
+	-- Online: checkBreach just read it from the live profile (no yield since).
+	local victimTarget = if victim then RaidProtectionService.targetOf(victim) else nil
+	local targetBand: number = if victimTarget then victimTarget.band else 0
 	local lockHeld = false
 	if base.offline then
 		-- 13 § Part D: presence -> lock -> presence again -> released view.
@@ -743,7 +777,7 @@ breachInner = function(player: Player): (boolean, string?)
 		end
 		lockHeld = RaidLock.acquire(base.ownerId, raidId)
 		if not lockHeld then
-			return giveUp("Locked") -- another raid, or the 30-min post-raid shield
+			return giveUp("Locked") -- another raid, or a theft not applied yet (one per absence)
 		end
 		if PresenceService.getPresence(base.ownerId) ~= "offline" then
 			return giveUp("Online")
@@ -753,6 +787,13 @@ breachInner = function(player: Player): (boolean, string?)
 			return giveUp("Busy")
 		end
 		view = data
+		-- R6 on the saved data: band + shields, checked on every attempt.
+		local target = RaidProtectionService.targetOfData(data)
+		local allowedNow, whyNot = RaidProtectionService.canRaid(player, target)
+		if not allowedNow or not target then
+			return giveUp(whyNot or "Busy")
+		end
+		targetBand = target.band
 		-- The raider may have moved or died while we waited.
 		local stillRoot = rootOf(player)
 		if not stillRoot or not player.Parent or NodeMath.distanceToHitbox(base.hitbox, stillRoot.Position) > raidCfg.BreachRecheckRange then
@@ -778,7 +819,15 @@ breachInner = function(player: Player): (boolean, string?)
 		return false, "InRaid"
 	end
 
-	RaidService.consumeBreach(player, base)
+	-- Last step before the raid exists: spend the charges (02 § The raid
+	-- sequence 2, "consume charges").
+	if not RaidService.consumeBreach(player, base) then
+		if lockHeld then
+			task.spawn(RaidLock.finish, base.ownerId, raidId, false)
+		end
+		raidOnVictim[base.ownerId] = nil
+		return false, "NoCharges"
+	end
 	local raid: Raid = {
 		id = raidId,
 		raider = player,
@@ -793,6 +842,7 @@ breachInner = function(player: Player): (boolean, string?)
 		taken = nil,
 		view = view,
 		tier = base.tier,
+		targetBand = targetBand,
 		plotHitbox = base.hitbox,
 		phase = "Breached",
 		endsAt = now() + raidCfg.WindowSeconds,
@@ -1109,6 +1159,9 @@ local function joinEscort(player: Player, raidArg: unknown): (boolean, string?)
 	if not raid.offered[player] or raid.escort or raidOf[player] or player.UserId == raid.victimId then
 		return false, "NotOffered"
 	end
+	if not RaidProtectionService.inBand(player, raid.targetBand) then
+		return false, "OutOfBand" -- their band rose since the offer
+	end
 	raid.escort = player
 	raidOf[player] = raid
 	player:SetAttribute(RAIDING_ATTR, raid.victimId) -- defenses treat them as an intruder
@@ -1172,7 +1225,10 @@ local function onTheftMessage(player: Player, message: { [string]: any }, update
 		addEntry(log, entry)
 		return log
 	end)
-	print(`[Raid] applied offline raid {raidId} to {player.Name}: lost {describe(taken, takenArmor)}`)
+	-- D1 / 02 § Theft math: the 30-min shield starts now, at the login that
+	-- applies the theft (consistency decision #13).
+	RaidProtectionService.startPostRaidVia(update)
+	print(`[Raid] applied offline raid {raidId} to {player.Name}: lost {describe(taken, takenArmor)}; 30-min shield started`)
 	if PlayerDataService.isLoaded(player) then
 		task.defer(VaultService.refresh, player)
 	end

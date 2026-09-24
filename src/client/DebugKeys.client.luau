@@ -21,7 +21,8 @@ local mineEvent = Remotes.getEvent("MineNode")
 
 -- The keys live in Shared/DebugKeyList (also the Bag's Debug tab). They
 -- avoid I/O (camera zoom: Roblox marks them as handled, so they never reach
--- this script), WASD/Space, E (prompts), R (build rotate), 1-4 (gadgets).
+-- this script), WASD/Space, E (prompts), R (build rotate), 1-4 (gadgets),
+-- \ (Roblox UI navigation: it grabs input and stops movement).
 local DebugKeyList = require(Shared:WaitForChild("DebugKeyList"))
 local KEYS: { [Enum.KeyCode]: string } = {}
 for _, entry in DebugKeyList do

@@ -45,6 +45,10 @@ require(Services.ScavService).start()
 require(Services.ScavWaveService).start()
 require(Services.OfflineBaseService).start()
 
+-- Step 8: Breach Charges (crafting), raid band + shields.
+require(Services.RaidProtectionService).start()
+require(Services.CraftingService).start()
+
 require(Services.DebugService).start() -- ignores commands outside Studio
 
 -- THROWAWAY build step 0B (mobile perf spike). Delete with src/server/PerfSpike.

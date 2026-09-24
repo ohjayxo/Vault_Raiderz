@@ -283,6 +283,31 @@ negative; profiles reject negatives), so they're now stored shifted by
 `Config.Raiding.LogCoordOffset`. This also restores the "applied" raid ids
 that guard offline theft messages against being applied twice.
 
+## Step 8 gap answers (2026-09-23) — NOT yet in `docs/`
+
+Josh took all of Claude's picks:
+1. **Raid band width** (02 § Preconditions "within the raider's band"):
+   raiding UP is always allowed; raiding DOWN at most **1 band** [PH]
+   (`Config.RaidProtection.MaxBandsBelow`).
+2. **Charge cost:** flat **1 Breach Charge per raid** [PH], not scaled by
+   target tier. Recipe **3 Riftsalt → 1 charge** [PH invented].
+3. **Where to craft:** a Craft row on the Bag's Items tab, anywhere, until
+   Workshop I (step 10) exists. Spend order = the step 4 rule.
+4. **Shielded raiders:** breaching a player's base **ends your own shields**
+   (48-hour and post-raid). The first Breach while shielded is refused with
+   a warning; Breach again within 10 s [PH] to confirm.
+5. **Seeing your shield:** a countdown row at the top of the Bag's Resources
+   tab, not on the HUD (FTUE rule 1, R4).
+6. **Stealing Breach Charges** (05 § Taxonomy says stealable): deferred to
+   the backlog; raids still take only Exposed resources + a spare armor piece.
+7. **Escorts are band-checked too (D101):** a friend is only offered / can
+   only join an escort if the target is in THEIR band (same MaxBandsBelow
+   rule). Claude's interpretation of R6; **Josh confirmed (2026-09-23)**.
+   The docs say nothing about escorts and bands.
+Also built as documented: both shields block online AND offline raids; the
+30-min shield starts at the login that applies an offline theft (#13);
+offline bases are only shown if someone on the server can raid them.
+
 ## "Your plot" marker (2026-09-23) — NOT yet in `docs/`
 
 Found on the first phone test: plots are given automatically (D113), you

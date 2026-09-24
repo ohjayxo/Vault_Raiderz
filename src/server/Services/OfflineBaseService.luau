@@ -2,8 +2,9 @@
 -- OfflineBaseService: shows offline players' bases on free plots, so a
 -- raider can scout and raid them (Josh's call, step 7; 02 § The raid
 -- sequence "Scout — bases are visually tiered", D56/D79: a server hosts a
--- set of plots). Band matching comes with step 8; for now any recent
--- leaver can appear.
+-- band-matched set of plots). Step 8: only bases that someone on this
+-- server may raid (in band, not shielded: RaidProtectionService) are shown.
+-- The breach re-checks band and shields on the fresh save regardless.
 --
 -- * When a player leaves, they're added to a MemoryStore sorted map
 --   ("recently offline", newest first, expires after Offline.TtlSeconds).
@@ -27,6 +28,7 @@ local Backoff = require(ServerScriptService.Util.Backoff)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 local PresenceService = require(script.Parent.PresenceService)
 local PlotService = require(script.Parent.PlotService)
+local RaidProtectionService = require(script.Parent.RaidProtectionService)
 
 local cfg = Config.Raiding.Offline
 local list = MemoryStoreService:GetSortedMap(if RunService:IsStudio() then cfg.StudioMapName else cfg.MapName)
@@ -85,7 +87,8 @@ function OfflineBaseService.refill()
 			if userId and not shown[userId] and not Players:GetPlayerByUserId(userId) then
 				if PresenceService.getPresence(userId) == "offline" then
 					local data, sessionActive = PlayerDataService.viewAsync(userId)
-					if data and not sessionActive and hasVaultCore(data) then
+					local target = if data then RaidProtectionService.targetOfData(data) else nil
+					if data and not sessionActive and hasVaultCore(data) and target and RaidProtectionService.raidableByAnyone(target, userId) then
 						if not PlotService.hostOffline(userId, name, data) then
 							break -- no free plot left
 						end

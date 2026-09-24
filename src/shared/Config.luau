@@ -751,9 +751,10 @@ local Config = {
 		ButtonDisplayOrder = 8, -- the Bag BUTTON: HUD level with Raids, under open menus
 		-- Counted items on the Items tab, in this order. Gadgets use
 		-- Config.Gadgets.Names; others are named here.
-		ItemOrder = { "Lockpick", "SmokeBomb", "SprintSerum", "ShockTrap", "Disruptor" },
-		ItemNames = { Lockpick = "Lockpicks" },
+		ItemOrder = { "BreachCharge", "Lockpick", "SmokeBomb", "SprintSerum", "ShockTrap", "Disruptor" },
+		ItemNames = { BreachCharge = "Breach Charges", Lockpick = "Lockpicks" },
 		ShowCredits = false, -- step 9 (FTUE hard rule 5 hides 06 until then)
+		ShieldColor = Color3.fromRGB(120, 200, 255), -- look only [PH], REVISIT with real UI
 	},
 	Cosmetics = {
 		SkinFolderName = "PickaxeSkins",
@@ -1120,9 +1121,47 @@ local Config = {
 
 	-- ── Step 8 ── Breach Charges, Riftsalt, bands, shields ─────────────
 	-- 05-items.md § The Riftsalt rule; 02-core-loop.md § Preconditions.
-	BreachCharges = {},
+	-- Riftsalt spawns only in Contested zones (NodeService enforces it), is
+	-- used for nothing else, and a raid needs charges (02 § Preconditions).
+	-- Crafted anywhere from the Bag's Items tab until Workshop I exists
+	-- (Josh's call, step 8); spent Exposed first, lowest Grade first (the
+	-- step 4 spend order, VaultService.spend).
+	BreachCharges = {
+		ItemId = "BreachCharge", -- an Items count (InventoryService)
+		Name = "Breach Charge",
+		Cost = { Riftsalt = 3 }, -- [PH] invented: a little under one Riftsalt node (4)
+		PerRaid = 1, -- [PH] invented: flat per raid (Josh's call, step 8)
+		CraftCooldownSeconds = 0.3, -- [PH] invented: rate limit on the Craft remote (not gameplay)
+		DebugGrant = 3, -- Studio key 5
+	},
 	-- Band matchmaking + shields. 01-pillars.md R6; D66, D67, D75, D79, D92.
-	RaidProtection = {},
+	RaidProtection = {
+		-- 02 § Preconditions: the target must be in the raider's band (band =
+		-- highest of vault tier, lifetime peak, gear score in tier units:
+		-- Util/BandMetric). Josh's call, step 8: raiding UP is always
+		-- allowed; raiding DOWN at most this many bands. [PH] invented.
+		MaxBandsBelow = 1,
+		-- Both shields block every raid on you, online or offline. Neither
+		-- can be removed by a "drop all shields" event such as Blackout
+		-- (D67, D75: ExemptFromDropAll). Blackout isn't in the slice; the
+		-- flag and RaidProtectionService.dropAllShields exist so it can't be
+		-- added later without honouring them.
+		Shields = {
+			-- 02 § FTUE hard rule 6: from first login (Meta.FirstLoginAt).
+			NewAccount = { Seconds = 48 * 3600, ExemptFromDropAll = true },
+			-- D1 / 02 § Theft math: after an offline raid, starting at the
+			-- victim's next login (consistency decision #13). [PH] 30 min.
+			PostRaid = { Seconds = 30 * 60, ExemptFromDropAll = true },
+		},
+		-- Josh's call, step 8: breaching a player's base ends YOUR shields.
+		-- The first Breach while shielded is refused with a warning; Breach
+		-- again within this many seconds to confirm. [PH] invented.
+		ConfirmSeconds = 10,
+		StateCooldownSeconds = 1, -- [PH] invented: GetShieldState rate limit (not gameplay)
+		-- Studio-only test keys: fast-forward steps for Util/Clock.
+		DebugSkipSeconds = { Hour = 3600, Day = 24 * 3600 },
+		DebugDropAllSeconds = 10 * 60, -- simulated Blackout (04 § Events: 10 min)
+	},
 
 	-- ── Step 9 ── NPC selling, direct trade, Level/Reputation ──────────
 	-- 06-economy.md § Two tiers of selling, § NPC price decay (D94).

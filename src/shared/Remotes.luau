@@ -78,6 +78,11 @@ local definitions: { [string]: RemoteKind } = {
 	RaidState = "Event", -- server -> raider/escort/victim: (RaidView?) nil = raid over
 	EscortOffer = "Event", -- server -> a raider's friend: (raidId, raiderName, seconds)
 	GetRaidLog = "Function", -- () -> { RaidLogEntry }
+
+	-- Step 8: Breach Charges + shields.
+	Craft = "Function", -- (itemId) -> (ok, reason?) the server owns every recipe
+	ShieldState = "Event", -- server -> owner: (ShieldState) their own shields
+	GetShieldState = "Function", -- () -> ShieldState? (Bag start-up)
 }
 
 local Remotes = {}

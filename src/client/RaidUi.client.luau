@@ -39,7 +39,12 @@ local REASON_TEXT: { [string]: string } = {
 	NoVault = "They have no Vault Core to raid",
 	AlreadyRaided = "Someone is already raiding that base",
 	Online = "They just came online",
-	Locked = "That base was raided recently (shielded)",
+	Locked = "That base was raided recently",
+	-- Step 8 (02 § Preconditions; R6). The band is never shown as a number (D92).
+	NoCharges = "You need a Breach Charge (craft it in the Bag)",
+	OutOfBand = "That base is out of your range",
+	Shielded = "That player is shielded",
+	ConfirmShield = "This ends YOUR shield. Tap Breach again",
 	TooFar = "Get closer",
 	NotPicking = "Not picking a lock",
 	Wait = "Steady...",
@@ -103,6 +108,7 @@ sabotageButton.Position = UDim2.new(1, -16, 1, -16 - SIZE * 4.1)
 
 local banner = label(UDim2.fromOffset(420, 44), UDim2.new(0.5, 0, 0, 104), 18)
 local message = label(UDim2.fromOffset(360, 30), UDim2.new(0.5, 0, 0.62, 0), 16)
+message.AutomaticSize = Enum.AutomaticSize.Y -- longer refusals wrap onto a second line
 
 -- Lockpick dial (Skyrim-style, Josh's call + his LOCKPICKING GUIDE): point
 -- the pick (mouse, drag, or right stick), hold Turn. Near the secret angle
