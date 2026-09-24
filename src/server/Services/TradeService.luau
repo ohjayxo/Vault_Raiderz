@@ -238,7 +238,9 @@ local function touch(session: Session)
 end
 
 -- Ends a window (or an invite) with a short message for the toast.
-local function tell(player: Player, text: string)
+-- `received` (a finished trade only) is what THIS player got, so the "Trade
+-- complete!" message can list it. Display only: the swap already happened.
+local function tell(player: Player, text: string, received: Offer?)
 	-- A stale invite message (declined, lapsed, cancelled) must not hide a
 	-- window the player has open with someone else. close() clears sessionOf
 	-- BEFORE telling, so real window closes still get through.
@@ -246,11 +248,11 @@ local function tell(player: Player, text: string)
 		return
 	end
 	if player.Parent then
-		Remotes.getEvent("TradeState"):FireClient(player, nil, text)
+		Remotes.getEvent("TradeState"):FireClient(player, nil, text, received)
 	end
 end
 
-local function close(session: Session, text: string)
+local function close(session: Session, text: string, received: { [Player]: Offer }?)
 	if session.closed then
 		return
 	end
@@ -262,8 +264,8 @@ local function close(session: Session, text: string)
 	if sessionOf[session.b] == session then
 		sessionOf[session.b] = nil
 	end
-	tell(session.a, text)
-	tell(session.b, text)
+	tell(session.a, text, if received then received[session.a] else nil)
+	tell(session.b, text, if received then received[session.b] else nil)
 end
 
 -- ── The commit ───────────────────────────────────────────────────────────
@@ -462,7 +464,7 @@ local function commit(session: Session)
 	PlayerDataService.saveNow(a)
 	PlayerDataService.saveNow(b)
 	print(`[Trade] {session.id}: {a.Name} <-> {b.Name} complete ({#offerA.Lines} lines + {offerA.Credits} Credits for {#offerB.Lines} lines + {offerB.Credits} Credits)`)
-	close(session, "Trade complete!")
+	close(session, "Trade complete!", { [a] = copyOffer(offerB), [b] = copyOffer(offerA) })
 end
 
 -- ── Intents ──────────────────────────────────────────────────────────────
@@ -598,7 +600,7 @@ local function respond(player: Player, inviteIdArg: unknown, acceptArg: unknown)
 	if not from.Parent or tradeBlock(from) or tradeBlock(player) then
 		tell(player, "Trade cancelled: someone can't trade right now")
 		tell(from, "Trade cancelled: someone can't trade right now")
-		return false, "Busy"
+		return false, "Cancelled" -- the client must not replace the message above with "Too fast"
 	end
 	local myPosition, theirPosition = positionOf(player), positionOf(from)
 	if not myPosition or not theirPosition or (myPosition - theirPosition).Magnitude > tradeCfg.InviteRangeStuds then

@@ -1254,6 +1254,7 @@ local Config = {
 			FooterRefreshSeconds = 0.25, -- [PH] invented: lock countdown tick
 			RowHeight = 30,
 			MessageSeconds = 2.5,
+			CompleteMessageSeconds = 7, -- [PH] invented: the "Trade complete!" bubble stays up longer, it lists what you received
 			Colors = {
 				Give = Color3.fromRGB(255, 190, 110),
 				Get = Color3.fromRGB(120, 220, 140),
@@ -1301,6 +1302,56 @@ local Config = {
 		-- Studio key ` (backtick; O/I are camera zoom): track levels that add up to Level 10 (4 + 3 + 3).
 		DebugLevelSplit = { Miner = 4, Trader = 3, Raider = 3 },
 		StateCooldownSeconds = 0.5, -- [PH] invented: GetProgressState rate limit
+	},
+
+	-- ── Shared look for the step 9 screens (NPC buyer, trade window, Bag
+	-- Level block) via Shared/UiStyle. LOOK ONLY, all [PH] invented: REVISIT
+	-- with the UI template pass (before step 14). Nothing here is gameplay.
+	UiStyle = {
+		Font = Enum.Font.GothamMedium,
+		FontBold = Enum.Font.GothamBold,
+		TextSize = { Title = 20, Body = 15, Small = 13 },
+		MinTap = 44, -- px: the smallest button height (thumb friendly, phones)
+		Corner = 12, -- panels
+		CardCorner = 10, -- cards and buttons
+		Pad = 10, -- inside cards
+		Gap = 8, -- between cards / rows
+		StrokeThickness = 1.5,
+		WideBreakpoint = 620, -- px: a window at least this wide uses two columns
+		Colors = {
+			Panel = Color3.fromRGB(17, 18, 28),
+			PanelStroke = Color3.fromRGB(78, 82, 120),
+			Card = Color3.fromRGB(28, 30, 46),
+			CardStroke = Color3.fromRGB(52, 56, 84),
+			Text = Color3.fromRGB(240, 242, 250),
+			TextDim = Color3.fromRGB(160, 166, 190),
+			Accent = Color3.fromRGB(255, 208, 96), -- Credits, Level
+			Good = Color3.fromRGB(96, 214, 138),
+			Warn = Color3.fromRGB(255, 176, 72),
+			Bad = Color3.fromRGB(240, 96, 88),
+			BarTrack = Color3.fromRGB(14, 15, 24),
+			ButtonNeutral = Color3.fromRGB(52, 56, 84),
+			ButtonPrimary = Color3.fromRGB(46, 140, 86),
+			ButtonDisabled = Color3.fromRGB(58, 60, 74),
+			ButtonDanger = Color3.fromRGB(150, 56, 56),
+			ButtonChip = Color3.fromRGB(40, 43, 66),
+		},
+		-- Grade name colors (text + chips), matching the node bursts.
+		GradeColors = {
+			Standard = Color3.fromRGB(196, 200, 214),
+			Dense = Color3.fromRGB(150, 212, 255),
+			Volatile = Color3.fromRGB(255, 220, 90),
+			Prismatic = Color3.fromRGB(255, 150, 236),
+			Vaultborn = Color3.fromRGB(255, 235, 170),
+		},
+		-- The buyer's price bar: green while the price is at or above GoodFrom of
+		-- full, amber down to WarnFrom, then red.
+		PriceBar = { GoodFrom = 0.6, WarnFrom = 0.35, Height = 10 },
+		InviteSlide = { Seconds = 0.3, HiddenY = -140, ShownY = 96 }, -- the invite popup's slide-in
+		AvatarSize = 40, -- px: Nearby list and trade header avatars
+		Level = { BadgeSize = 76, BarHeight = 14 }, -- the Bag's Level block (the XP text sits inside the bar)
+		ShortWindowHeight = 400, -- px: a trade window shorter than this drops its status line (phone landscape)
+		WarningStripHeight = 40, -- px: the fixed below-market warning above the trade list
 	},
 
 	-- ── Step 10 ── Workshop I, Tech Path T1, Research, Blueprints ──────

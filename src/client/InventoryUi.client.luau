@@ -28,6 +28,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Types = require(Shared:WaitForChild("PlayerDataTypes"))
 local DebugKeyList = require(Shared:WaitForChild("DebugKeyList"))
+local UiStyle = require(Shared:WaitForChild("UiStyle"))
 
 local player = Players.LocalPlayer
 local bagCfg = Config.Inventory
@@ -361,20 +362,75 @@ local function renderResources()
 	-- Config.Inventory.ShowCredits is on; the FTUE turns it off (step 14).
 	if bagCfg.ShowCredits then
 		local rep = reputation
-		row({
-			{ text = `Credits {withCommas(credits or 0)}`, width = 200, color = Color3.fromRGB(255, 220, 120) },
-			{ text = if rep then `Level {rep.Level}` else "Level ...", width = 150 },
-		})
+		local look = Config.UiStyle
+		local palette = look.Colors
+		local badgeSize = look.Level.BadgeSize
+		rowCount += 1
+		local block = Instance.new("Frame")
+		block.LayoutOrder = rowCount
+		block.Size = UDim2.new(1, -8, 0, badgeSize + 24)
+		block.BackgroundColor3 = palette.Card
+		block.BorderSizePixel = 0
+		block.Parent = content
+		UiStyle.corner(block, look.CardCorner)
+		UiStyle.stroke(block, palette.CardStroke, 1)
+		UiStyle.padding(block, 6)
+
+		-- Level badge on the left.
+		local badge = Instance.new("Frame")
+		badge.Size = UDim2.fromOffset(badgeSize, badgeSize)
+		badge.Position = UDim2.fromOffset(0, 6)
+		badge.BackgroundColor3 = palette.BarTrack
+		badge.BorderSizePixel = 0
+		badge.Parent = block
+		UiStyle.corner(badge, look.CardCorner + 4)
+		UiStyle.stroke(badge, palette.Accent, 2)
+		local levelNumber = UiStyle.label(badge, if rep then tostring(rep.Level) else "...", 30, palette.Accent, true)
+		levelNumber.Position = UDim2.fromOffset(0, 8)
+		levelNumber.Size = UDim2.new(1, 0, 0, 34)
+		levelNumber.AutomaticSize = Enum.AutomaticSize.None
+		levelNumber.TextXAlignment = Enum.TextXAlignment.Center
+		local levelCaption = UiStyle.label(badge, "LEVEL", look.TextSize.Small, palette.TextDim, true)
+		levelCaption.Position = UDim2.fromOffset(0, 44)
+		levelCaption.Size = UDim2.new(1, 0, 0, 18)
+		levelCaption.AutomaticSize = Enum.AutomaticSize.None
+		levelCaption.TextXAlignment = Enum.TextXAlignment.Center
+
+		-- Credits pill + one bar per track on the right.
+		local right = Instance.new("Frame")
+		right.Position = UDim2.fromOffset(badgeSize + 12, 0)
+		right.Size = UDim2.new(1, -(badgeSize + 12), 1, 0)
+		right.BackgroundTransparency = 1
+		right.Parent = block
+		UiStyle.list(right, false, 4)
+		local creditsPill = UiStyle.pill(right, `Credits {UiStyle.money(credits or 0)}`, palette.Accent)
+		creditsPill.LayoutOrder = 1
 		if rep then
-			local cells = {}
-			for _, track in Config.Progression.Tracks do
+			for index, track in Config.Progression.Tracks do
 				local t = rep.Tracks[track]
-				table.insert(cells, { text = `{track} {t.Level}  ({withCommas(t.XP - t.Prev)}/{withCommas(t.Next - t.Prev)})`, width = 190, color = NOTE })
+				local trackRow = UiStyle.row(right, 16, index + 1)
+				local name = UiStyle.label(trackRow, `{track} {t.Level}`, look.TextSize.Small, palette.Text, true)
+				name.Size = UDim2.fromOffset(78, 16)
+				name.AutomaticSize = Enum.AutomaticSize.None
+				name.TextTruncate = Enum.TextTruncate.AtEnd
+				name.TextWrapped = false
+				local span = math.max(1, t.Next - t.Prev)
+				-- The bar takes whatever width is left (never negative on a narrow
+				-- phone); the XP numbers sit inside it.
+				local bar = UiStyle.bar(trackRow, look.Level.BarHeight, (t.XP - t.Prev) / span, palette.Good)
+				bar.Size = UDim2.new(1, -(78 + 6), 0, look.Level.BarHeight)
+				local xpText = UiStyle.label(bar, `{UiStyle.money(t.XP - t.Prev)}/{UiStyle.money(span)}`, 11, palette.Text, true)
+				xpText.Size = UDim2.fromScale(1, 1)
+				xpText.AutomaticSize = Enum.AutomaticSize.None
+				xpText.TextXAlignment = Enum.TextXAlignment.Center
+				xpText.TextWrapped = false
+				xpText.TextTruncate = Enum.TextTruncate.AtEnd
+				xpText.TextStrokeTransparency = 0.6
+				xpText.ZIndex = 3
 			end
-			row(cells)
-			if not rep.TradeUnlocked then
-				row({ { text = `Trading unlocks at Level {Config.Progression.TradeUnlockLevel}.`, width = 560, color = NOTE } })
-			end
+		end
+		if rep and not rep.TradeUnlocked then
+			row({ { text = `Trading unlocks at Level {Config.Progression.TradeUnlockLevel}.`, width = 560, color = NOTE } })
 		end
 	end
 	-- Your raid shields first (01 R6; D67, D75).

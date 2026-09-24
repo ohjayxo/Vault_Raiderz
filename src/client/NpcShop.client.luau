@@ -6,7 +6,8 @@
 -- Display and intents only: every price and count comes from the server
 -- (GetSellQuote / SellUnits, R5). Tapping Sell sends "this resource, this
 -- Grade, this many"; the server decides what actually sells and for how much.
--- Greybox UI: big buttons, no art (UI templates pass comes before step 14).
+-- Look: Shared/UiStyle (Config.UiStyle, look only). One card per resource
+-- with a price bar (today's price as a share of full), one block per Grade.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -16,12 +17,14 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Types = require(Shared:WaitForChild("PlayerDataTypes"))
+local UiStyle = require(Shared:WaitForChild("UiStyle"))
 
 local player = Players.LocalPlayer
 local cfg = Config.NpcSelling
 local ui = cfg.Ui
-local NOTE = Color3.fromRGB(170, 170, 190)
-local GOLD = Color3.fromRGB(255, 220, 120)
+local style = Config.UiStyle
+local colors = style.Colors
+local money = UiStyle.money
 
 local REASON_TEXT: { [string]: string } = {
 	Busy = "Too fast",
@@ -36,105 +39,63 @@ local quote: Types.SellQuote? = nil
 local credits: number? = nil
 local busy = false
 
--- ── UI (greybox) ─────────────────────────────────────────────────────────
+-- ── Window shell ─────────────────────────────────────────────────────────
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "NpcShop"
 gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling -- children always draw above their parent
 gui.DisplayOrder = ui.DisplayOrder
 
-local function makeButton(parent: Instance, text: string, width: number, height: number): TextButton
-	local b = Instance.new("TextButton")
-	b.Size = UDim2.fromOffset(width, height)
-	b.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-	b.BackgroundTransparency = 0.1
-	b.TextColor3 = Color3.new(1, 1, 1)
-	b.Font = Enum.Font.GothamBold
-	b.TextSize = 14
-	b.Text = text
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = b
-	b.Parent = parent
-	return b
-end
+local panel = UiStyle.panel(gui, 0.92, 0.88, ui.PanelMaxSize)
 
-local panel = Instance.new("Frame")
-panel.AnchorPoint = Vector2.new(0.5, 0.5)
-panel.Position = UDim2.fromScale(0.5, 0.5)
-panel.Size = UDim2.fromScale(0.9, 0.85)
-panel.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-panel.BackgroundTransparency = 0.05
-panel.Visible = false
-panel.Parent = gui
-local limit = Instance.new("UISizeConstraint")
-limit.MaxSize = ui.PanelMaxSize
-limit.Parent = panel
-local panelCorner = Instance.new("UICorner")
-panelCorner.CornerRadius = UDim.new(0, 10)
-panelCorner.Parent = panel
-
-local title = Instance.new("TextLabel")
-title.Position = UDim2.fromOffset(12, 8)
-title.Size = UDim2.new(1, -60, 0, 34)
-title.BackgroundTransparency = 1
-title.TextColor3 = GOLD
-title.Font = Enum.Font.GothamBold
-title.TextSize = 16
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Text = "Buyer"
-title.Parent = panel
-
-local closeButton = makeButton(panel, "X", 34, 34)
+-- Header: title, Credits pill, close button.
+local header = Instance.new("Frame")
+header.Position = UDim2.fromOffset(12, 10)
+header.Size = UDim2.new(1, -24 - style.MinTap - 8, 0, style.MinTap)
+header.BackgroundTransparency = 1
+header.Parent = panel
+UiStyle.list(header, true, 10)
+local title = UiStyle.title(header, "Buyer")
+title.AutomaticSize = Enum.AutomaticSize.XY
+title.Size = UDim2.fromOffset(0, 0)
+title.LayoutOrder = 1
+local creditsPill = UiStyle.pill(header, "Credits 0", colors.Accent)
+creditsPill.LayoutOrder = 2
+-- The close button sits in the corner, outside the header row, so a narrow
+-- phone screen can never push it off the panel.
+local closeButton = UiStyle.button(panel, "X", "neutral", style.MinTap, style.MinTap)
 closeButton.AnchorPoint = Vector2.new(1, 0)
-closeButton.Position = UDim2.new(1, -8, 0, 8)
+closeButton.Position = UDim2.new(1, -12, 0, 10)
 
-local content = Instance.new("ScrollingFrame")
-content.Position = UDim2.fromOffset(8, 50)
-content.Size = UDim2.new(1, -16, 1, -58)
-content.BackgroundTransparency = 1
-content.BorderSizePixel = 0
-content.ScrollBarThickness = 6
-content.AutomaticCanvasSize = Enum.AutomaticSize.Y
-content.CanvasSize = UDim2.new()
-content.Parent = panel
-local contentLayout = Instance.new("UIListLayout")
-contentLayout.Padding = UDim.new(0, 4)
-contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-contentLayout.Parent = content
+local content = UiStyle.scroller(panel, UDim2.fromOffset(10, 10 + style.MinTap + 8), UDim2.new(1, -20, 1, -(10 + style.MinTap + 8 + 10)))
 
-local message = Instance.new("TextLabel")
+-- A short message that fades away (the sale result or a refusal).
+local message = UiStyle.pill(panel, "", colors.Text, Color3.new(0, 0, 0))
 message.AnchorPoint = Vector2.new(0.5, 1)
-message.Position = UDim2.new(0.5, 0, 1, -8)
-message.Size = UDim2.fromOffset(360, 28)
-message.BackgroundColor3 = Color3.new(0, 0, 0)
-message.BackgroundTransparency = 0.2
-message.TextColor3 = Color3.new(1, 1, 1)
-message.Font = Enum.Font.GothamBold
-message.TextSize = 14
+message.Position = UDim2.new(0.5, 0, 1, -12)
 message.Visible = false
 message.ZIndex = 5
-message.Parent = panel
+message.TextWrapped = true
+message.TextSize = style.TextSize.Body
+local messageLimit = Instance.new("UISizeConstraint")
+messageLimit.MaxSize = Vector2.new(300, math.huge)
+messageLimit.Parent = message
 
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local messageToken = 0
-local function showMessage(text: string)
+local function showMessage(text: string, good: boolean)
 	messageToken += 1
 	local token = messageToken
 	message.Text = text
+	message.TextColor3 = if good then colors.Good else colors.Warn
 	message.Visible = true
 	task.delay(ui.MessageSeconds, function()
 		if messageToken == token then
 			message.Visible = false
 		end
 	end)
-end
-
-local function withCommas(n: number): string
-	local text = tostring(math.floor(n))
-	local formatted = text:reverse():gsub("(%d%d%d)", "%1,"):reverse()
-	return (formatted:gsub("^,", ""))
 end
 
 -- ── Selling ──────────────────────────────────────────────────────────────
@@ -151,11 +112,11 @@ local function sell(resource: string, grade: string, count: number)
 	end)
 	busy = false
 	if not ok then
-		showMessage(REASON_TEXT.Failed)
+		showMessage(REASON_TEXT.Failed, false)
 	elseif not accepted then
-		showMessage(REASON_TEXT[reason] or REASON_TEXT.Failed)
+		showMessage(REASON_TEXT[reason] or REASON_TEXT.Failed, false)
 	else
-		showMessage(`Sold for {withCommas(earned or 0)} Credits`)
+		showMessage(`Sold for {money(earned or 0)} Credits`, true)
 	end
 	if ok and newQuote then
 		quote = newQuote
@@ -163,32 +124,44 @@ local function sell(resource: string, grade: string, count: number)
 	render()
 end
 
-local function rowFrame(order: number): Frame
-	local frame = Instance.new("Frame")
-	frame.LayoutOrder = order
-	frame.Size = UDim2.new(1, -8, 0, ui.RowHeight)
-	frame.BackgroundTransparency = 1
-	frame.Parent = content
-	local layout = Instance.new("UIListLayout")
-	layout.FillDirection = Enum.FillDirection.Horizontal
-	layout.VerticalAlignment = Enum.VerticalAlignment.Center
-	layout.Padding = UDim.new(0, 6)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = frame
-	return frame
-end
+-- One Grade you hold: name + count + price on top, sell chips underneath.
+local function gradeBlock(parent: Instance, order: number, resource: string, grade: string, have: number, price: number)
+	local block = Instance.new("Frame")
+	block.LayoutOrder = order
+	block.Size = UDim2.new(1, 0, 0, 0)
+	block.AutomaticSize = Enum.AutomaticSize.Y
+	block.BackgroundTransparency = 1
+	block.Parent = parent
+	UiStyle.list(block, false, 4)
 
-local function label(parent: Instance, text: string, width: number, color: Color3?, order: number)
-	local l = Instance.new("TextLabel")
-	l.LayoutOrder = order
-	l.Size = UDim2.fromOffset(width, ui.RowHeight)
-	l.BackgroundTransparency = 1
-	l.TextColor3 = color or Color3.new(1, 1, 1)
-	l.Font = Enum.Font.GothamBold
-	l.TextSize = 14
-	l.TextXAlignment = Enum.TextXAlignment.Left
-	l.Text = text
-	l.Parent = parent
+	local top = UiStyle.row(block, 22, 1)
+	local name = UiStyle.label(top, grade, style.TextSize.Body, UiStyle.gradeColor(grade), true)
+	name.Size = UDim2.new(0.42, 0, 1, 0)
+	name.AutomaticSize = Enum.AutomaticSize.None
+	local count = UiStyle.label(top, `x{money(have)}`, style.TextSize.Body, colors.Text, false)
+	count.Size = UDim2.new(0.25, 0, 1, 0)
+	count.AutomaticSize = Enum.AutomaticSize.None
+	local each = UiStyle.label(top, `{price} each`, style.TextSize.Body, colors.Accent, true)
+	each.Size = UDim2.new(0.33, -12, 1, 0)
+	each.AutomaticSize = Enum.AutomaticSize.None
+	each.TextXAlignment = Enum.TextXAlignment.Right
+
+	-- Chips: "Sell 1", "Sell 10" (only if it isn't just "All"), "All".
+	local amounts: { { text: string, amount: number } } = { { text = "Sell 1", amount = 1 } }
+	if have > 10 then
+		table.insert(amounts, { text = "Sell 10", amount = 10 })
+	end
+	if have > 1 then
+		table.insert(amounts, { text = "All", amount = have })
+	end
+	local chips = UiStyle.row(block, style.MinTap, 2)
+	for _, entry in amounts do
+		local chip = UiStyle.button(chips, entry.text, "chip", 0, style.MinTap)
+		chip.Size = UDim2.new(1 / #amounts, -6, 1, 0)
+		chip.Activated:Connect(function()
+			sell(resource, grade, entry.amount)
+		end)
+	end
 end
 
 render = function()
@@ -197,12 +170,14 @@ render = function()
 			child:Destroy()
 		end
 	end
-	title.Text = `Buyer   ·   Credits {withCommas(credits or 0)}`
+	creditsPill.Text = `Credits {money(credits or 0)}`
 	local q = quote
 	if not q then
-		label(rowFrame(1), "Loading...", 300, NOTE, 1)
+		local loading = UiStyle.label(content, "Loading prices...", style.TextSize.Body, colors.TextDim, false)
+		loading.LayoutOrder = 1
 		return
 	end
+
 	local order = 0
 	local anything = false
 	for _, resource in Config.Resources.Types do
@@ -210,38 +185,50 @@ render = function()
 		if not data then
 			continue
 		end
-		order += 1
-		label(rowFrame(order), `{resource}   (today's price {data.Percent}% of full)`, 500, NOTE, 1)
+		local haveAny = false
 		for _, grade in Config.Grade.Names do
 			local entry = data.Grades[grade]
 			if entry and entry.Have > 0 then
-				anything = true
-				order += 1
-				local frame = rowFrame(order)
-				label(frame, `{grade} x{withCommas(entry.Have)}  @ {entry.Price}`, 250, nil, 1)
-				for i, amount in { 1, 10, entry.Have } do
-					local text = if i == 3 then "All" else `Sell {amount}`
-					if i == 2 and entry.Have <= 10 then
-						continue -- "Sell 10" would just be "All"
-					end
-					if i == 3 and entry.Have <= 1 then
-						continue
-					end
-					local b = makeButton(frame, text, 84, ui.RowHeight - 2)
-					b.LayoutOrder = i + 1
-					b.Activated:Connect(function()
-						sell(resource, grade, amount)
-					end)
-				end
+				haveAny = true
+			end
+		end
+		if not haveAny then
+			continue
+		end
+		anything = true
+
+		order += 1
+		local card = UiStyle.card(content, order)
+		local headRow = UiStyle.row(card, 24, 1)
+		local resourceName = UiStyle.label(headRow, resource, style.TextSize.Title, colors.Text, true)
+		resourceName.Size = UDim2.new(0.5, 0, 1, 0)
+		resourceName.AutomaticSize = Enum.AutomaticSize.None
+		local percent = UiStyle.label(headRow, `Today: {data.Percent}%`, style.TextSize.Body, UiStyle.priceColor(data.Percent / 100), true)
+		percent.Size = UDim2.new(0.5, -6, 1, 0)
+		percent.AutomaticSize = Enum.AutomaticSize.None
+		percent.TextXAlignment = Enum.TextXAlignment.Right
+		local bar = UiStyle.bar(card, style.PriceBar.Height, data.Percent / 100, UiStyle.priceColor(data.Percent / 100))
+		bar.LayoutOrder = 2
+
+		local gradeOrder = 2
+		for _, grade in Config.Grade.Names do
+			local entry = data.Grades[grade]
+			if entry and entry.Have > 0 then
+				gradeOrder += 1
+				gradeBlock(card, gradeOrder, resource, grade, entry.Have, entry.Price)
 			end
 		end
 	end
+
 	if not anything then
 		order += 1
-		label(rowFrame(order), "You have nothing the buyer wants. Mine some resources first.", 560, NOTE, 1)
+		local empty = UiStyle.card(content, order)
+		UiStyle.label(empty, "Nothing to sell yet", style.TextSize.Title, colors.Text, true).LayoutOrder = 1
+		UiStyle.label(empty, "Mine some Stone or Ore, then come back.", style.TextSize.Body, colors.TextDim, false).LayoutOrder = 2
 	end
 	order += 1
-	label(rowFrame(order), "Sells from your at-risk pile first, then your bank. Prices drop as you sell and reset each day.", 560, NOTE, 1)
+	local note = UiStyle.label(content, "Sells from your at-risk pile first, then your bank. Prices drop as you sell and reset each day.", style.TextSize.Small, colors.TextDim, false)
+	note.LayoutOrder = order
 end
 
 -- ── Opening / closing ────────────────────────────────────────────────────

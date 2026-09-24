@@ -99,7 +99,7 @@ local definitions: { [string]: RemoteKind } = {
 	TradeSetCredits = "Function", -- (amount) -> (ok, reason?)
 	TradeConfirm = "Function", -- (version) -> (ok, reason?)
 	TradeCancel = "Function", -- () -> (ok, reason?)
-	TradeState = "Event", -- server -> both: (TradeView?, reason?) nil = window closed
+	TradeState = "Event", -- server -> both: (TradeView?, reason?, received?) nil = window closed; received = TradeOffer you got (finished trade only)
 	GetTradeHistory = "Function", -- () -> { TradeRecord }
 }
 
