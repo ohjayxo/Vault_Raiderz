@@ -41,6 +41,13 @@ end
 
 -- ── Picking a node ───────────────────────────────────────────────────────
 
+-- Studio only: why a click didn't send a mine request (testing aid, REWORK R1-00).
+local function studioWhy(why: string)
+	if RunService:IsStudio() then
+		print(`[ClickDebug] {why}`)
+	end
+end
+
 local function nodeHitboxes(): { Instance }
 	local hitboxes = {}
 	for _, node in CollectionService:GetTagged(Config.Nodes.Tag) do
@@ -55,10 +62,12 @@ end
 local function tryMineAt(screenPosition: Vector2)
 	-- In build mode a tap means "put it here" (BuildMode.client.luau).
 	if player:GetAttribute(Config.Base.BuildUi.ClientModeAttribute) then
+		studioWhy("build mode is on")
 		return
 	end
 	local camera = workspace.CurrentCamera
 	if not camera then
+		studioWhy("no camera")
 		return
 	end
 	-- Tap/click positions are GUI coordinates (below the top bar), which is
@@ -69,6 +78,7 @@ local function tryMineAt(screenPosition: Vector2)
 	params.FilterDescendantsInstances = nodeHitboxes()
 	local result = workspace:Raycast(ray.Origin, ray.Direction * Config.Nodes.PickRangeStuds, params)
 	if not result then
+		studioWhy("the click didn't hit a node")
 		return
 	end
 	local hitbox = result.Instance :: BasePart
@@ -82,14 +92,20 @@ local function tryMineAt(screenPosition: Vector2)
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if root and NodeMath.distanceToHitbox(hitbox, root.Position) > Config.Nodes.MineDistance then
 		showHint()
+		studioWhy("too far on this client (Walk closer)")
 		return
 	end
+	studioWhy(`sent mine request for {node.Name}`)
 	mineEvent:FireServer(node)
 end
 
 -- Mouse (PC). Right-drag is camera, so left click is free.
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed or input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+		return
+	end
+	if gameProcessed then
+		studioWhy("click was taken by the UI or Studio")
 		return
 	end
 	local position = input.Position

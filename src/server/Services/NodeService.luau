@@ -219,10 +219,10 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 	-- 4. Line of sight: no island/world geometry between player and node
 	-- (13-build-guide.md § Anti-exploit baseline).
 	local from = root.Position
-	if workspace:Raycast(from, node.hitbox.Position - from, losParams) then
-		local blocker = workspace:Raycast(from, node.hitbox.Position - from, losParams)
+	local blocker = workspace:Raycast(from, node.hitbox.Position - from, losParams)
+	if blocker then
 		logAnomaly(player, "mined through world geometry")
-		studioWhy(player, `no line of sight (blocked by {if blocker then blocker.Instance:GetFullName() else "?"})`)
+		studioWhy(player, `no line of sight (blocked by {blocker.Instance:GetFullName()})`)
 		return
 	end
 

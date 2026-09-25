@@ -35,6 +35,9 @@ local states: { [Humanoid]: State } = {}
 
 local MovementService = {}
 
+-- Movement trust (below) caps a stunned player's saved-up distance.
+local onStunned: (humanoid: Humanoid) -> ()
+
 local function stateOf(humanoid: Humanoid): State
 	local existing = states[humanoid]
 	if existing then
@@ -117,6 +120,7 @@ function MovementService.stun(humanoid: Humanoid, seconds: number)
 	state.stunToken += 1
 	local token = state.stunToken
 	apply(humanoid)
+	onStunned(humanoid)
 	task.delay(seconds, function()
 		if states[humanoid] == state and state.stunToken == token then
 			apply(humanoid)
@@ -162,8 +166,9 @@ type Track = {
 	lastAt: number,
 	movedAt: number, -- when lastPosition was first seen (a stalled client's updates bunch up)
 	budget: number, -- studs they may still move
-	push: number, -- extra studs from a knockback (expectPush)
+	push: number, -- extra studs from a knockback (expectPush), never more than the biggest one
 	pushHoldUntil: number,
+	pushGranted: number, -- the biggest recent knockback, for isPositionTrusted's window
 	speeds: { SpeedSample }, -- the server's WalkSpeed / jump speed, recent
 	samples: { Sample }, -- accepted positions, recent (isPositionTrusted)
 	groundedAt: number, -- last sample standing on something
@@ -175,6 +180,8 @@ type Track = {
 	settleUntil: number, -- after a snap-back or server move, late client updates are ignored
 	settleAt: CFrame?,
 	settleSlack: number,
+	settleStartedAt: number,
+	settleFromFail: boolean, -- a snap-back (movement during it is charged), not a server teleport
 }
 
 local tracks: { [Player]: Track } = {}
@@ -271,6 +278,7 @@ local function newTrack(root: BasePart, at: CFrame, now: number): Track
 		budget = moveCfg.BurstStuds,
 		push = 0,
 		pushHoldUntil = 0,
+		pushGranted = 0,
 		speeds = {},
 		samples = { { at = now, position = at.Position } },
 		groundedAt = now,
@@ -282,6 +290,8 @@ local function newTrack(root: BasePart, at: CFrame, now: number): Track
 		settleUntil = 0,
 		settleAt = nil,
 		settleSlack = 0,
+		settleStartedAt = 0,
+		settleFromFail = false,
 	}
 end
 
@@ -292,7 +302,6 @@ local function rebase(track: Track, position: Vector3, safe: CFrame, now: number
 	track.lastAt = now
 	track.movedAt = now
 	track.budget = moveCfg.BurstStuds
-	track.push = 0
 	track.samples = { { at = now, position = position } }
 	track.groundedAt = now
 	track.groundedPosition = safe.Position
@@ -321,11 +330,13 @@ end
 
 -- Ignore client updates until the client has had time to hear about a
 -- move the server made (snap-back or teleport) to `at`.
-local function settle(player: Player, track: Track, at: CFrame, now: number, walk: number)
+local function settle(player: Player, track: Track, at: CFrame, now: number, walk: number, fromFail: boolean)
 	local seconds = math.clamp(roundTrip(player) + moveCfg.SettleExtraSeconds, moveCfg.SettleMinSeconds, moveCfg.SettleMaxSeconds)
 	track.settleUntil = now + seconds
 	track.settleAt = at
 	track.settleSlack = moveCfg.SettleStuds + walk * moveCfg.SpeedTolerance * seconds
+	track.settleStartedAt = now
+	track.settleFromFail = fromFail
 end
 
 local function fail(player: Player, track: Track, character: Model, now: number, walk: number, reason: string, detail: string, teleport: boolean): boolean
@@ -338,7 +349,7 @@ local function fail(player: Player, track: Track, character: Model, now: number,
 	if enforced[player] or moveCfg.EnforceOutsideRaid then
 		character:PivotTo(track.safe)
 		track.root.AssemblyLinearVelocity = Vector3.zero
-		settle(player, track, track.safe, now, walk)
+		settle(player, track, track.safe, now, walk, true)
 	else
 		-- Log-only fallback: where they are becomes the new baseline.
 		local here = track.root.CFrame
@@ -374,11 +385,19 @@ local function checkPlayer(player: Player, now: number): boolean
 	if settleAt then
 		track.settleAt = nil
 		local away = flat(root.Position - settleAt.Position)
-		if away > track.settleSlack then
+		if away > track.settleSlack + track.push then
 			return fail(player, track, character, now, walk, "ignored a snap-back", `{math.floor(away)} studs away`, false)
 		end
-		rebase(track, root.Position, settleAt, now)
-		return true
+		if not track.settleFromFail then
+			-- The server put them here (spawn, teleport): start fresh.
+			rebase(track, root.Position, settleAt, now)
+			return true
+		end
+		-- After a snap-back, movement during the settle is paid for from an
+		-- empty budget (review 2026-09-25 #2): otherwise every fail -> snap ->
+		-- settle cycle would hand out free distance and a fresh burst.
+		rebase(track, settleAt.Position, settleAt, track.settleStartedAt)
+		track.budget = 0
 	end
 
 	local dt = now - track.lastAt
@@ -408,24 +427,37 @@ local function checkPlayer(player: Player, now: number): boolean
 	-- ground and the first in the air, and positions may arrive late, so
 	-- allow the highest point of any jump in that window.
 	local gravity = workspace.Gravity
+	local late = moveCfg.RiseLagSeconds + rtt
+	-- Walking up a slope since the last ground sample, no further than
+	-- walking could have gone in that time (saved budget doesn't buy height).
+	local function climbTo(point: Vector3): number
+		local walked = math.min(flat(point - track.groundedPosition), rate * (now - track.groundedAt + late))
+		return walked * moveCfg.ClimbRatio
+	end
 	local onGround = standing(character, root, humanoid)
 	if onGround then
 		track.airAt = nil
 		track.airPosition = nil
+		-- Landing somewhere high is a rise too (review 2026-09-25 #3): no
+		-- higher than a full jump from the last ground, plus the climb.
+		local apex = if gravity > 0 then jump * jump / (2 * gravity) else math.huge
+		local ceiling = track.groundedPosition.Y + climbTo(position) + apex + moveCfg.RiseSlackStuds
+		if position.Y > ceiling then
+			local detail = `{math.floor(position.Y - track.groundedPosition.Y)} studs up, landed`
+			return fail(player, track, character, now, walk, "rose higher than a jump", detail, false)
+		end
 	else
 		local airAt = track.airAt or now
 		local airPosition = track.airPosition or position
 		track.airAt = airAt
 		track.airPosition = airPosition
-		local late = moveCfg.RiseLagSeconds + rtt
 		local earliest = math.max(0, now - airAt - late)
 		local latest = now - track.groundedAt + late
 		local apexTime = if gravity > 0 then jump / gravity else latest
 		local t = math.clamp(apexTime, earliest, latest)
 		local rise = jump * t - gravity * t * t / 2
 		-- Walking up a slope between the last ground sample and the jump.
-		local climb = flat(airPosition - track.groundedPosition) * moveCfg.ClimbRatio
-		local ceiling = track.groundedPosition.Y + climb + rise + moveCfg.RiseSlackStuds
+		local ceiling = track.groundedPosition.Y + climbTo(airPosition) + rise + moveCfg.RiseSlackStuds
 		if position.Y > ceiling then
 			local detail = `{math.floor(position.Y - track.groundedPosition.Y)} studs up`
 			return fail(player, track, character, now, walk, "rose higher than a jump", detail, false)
@@ -486,27 +518,42 @@ function MovementService.expectTeleport(player: Player, destination: CFrame)
 	end
 	tracks[player] = track
 	spawning[player] = nil
-	settle(player, track, destination, now, humanoid.WalkSpeed)
+	settle(player, track, destination, now, humanoid.WalkSpeed, false)
 end
 
 -- The server is about to push this player `studs` (knockback): extra
 -- allowance, held until their client can have felt it, then draining.
+-- Knockbacks don't add up (review 2026-09-25 #1): a player who cancels the
+-- push on their own client would otherwise bank a long blink from repeated
+-- hits (an escort hitting their carrier costs no grip).
 function MovementService.expectPush(player: Player, studs: number)
 	local track = tracks[player]
 	if track then
-		track.push += studs
-		track.pushHoldUntil = os.clock() + roundTrip(player) + moveCfg.PushHoldSeconds
+		local now = os.clock()
+		if now >= track.pushHoldUntil + moveCfg.TrustWindowSeconds + moveCfg.CheckSeconds then
+			track.pushGranted = 0
+		end
+		track.push = math.max(track.push, studs)
+		track.pushGranted = math.max(track.pushGranted, studs)
+		track.pushHoldUntil = now + roundTrip(player) + moveCfg.PushHoldSeconds
 	end
 end
 
--- The question every position-based action asks first (mining, lockpick,
--- grabs, escapes, hits, breach, sabotage, placed gadgets; later pedestals,
--- camp grabs and bounty hits). Checks the move since the last sample right
--- now, so "teleport, act" in between samples fails. False while dead, just
--- snapped back or untrusted, or when the last TrustWindowSeconds covered
--- more ground than walking could (a blink paid for with saved-up budget;
--- refused, not punished, so a lag burst only delays the action). When
--- true, their HumanoidRootPart's position is one the server accepted.
+-- A stun reaches the client a round trip later; after that, saved-up
+-- distance can't be spent walking through it (review 2026-09-25 #5).
+onStunned = function(humanoid: Humanoid)
+	local player = Players:GetPlayerFromCharacter(humanoid.Parent)
+	if not player then
+		return
+	end
+	task.delay(roundTrip(player), function()
+		local track = tracks[player]
+		if track and MovementService.isStunned(humanoid) then
+			track.budget = math.min(track.budget, moveCfg.BurstStuds)
+		end
+	end)
+end
+
 -- Studio only: says why an action was refused, so a tester can tell a
 -- real catch from a false one (the anomaly log above is throttled).
 local function refused(player: Player, why: string): boolean
@@ -515,6 +562,16 @@ local function refused(player: Player, why: string): boolean
 	end
 	return false
 end
+
+-- The question every position-based action asks first (mining, lockpick,
+-- grabs, escapes, hits, breach, sabotage, placed gadgets; later pedestals,
+-- camp grabs and bounty hits). Checks the move since the last sample right
+-- now, so "teleport, act" in between samples fails. False while dead, just
+-- snapped back or untrusted, or when the last TrustWindowSeconds covered
+-- more ground than walking (plus a recent knockback) could (a blink paid
+-- for with saved-up budget; refused, not punished, so a lag burst only
+-- delays the action). When true, their HumanoidRootPart's position is one
+-- the server accepted.
 
 function MovementService.isPositionTrusted(player: Player): boolean
 	local _, root = bodyOf(player)
@@ -533,15 +590,17 @@ function MovementService.isPositionTrusted(player: Player): boolean
 	if now < track.untrustedUntil then
 		return refused(player, `untrusted for {math.floor((track.untrustedUntil - now) * 10) / 10} s more`)
 	end
-	if now < track.pushHoldUntil + moveCfg.TrustWindowSeconds then
-		return true -- just knocked back: the server moved them
-	end
 	local oldest = track.samples[1]
 	local walk = 0
 	for _, sample in track.speeds do
 		walk = math.max(walk, sample.walk)
 	end
 	local allowed = moveCfg.TrustSlackStuds + walk * moveCfg.EnforcedSpeedTolerance * (now - oldest.at)
+	-- A knockback moved them (the oldest sample can be a check older than
+	-- the window): allow that one push, not a free pass.
+	if now < track.pushHoldUntil + moveCfg.TrustWindowSeconds + moveCfg.CheckSeconds then
+		allowed += track.pushGranted
+	end
 	local moved = flat(root.Position - oldest.position)
 	if moved > allowed then
 		return refused(player, `moved {math.floor(moved)} studs in {math.floor((now - oldest.at) * 100) / 100} s (allowed {math.floor(allowed)})`)
@@ -587,7 +646,7 @@ function MovementService.start()
 			local now = os.clock()
 			local track = newTrack(root, root.CFrame, now)
 			tracks[player] = track
-			settle(player, track, root.CFrame, now, Config.Movement.BaseWalkSpeed)
+			settle(player, track, root.CFrame, now, Config.Movement.BaseWalkSpeed, false)
 		end
 	end
 	local function watch(player: Player)
