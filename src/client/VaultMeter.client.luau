@@ -76,6 +76,22 @@ creditsRow.Visible = false
 
 gui.Parent = player:WaitForChild("PlayerGui")
 
+-- The menu dock (Raids / Bag / ...) sits under this card. The card grows as
+-- rows appear (Credits after the first sale), so while it's shown the dock
+-- follows its bottom edge instead of a fixed Y that the card can outgrow.
+local dockRow = UiStyle.dock(player.PlayerGui)
+local function placeDock()
+	local y = style.Dock.Y
+	if gui.Enabled then
+		y = math.max(y, panel.AbsolutePosition.Y + panel.AbsoluteSize.Y + style.Dock.Gap)
+	end
+	dockRow.Position = UDim2.fromOffset(style.Dock.X, y)
+end
+panel:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeDock)
+panel:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeDock)
+gui:GetPropertyChangedSignal("Enabled"):Connect(placeDock)
+placeDock()
+
 panel.Activated:Connect(function()
 	local bag = player.PlayerGui:FindFirstChild("InventoryUi")
 	local open = bag and bag:FindFirstChild("Open")
