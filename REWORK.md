@@ -1,17 +1,23 @@
 # REWORK.md — Vault Raiderz Phase R1 (the minimum playable rework)
 
-**Status:** ACTIVE · **Version 1.2** (2026-09-24). Written in the claude.ai
-design project from *Vault Raiderz: The Rework Plan* v1.1 (PDF). v1.1 of
-this file adds the Rich Vein and a simple Level to R1, a cheap-phone gate,
-status checkboxes for Vault Ops, and a few fixes. v1.2 adds a model and
-effort for every step (§14.1), and Claude Code now recommends the next
-step's model and effort before you start it (see §18).
-**Goes in:** the repo root, next to `CLAUDE.md`.
+**Status:** ACTIVE · **Version 1.3** (2026-09-24). Written in the claude.ai
+design project from *Vault Raiderz: The Rework Plan* v1.2 (PDF). v1.1 added
+the Rich Vein, a simple Level, a cheap-phone gate and status checkboxes.
+v1.2 added a model and effort for every step (§14.1). **v1.3 replaces the
+Main Street map with The Quarry** (spec in the companion file
+`WORLD_MAP.md`), splits R1-08 into R1-08a/b/c and builds the map right
+after R1-01, turns the Plaza into a truce square, moves the Scav Camp to
+the Gate, makes the Burrow the only Scav spawn, and adds respawn rules.
+Every call is logged in §18.
+**Goes in:** the repo root as `REWORK.md` (replacing v1.2), next to
+`CLAUDE.md` and `WORLD_MAP.md`.
 **Authority:** where this file and `docs/` disagree, **this file wins**.
-`docs/` is **frozen** during the rework: don't edit it.
+For the map's positions, shapes, spawns and dressing, **`WORLD_MAP.md` is
+the spec** (§19). `docs/` is **frozen** during the rework: don't edit it.
 **Numbers:** every number marked `[PH]` is a starting placeholder. Put it in
 `src/shared/Config.luau` with a comment naming the section of this file
-(for example `-- REWORK §5.2 [PH]`). Tune freely; no decision entry needed.
+(for example `-- REWORK §5.2 [PH]`, or `-- WORLD_MAP §3 [PH]` for map
+numbers). Tune freely; no decision entry needed.
 
 ---
 
@@ -30,7 +36,9 @@ step's model and effort before you start it (see §18).
 
 ### For Claude Code
 - Read this whole file before any R1 item. Then read only the `docs/`
-  sections the item lists.
+  sections and `WORLD_MAP.md` sections the item lists.
+- **Build order is the §14 status list, not the item numbers.** R1-08a
+  and R1-08b come right after R1-01; R1-08c comes after R1-10.
 - **R5 still rules everything:** the server decides every value, roll,
   drop, payout and theft. Clients send intents only. Odds never reach
   clients.
@@ -77,7 +85,7 @@ Josh chose these on 2026-09-24 (Appendix A of the Rework Plan).
 | RW4 | Gem look | **Crystals** (simple faceted models). Creature gems are a later update. |
 | RW5 | Breach Charges | **Crafted from Charge Parts (Scav drops) + Ore.** Riftsalt is parked. |
 | RW6 | "Summon a Rich Vein" purchase | **Skipped.** No Robux products in R1 (the D107 scope wall still applies). |
-| RW7 | Street width | **168 studs** (double the original 96). |
+| RW7 | Map layout | **The Quarry** (`WORLD_MAP.md`), reopened 2026-09-24. Replaces the 168-stud street. |
 | RW8 | Design docs | **Frozen.** This file overrides them; decisions go in §18. |
 
 Rework design rules (also locked for R1):
@@ -104,7 +112,9 @@ Rework design rules (also locked for R1):
 | `02 § The Chase` point 5 | unchanged (grip, D115) **plus** §7.2 interceptor bounty |
 | `04 § Scav Waves` (cadence, failure cost) | §6 NPC theft layer |
 | D75 post-raid shield "starts at next login" | §8: starts immediately (no offline raids) |
-| D113 street 240 × 320 (the widened version) | 168 × 320, plaza 168 × 96 |
+| D110 Main Street layout, D113 street width, D110 plaza placement (derelict vault in the south plaza; plaza PvP on) | `WORLD_MAP.md`: The Quarry. Scav Camp at the Gate (§8); the Plaza is a truce square (§9) |
+| Respawn location (docs silent) | `WORLD_MAP.md` §10: first join in the Plaza, later joins at your bridge mouth, every death respawns in the Plaza |
+| Scav aggro on bystanders (docs silent) | `WORLD_MAP.md` §5: target lock |
 | `05 § Grade` visuals "faint shimmer" for Dense | §10 juice: Dense and Volatile are obvious |
 | Consistency decision #37 (a grab takes the best spare armor piece) | Off (`ArmorTheft = false`, RW1) |
 | Captain Rare drop = 40 Research Scrap (temporary) | §5.2: one Dense gem + 2 Charge Parts |
@@ -135,6 +145,7 @@ Config.Features = {
     FirstSessionShield = true,
     RichVein = true,           -- §11
     SimpleLevel = true,        -- §12 (display + rewards only, gates nothing)
+    TruceSquare = true,        -- WORLD_MAP §9 (no player damage in the Plaza)
 
     -- Parked (off). Code stays; behaviour switched off.
     OfflineRaids = false,      -- RW2
@@ -151,6 +162,7 @@ Config.Features = {
     NewAccountShield48h = false, -- replaced by FirstSessionShield
     ArmorTheft = false,        -- RW1: gems only (overrides consistency #37)
     ResearchScrap = false,     -- no Research Bench in R1
+    Reaches = false,           -- §16: returns in R2; bridge barricaded (WORLD_MAP §8)
 
     -- R2 (off until built)
     InvitePrompts = false,
@@ -266,7 +278,9 @@ Each wave includes **one Snatcher** [PH].
 - **Target:** a random displayed gem on the player's plot. During the
   owner's first session it never targets Prismatic or Vaultborn [PH].
 - **Grab:** stands at the pedestal for 2 s [PH], then carries the gem
-  toward the Scav Camp at 12 studs/s [PH] (slower than a running player).
+  toward the Scav Burrow under the Spire at 14.5 studs/s [PH] (slower than
+  a running player). Every plot is the same distance from the Burrow, so
+  every run is ≈ 15 s (`WORLD_MAP.md` §5).
 - **While carrying:** marked with the same carrier marker and trail as a
   player carrier, so everyone sees it.
 - **HP 40** [PH], about one Wooden combo plus a hit. Any player can hit it.
@@ -275,15 +289,19 @@ Each wave includes **one Snatcher** [PH].
   **catch reward**: 15 Credits + XP (§12) [PH], so defending always feels
   good. Anyone else who kills it earns the interceptor bounty (§7.2).
   Waves come on a fixed schedule, so the catch reward can't be farmed.
-- **Reaches the camp:** the gem moves to the owner's **Held by Scavs**
+- **Reaches the Burrow:** the gem moves to the owner's **Held by Scavs**
   list. Toast: "A Scav took your Dense Quartz to the Scav Camp. Raid it to
   get it back."
 - If the pedestal holds nothing when the Snatcher arrives, it attacks
   defenses like a normal Scav.
+- Where Scavs spawn (the Burrow only), which way they exit, who they
+  ignore (target lock), the Captain entrance and the live-Scav cap:
+  `WORLD_MAP.md` §5.
 
 ### 6.3 The Scav Camp
-The FTUE's derelict vault in the south plaza (D113) **becomes the Scav
-Camp** (one camp in R1; a second one at the map edge is R2).
+The FTUE's derelict vault **becomes the Scav Camp** and sits on the Gate
+island in the north (`WORLD_MAP.md` §8); its exit faces the bowl. One camp
+in R1; the second arrives with the Reaches in R2.
 - **Entry:** the existing Skyrim-style lockpick, with wide sweet spots
   (easiest setting). **No Breach Charge, no band check.**
 - **Guards:** 2 Scavs [PH] that respawn 60 s [PH] after dying.
@@ -354,7 +372,7 @@ carrier, a Snatcher, or a camp raider.
   item.
 
 ### 9.2 Crafting Bench (replaces Workshop I for R1)
-A **public station in the south plaza** next to the NPC buyer (no base
+A **public station in the Plaza** (`WORLD_MAP.md` §9; no base
 placement UX needed). Vertical, touch-friendly list; tap a recipe, see
 cost, tap Craft. If a recipe already exists in `Config` from earlier
 steps, keep its cost; otherwise use these [PH]:
@@ -372,7 +390,7 @@ steps, keep its cost; otherwise use these [PH]:
 Higher tiers (Voltsteel, Riftedge) stay out of R1.
 
 ### 9.3 NPC buyer
-In the south plaza. Buys:
+In the Plaza (`WORLD_MAP.md` §9). Buys:
 - **Gems** at their NPC value (§5.2), no decay.
 - **Stone** 1 Credit and **Ore** 3 Credits per unit [PH], with a simple
   per-player decay: −1% per unit sold today, floor 50%, reset at 00:00 UTC
@@ -399,7 +417,7 @@ never changes an outcome.
   grade-coloured trail and a sound that gets bigger with Grade (about
   0.8 s [PH]).
 - **Pedestal:** gem floats and glows; owner sees `+N` ticks; everyone sees
-  the glow from the street.
+  the glow from the Rim and the Pit.
 - **Chase:** carrier trail, a red screen-edge pulse for the carrier and the
   owner, the grip bar (D115), a loud "stopped!" moment when grip hits 0.
 - **Payouts:** offline payout screen with a counting-up number.
@@ -408,15 +426,14 @@ never changes an outcome.
 
 ---
 
-## 11. The Rich Vein (the street heartbeat)
+## 11. The Rich Vein (the Pit's heartbeat)
 
 The one event that pulls every player on the server into the same place at
 the same time. A small, free version of the Riftfall idea. No Robux (RW6).
 
 - **When:** every 4 minutes [PH] while at least one player is on the
   server. At most one vein at a time.
-- **Where:** one of 3 [PH] marked spots on Main Street (never on a plot,
-  never in the plaza).
+- **Where:** one of the 3 [PH] vein spots in the Pit (`WORLD_MAP.md` §7).
 - **Warning:** a server banner through the D58 broadcast queue (below raid
   alerts and Chase pings, above cosmetic flex) and a visible glow at the
   spot, with a 10 s [PH] countdown.
@@ -475,12 +492,19 @@ Replaces `02 § FTUE spec`. Times are targets [PH].
 
 A returning player who quit mid-FTUE resumes at the step they reached.
 
+**Positions:** the first-session spawn is in the Plaza facing the bowl,
+and the first glowing node is on the Rim just outside the Plaza bridge
+(`WORLD_MAP.md` §6, §10). An FTUE player always gets one of plot fill
+slots 1–4, so every FTUE walk is ≤ ~16 s. The 4:00–6:00 camp raid is at
+the Gate. Banners use the place names in `WORLD_MAP.md` §1.
+
 ---
 
 ## 14. The R1 items (in order)
 
 Sizes use the estimate's key: S ≈ 1 session, M ≈ 2–3, L ≈ 4–6.
-After every item: Prompt R, then commit. Each item names its model and
+After every item: Prompt R, then commit. **Build in the order of the
+status list below**; item numbers are labels, not the order. Each item names its model and
 effort; §14.1 explains how to set them.
 
 ### 14.1 Model and effort
@@ -516,22 +540,25 @@ gap): Opus · medium. Commit: Sonnet · low.
 ### Status (tick when committed; Vault Ops reads these lines)
 - [ ] R1-00 Movement trust (M1) · Opus high
 - [ ] R1-01 Branch, switches, pointer · Sonnet medium
+- [ ] R1-08a Quarry geometry (right after R1-01) · Sonnet high
+- [ ] R1-08b Plot fill order, spawns and respawns · Opus high
 - [ ] R1-02 Gem data and drops · Opus high
 - [ ] R1-03 Pedestals, vault gem slots, income · Opus high
 - [ ] R1-04 Theft targets gems; offline raids off · Opus high
 - [ ] R1-05 Scav Snatcher, NPC Chase, Scav Camp · Sonnet high
 - [ ] R1-06 Wave cadence and FTUE hook · Sonnet medium
 - [ ] R1-07 Interceptor bounty · Opus high
-- [ ] R1-08 Street width 168 · Sonnet medium
 - [ ] R1-09 Crafting Bench · Sonnet high
 - [ ] R1-10 NPC buyer · Sonnet high
+- [ ] R1-08c Map dressing and legibility · Sonnet high
 - [ ] R1-11 Juice pass v1 + cheap-phone check · Sonnet high
 - [ ] R1-12 Analytics events · Sonnet medium
 - [ ] R1-12a Simple Level · Sonnet medium
 - [ ] R1-12b Rich Vein · Sonnet high
 - [ ] R1-13 FTUE v2 · Opus high
-- [ ] R1-14 Protection and charges cleanup · Opus high
+- [ ] R1-14 Protection, truce square and charges cleanup · Opus high
 - [ ] R1-15 Private playtest and fixes · Sonnet high
+- [ ] ~~R1-08 Street width 168~~ · superseded by R1-08a (v1.2 item; don't build)
 
 ### R1-00 — Movement trust (backlog M1) · M
 - **Model / effort:** Opus 5.5 · high (exploit-critical: every later gem and Chase check trusts it). **Prompt R:** Opus high.
@@ -551,6 +578,38 @@ gap): Opus · medium. Commit: Sonnet · low.
 - Add the §17 pointer text to the top of `CLAUDE.md`.
 - **Done when:** the game runs with every parked switch off and nothing
   parked is visible; flipping a switch back on restores the old behaviour.
+
+### R1-08a — Quarry geometry · M (build right after R1-01)
+- **Model / effort:** Sonnet 5 · high (a full regeneration of the world script). **Prompt R:** Opus high.
+- `WORLD_MAP.md` §1–§4, §5 (Spire and Burrow geometry only), §6, §7, §8,
+  §9.2 (Plaza shape and station slots only), §15 (scenery greybox shapes
+  only), §19 tags, §21.1 checks 1–5, 7, 8.
+- Regenerate `docs-build/worldgen/gen_world.py` from the `WORLD_MAP.md` §3
+  table. **This is a new layout, not a width change.** Keep every greybox
+  contract (Plot tag, PlotIndex, Hitbox, Bridge<index>, Scav ground ~60
+  studs toward the bridge). Every number goes in `Config.World` with
+  `-- WORLD_MAP §N [PH]`. Barricade the Reaches bridge
+  (`Features.Reaches = false`).
+- Add `validate_world.py` (or a `--check` mode in `gen_world.py`) that runs
+  the §21.1 checks and fails loudly.
+- **Done when:** the validation passes; all 8 bridges and plot-to-centre
+  distances match within 1 stud; every gate faces the centre and the build
+  grid follows; plot → centre ≈ 13.5 s and Plaza spawn → fill slots 1–4
+  ≤ ~16 s on foot; D111's 140-stud escape still triggers on every plot;
+  Scavs can path from the Burrow to every plot's Scav ground; nothing
+  clips or floats.
+
+### R1-08b — Plot fill order, spawns and respawns · S (right after R1-08a)
+- **Model / effort:** Opus 5.5 · high (respawn location protects D3; plot and friend assignment are easy to get subtly wrong). **Prompt R:** Opus high.
+- `WORLD_MAP.md` §10: fill order, friend placement, offline display bases
+  yield their plot, FTUE players get fill slots 1–4, first-session and
+  later-join spawns, every death respawns in the Plaza, home beacon
+  (client-only). Carrier death still returns the loot (D111).
+- **Done when:** two fresh test clients land on fill slots 1 and 2; a
+  friend joins next to their friend; an offline display base moves when an
+  online player needs the plot; jumping off the Rim respawns you in the
+  Plaza, never at home; a returning player spawns at their own bridge
+  mouth; the home beacon shows only for its owner.
 
 ### R1-02 — Gem data and drops · M
 - **Model / effort:** Opus 5.5 · high (gem records and the one move function; duplication risk). **Prompt R:** Opus high ×2.
@@ -588,15 +647,23 @@ gap): Opus · medium. Commit: Sonnet · low.
 - **Model / effort:** Sonnet 5 · high (large but built on R1-02's gem move function; Opus reviews it). **Prompt R:** Opus high.
 - §6.2, §6.3. The derelict vault becomes the Scav Camp (reuse the
   lockpick and carrier code). Held by Scavs list, camp loot, cooldown.
+- `WORLD_MAP.md` §5 and §8: Snatchers run to the Burrow; Burrow is the
+  only Scav spawn; emergence toward the target, 0.5 s apart; target lock;
+  Captain entrance; live-Scav cap; camp exit faces the bowl; camp door
+  light.
 - **Done when:** a Snatcher can take a gem and be caught (gem returns);
-  a Snatcher that reaches the camp moves the gem to Held by Scavs; raiding
+  a Snatcher that reaches the Burrow moves the gem to Held by Scavs; a
+  Snatcher run takes about the same time from every plot; Scavs ignore a
+  bystander who doesn't hit them; raiding
   the camp returns every held gem plus the reward; cooldown works; other
   players can intercept.
 
 ### R1-06 — Wave cadence and FTUE hook · S
 - **Model / effort:** Sonnet 5 · medium (timers and a hook). **Prompt R:** Sonnet high.
 - §6.1. Waves every 3–5 min [PH] once a pedestal exists; a function the
-  FTUE can call to start the scripted Snatcher.
+  FTUE can call to start the scripted Snatcher. Waves spawn only from the
+  Burrow; the live-Scav cap (~24 [PH], `WORLD_MAP.md` §5) holds alongside
+  D59.
 - **Done when:** waves arrive on schedule; `ScavExposedTax = false` takes
   nothing; the concurrent-wave ceiling still holds with 8 players.
 
@@ -606,13 +673,6 @@ gap): Opus · medium. Commit: Sonnet · low.
 - **Done when:** a third player stopping a carrier gets paid; the owner,
   escort and friends don't; the hourly cap and 30-minute repeat rule
   hold; a two-account farming loop earns almost nothing.
-
-### R1-08 — Street width 168 · S
-- **Model / effort:** Sonnet 5 · medium (map geometry and Config values). **Prompt R:** Sonnet high.
-- Street 240 × 320 → **168 × 320**, plaza → **168 × 96** [PH]. Keep
-  bridges, plots, escape radius and Scav lanes.
-- **Done when:** crossing to the opposite plot takes about 10 s [PH];
-  nothing clips or floats.
 
 ### R1-09 — Crafting Bench · M
 - **Model / effort:** Sonnet 5 · high (UI plus server-checked costs). **Prompt R:** Sonnet high.
@@ -627,15 +687,31 @@ gap): Opus · medium. Commit: Sonnet · low.
 - **Done when:** gems sell at their value; Stone and Ore decay per unit
   and reset at 00:00 UTC; selling can't be spammed or duplicated.
 
+### R1-08c — Map dressing and legibility · M (after R1-10, before R1-11)
+- **Model / effort:** Sonnet 5 · high (many props plus safety rules). **Prompt R:** Sonnet high.
+- `WORLD_MAP.md` §11 (legibility), §12 (colour key), §13 and §14 **R1 tier
+  only** (skip "R1 if time" unless Josh asks), §15 (cliffs, vault door,
+  cloud deck as greybox), §18 streaming settings, §19 reserved slot tags,
+  §21.1 check 6. Client-only visuals from existing server state; no new
+  systems.
+- **Done when:** all §21.1 checks pass; the colour key touches `Visual`
+  only; streaming is on with the recommended settings; banners flash
+  during a raid; offline lanterns dim; nothing standable sits above 3
+  studs within 40 studs of a plot.
+
 ### R1-11 — Juice pass v1 + cheap-phone check · M
 - **Model / effort:** Sonnet 5 · high (lots of client polish; no outcomes change). **Prompt R:** Sonnet high.
-- §10. Then run the cheap-phone test still open from build step 0B: an
-  inexpensive Android phone, 8 plots in use, a Scav wave and a Chase on
-  screen at once.
+- §10, plus `WORLD_MAP.md` §13 ambience, §16 event looks and §17
+  lighting. Then run the cheap-phone test still open from build step 0B:
+  an inexpensive Android phone, **standing in the Pit** with all 8 plots
+  loaded, a vein, a Scav wave and a Chase on screen at once. Pick Future or
+  ShadowMap lighting by this test.
 - **Done when:** on a phone, mining feels satisfying for five minutes
   straight (Josh's judgement); no juice code changes an outcome; the cheap
   phone holds a playable frame rate (target 30 FPS [PH]). If it doesn't,
-  cut particle counts and effects first, never the Chase feedback.
+  cut in the `WORLD_MAP.md` §14 order (skyline, then "R1 if time"
+  dressing, then particles), never the Chase feedback, compass mosaic,
+  rails, milestones or banners.
 
 ### R1-12 — Analytics events · S
 - **Model / effort:** Sonnet 5 · medium (event calls in known places). **Prompt R:** Sonnet high.
@@ -656,7 +732,8 @@ gap): Opus · medium. Commit: Sonnet · low.
 
 ### R1-12b — Rich Vein · M
 - **Model / effort:** Sonnet 5 · high (reuses nodes and the broadcast queue; performance matters). **Prompt R:** Sonnet high.
-- §11. Reuse the node system and the D58 broadcast queue.
+- §11. Reuse the node system and the D58 broadcast queue. Spot positions
+  and looks: `WORLD_MAP.md` §7, §16.
 - **Done when:** veins appear on schedule at the marked spots with a
   countdown; boosted odds apply only to vein nodes; the FTUE pull-forward
   works and respects its limit; 8 players on one vein don't drop the
@@ -664,19 +741,25 @@ gap): Opus · medium. Commit: Sonnet · low.
 
 ### R1-13 — FTUE v2 · L
 - **Model / effort:** Opus 5.5 · high (many systems, second-by-second spec, resume logic). **Prompt R:** Opus high.
-- §13, second by second, with the funnel steps from §15.
+- §13, second by second, with the funnel steps from §15. Spawn and
+  first-node positions: `WORLD_MAP.md` §6, §10.
 - **Done when:** a fresh account reaches free play in about 10 minutes
   with no help; no text before 2:30; nothing parked is visible; quitting
   and rejoining mid-FTUE resumes correctly. **Watch someone who has never
   seen the game play it without helping them.**
 
-### R1-14 — Protection and charges cleanup · S
+### R1-14 — Protection, truce square and charges cleanup · M
 - **Model / effort:** Opus 5.5 · high (shield and band rules (R6)). **Prompt R:** Opus high.
 - §8 first-session shield and immediate post-raid shield;
   `NewAccountShield48h = false`; confirm `Riftsalt = false` everywhere.
+- `WORLD_MAP.md` §9.1 truce square: no player damage or knockback in the
+  Plaza except on carriers (grip still drains); no hit-and-hop (5 s
+  [PH]); server-side position check via R1-00.
 - **Done when:** a new account can't be raided for 60 minutes of play
   time, the shield survives rejoin, ends when they raid, and the band
-  still blocks out-of-band targets.
+  still blocks out-of-band targets; two clients can't damage each other
+  in the Plaza; a carrier can still be knocked loose there; hitting
+  someone then stepping in gives no protection for 5 s.
 
 ### R1-15 — Private playtest and fixes · M
 - **Model / effort:** Sonnet 5 · high (per bug; switch to Opus high for anything touching gems, raids or Credits). **Prompt R:** Sonnet high.
@@ -725,11 +808,20 @@ pass can follow (safety capacity, allowed by R3). Any Robux path to a
 random outcome needs published odds and PolicyService gating (Roblox's
 paid random items policy), so avoid them.
 
+**Shop rules (one booth, `WORLD_MAP.md` §9):** fixed-price cosmetics only;
+preview on your own avatar before buying; the weekly featured set and the
+VIP server live inside the shop's one menu; honest end dates that never
+reset; no purchase prompts in a player's first 10 minutes; no spending
+leaderboards or donation boards; no gifting to non-friends; nothing random
+behind Robux (PolicyService required if that ever changes). Every cosmetic
+category also has free earnable items (streak day 7, gem index,
+referrals).
+
 **R2 (weekly updates after publishing, one per week):** a second Scav Camp;
 invite prompts and referral rewards; daily reward; rotating trader stock;
 gem index and base skins; hide-UI creator camera; Resonance nodes (D102);
-the Reaches return; Vault Rush weekly event; optional raid alarm. More
-ideas: Rework Plan Part 13.
+the Reaches return; Vault Rush weekly event; optional raid alarm. Map
+R2 candidates: `WORLD_MAP.md` §20. More ideas: Rework Plan Part 13.
 
 **Parked (switches off):** offline raids, Exposed ore, Riftsalt, transit
 sink, direct trade, Level gate, Tech Path, Research Bench, blueprints,
@@ -747,8 +839,9 @@ Read CLAUDE.md, then REWORK.md in full. Don't write features yet.
 2. Tag the current commit slice-step8 and create a branch called rework.
 3. Add this to the very top of CLAUDE.md:
    "REWORK PHASE R1 IS ACTIVE. Read REWORK.md before any work. Where
-   REWORK.md and docs/ disagree, REWORK.md wins. docs/ is frozen: do not
-   edit it. Log build-time calls in REWORK.md §18, one line each."
+   REWORK.md and docs/ disagree, REWORK.md wins. For the map, WORLD_MAP.md
+   is the spec. docs/ is frozen: do not edit it. Log build-time calls in
+   REWORK.md §18, one line each."
 4. List which existing services and modules you'll extend for each R1
    item (NodeService, VaultService, PlotService, raid, Chase, Scav...),
    and anything in REWORK.md that conflicts with the current code.
@@ -760,10 +853,12 @@ Show me the list and wait.
 
 ### Prompt RW-ITEM (every item)
 ```
-Read REWORK.md § 14 item R1-XX and every section it points to, plus
-the docs/ sections those mention. Goal: <one sentence from the item>.
+Read REWORK.md § 14 item R1-XX and every section it points to
+(including WORLD_MAP.md sections), plus the docs/ sections those
+mention. Goal: <one sentence from the item>.
 Keep R5 (server authority) and the greybox contract. Put every new
-number in Config.luau with "-- REWORK §N [PH]". Respect
+number in Config.luau with "-- REWORK §N [PH]" (or "-- WORLD_MAP §N
+[PH]" for map numbers). Respect
 Config.Features. Don't change systems outside this item.
 Plan first and show me the plan. After I say go, build it.
 When done: list files changed, new Config values, anything you logged
@@ -791,6 +886,8 @@ unchecked item with its model and effort, so I can switch before I
 ### Also use
 - **Prompt R** (review) after every item, twice for R1-02, R1-03, R1-04,
   R1-07.
+- **Upgrading from v1.2:** the one-time prompt is in
+  `HANDOFF_REWORK3.md`. Delete that file after the handoff commit.
 - **Prompt B** (bug report) and **Prompt G** (design gap) as before.
 - **Commit:** `[R1-XX] <summary>`, then push.
 
@@ -813,3 +910,37 @@ One line per build-time call: `date · item · decision · reason`.
 - 2026-09-24 · RW-START · Commit the uncommitted UI rework on main before tagging and branching · so the tag includes it and nothing mixes into R1-01.
 - 2026-09-24 · R1-02/05 · §5.3 Held by Scavs overflow: the oldest held gem is auto-sold to its owner at NPC value with a toast, not lost · RW10 and R2 (nothing destroyed below vault tier 8).
 - 2026-09-24 · R1-01 · Step 9 direct trade, old Level/Reputation UI are switched off behind Config.Features, never deleted; NpcShop is extended in R1-10 · "parking means switching off".
+- 2026-09-24 · — · REWORK.md v1.3 + WORLD_MAP.md v1.0 · Main Street played like a runway; the Quarry keeps every mechanic and timing.
+- 2026-09-24 · R1-08a · D110 and RW7 reopened: The Quarry replaces Main Street (WORLD_MAP §3). Plot ring r 216, bridges 32, Rim road r 136–160, Pit r 112 · research favours centre-focused maps; equal bridges and rim-high plots fix both old ring rejections (unequal bridges, drop-ins).
+- 2026-09-24 · R1-05/R1-14 · D110 plaza placement reopened: Scav Camp to the Gate island (exit faces the bowl); Plaza is a truce square with no hit-and-hop · safe-south/danger-north gradient; no griefing at the buyer and bench.
+- 2026-09-24 · R1-05/R1-06 · The Burrow under the Spire is the only Scav spawn; Snatchers run to it at 14.5 studs/s (≈ 15 s from every plot); emerge toward target 0.5 s apart; target lock (ignore bystanders unless hit/defending); Captain entrance; live-Scav cap ~24 · fairness, readability, NPC clump lag, no Charge Part farm; docs were silent on bystander aggro.
+- 2026-09-24 · R1-08b · Fill order nearest the Plaza first; friends placed together; FTUE players get slots 1–4; later joins spawn at own bridge mouth; every death respawns in the Plaza; home beacon; no teleport buttons · death-teleport home would have broken D3.
+- 2026-09-24 · R1-08c/R1-11 · Map dressing and ambience in R1 / "R1 if time" tiers (WORLD_MAP §11–§16), greybox colour key, decor safety rule (nothing standable above 3 studs within 40 of a plot), scenery ≥ 30 studs from walkable, streaming + LOD, fixed lighting, place names · more to see with no mechanic changes; cheap-phone gate protected by a cut order.
+- 2026-09-24 · R1-08a/R1-09/R1-10 · Plaza 120 × 88, 6 stations max (arch + spawn, overlooks, buyer, brazier seats, bench; shop, event pad, board tagged for later); §16 shop rules · research: Brainrot, Grow a Garden and 99 Nights run 3–6 hub stations and rotate event machines.
+- 2026-09-24 · R1-01 · Features.Reaches = false and Features.TruceSquare = true · §16 parked the Reaches without a switch; the truce square needs one.
+- 2026-09-24 · §14 · R1-08 split into R1-08a (geometry), R1-08b (plots and spawns), R1-08c (dressing); 08a/08b build right after R1-01 · R1-05, R1-12b and R1-13 depend on the map.
+- 2026-09-24 · — · Map layout locked for R1; new map additions wait for R1-15 playtest data.
+
+---
+
+## 19. Map layout: The Quarry
+
+The map spec lives in **`WORLD_MAP.md`** (repo root), with a to-scale
+reference drawing in `docs-build/worldgen/WORLD_MAP.svg`. It replaces
+D110 (Main Street) and RW7 (168-stud street).
+
+In short: 8 plot islands on the **Rim** of a round quarry, each on an
+identical 32-stud bridge to a railed Rim road; a gentle slope into the
+**Pit**, where the Rich Veins erupt; the crystal **Spire** at the centre,
+standing over the **Burrow**, the only Scav spawn; the Scav Camp on the
+**Gate** island in the north, in front of a giant vault door; and the
+**Plaza** in the south, a truce square with 6 stations at most and the
+first spawn.
+
+Built by R1-08a (geometry), R1-08b (plot order and spawns) and R1-08c
+(dressing), with pieces in R1-05, R1-06, R1-11, R1-12b, R1-13 and R1-14.
+
+**The layout is locked for R1.** New map additions wait for R1-15
+playtest data. `WORLD_MAP.md` wins on positions, shapes, spawns and
+dressing; this file wins on system rules and system numbers. If they seem
+to disagree, stop and use Prompt G.

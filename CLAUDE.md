@@ -1,3 +1,9 @@
+REWORK PHASE R1 IS ACTIVE (REWORK.md v1.3). Read REWORK.md before any
+work. For the map, WORLD_MAP.md is the spec. Where REWORK.md and
+docs/ disagree, REWORK.md wins. docs/ is frozen: do not edit it.
+Build R1 items in the order of the REWORK.md §14 status list, not by
+item number. Log build-time calls in REWORK.md §18, one line each.
+
 # CLAUDE.md — Vault Raiderz (Roblox, Luau, Rojo)
 
 You are building the **vertical slice** of Vault Raiderz, a Roblox game.
