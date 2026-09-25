@@ -173,6 +173,7 @@ type Track = {
 	samples: { Sample }, -- accepted positions, recent (isPositionTrusted)
 	groundedAt: number, -- last sample standing on something
 	groundedPosition: Vector3,
+	groundJump: number, -- jump speed on the last ground sample: the take-off speed of a jump in progress
 	airAt: number?, -- first sample in the air since then: the jump was in between
 	airPosition: Vector3?,
 	safe: CFrame, -- last accepted spot standing on something: where a failed move goes back to
@@ -283,6 +284,7 @@ local function newTrack(root: BasePart, at: CFrame, now: number): Track
 		samples = { { at = now, position = at.Position } },
 		groundedAt = now,
 		groundedPosition = at.Position,
+		groundJump = 0,
 		airAt = nil,
 		airPosition = nil,
 		safe = at,
@@ -428,6 +430,10 @@ local function checkPlayer(player: Player, now: number): boolean
 	-- allow the highest point of any jump in that window.
 	local gravity = workspace.Gravity
 	local late = moveCfg.RiseLagSeconds + rtt
+	-- The jump speed they took off with (review 2026-09-25 #6): a stun
+	-- (JumpPower 0) early in a jump can age the take-off speed out of
+	-- `jump`'s short window while they're still rising.
+	local takeOff = math.max(jump, track.groundJump)
 	-- Walking up a slope since the last ground sample, no further than
 	-- walking could have gone in that time (saved budget doesn't buy height).
 	local function climbTo(point: Vector3): number
@@ -440,7 +446,7 @@ local function checkPlayer(player: Player, now: number): boolean
 		track.airPosition = nil
 		-- Landing somewhere high is a rise too (review 2026-09-25 #3): no
 		-- higher than a full jump from the last ground, plus the climb.
-		local apex = if gravity > 0 then jump * jump / (2 * gravity) else math.huge
+		local apex = if gravity > 0 then takeOff * takeOff / (2 * gravity) else math.huge
 		local ceiling = track.groundedPosition.Y + climbTo(position) + apex + moveCfg.RiseSlackStuds
 		if position.Y > ceiling then
 			local detail = `{math.floor(position.Y - track.groundedPosition.Y)} studs up, landed`
@@ -453,9 +459,9 @@ local function checkPlayer(player: Player, now: number): boolean
 		track.airPosition = airPosition
 		local earliest = math.max(0, now - airAt - late)
 		local latest = now - track.groundedAt + late
-		local apexTime = if gravity > 0 then jump / gravity else latest
+		local apexTime = if gravity > 0 then takeOff / gravity else latest
 		local t = math.clamp(apexTime, earliest, latest)
-		local rise = jump * t - gravity * t * t / 2
+		local rise = takeOff * t - gravity * t * t / 2
 		-- Walking up a slope between the last ground sample and the jump.
 		local ceiling = track.groundedPosition.Y + climbTo(airPosition) + rise + moveCfg.RiseSlackStuds
 		if position.Y > ceiling then
@@ -469,7 +475,7 @@ local function checkPlayer(player: Player, now: number): boolean
 	-- since `from` was first seen, a round trip and late positions).
 	if moved > 0 and not humanoid.SeatPart and not walkable(from, position) then
 		local window = now - track.movedAt + rtt + moveCfg.RiseLagSeconds
-		local apex = if gravity > 0 then jump * jump / (2 * gravity) else math.huge
+		local apex = if gravity > 0 then takeOff * takeOff / (2 * gravity) else math.huge
 		local lift = math.min(apex, gravity * window * window / 8) + moveCfg.StepSlackStuds
 		local feetY = math.max(from.Y, position.Y) - rootToFeet(humanoid, root) + lift
 		if not clear(Vector3.new(from.X, feetY, from.Z), Vector3.new(position.X, feetY, position.Z)) then
@@ -480,6 +486,7 @@ local function checkPlayer(player: Player, now: number): boolean
 	if onGround then
 		track.groundedAt = now
 		track.groundedPosition = position
+		track.groundJump = jump
 		track.safe = root.CFrame
 	end
 	if position ~= from then

@@ -165,10 +165,11 @@ rules + layout) and 1 skeptic that tried to refute each finding.
   A knockback still lets its target move up to that one push (~26 studs
   for a boosted finisher) even if they cancel it on their client, so a
   colluding escort can give a carrier one short blink (review 2026-09-25 #1).
-- **Movement trust, review 2026-09-25 #6 (Low):** the rise check uses the
-  highest jump speed of the last ~0.35 s; a stun (JumpPower 0) landing in
-  the first ~0.1 s of a jump can falsely fail a low-ping player once. Fix:
-  remember the jump speed at take-off (`track.groundJump`) and use the max.
+- **Movement trust, review 2026-09-25 #6 (Low): fixed, awaiting Josh's
+  Studio test.** A stun (JumpPower 0) in the first ~0.1 s of a jump could
+  falsely fail a low-ping player once. The jump speed on the last ground
+  sample is now kept (`track.groundJump`) and the rise, landing and wall
+  checks use the higher of it and the recent jump speed.
 - **Can't be tested in Studio, test on a live private server** (two devices
   or a friend): victim rejoins mid-raid; two raiders on different servers
   hit the same offline base; MemoryStore/DataStore failure paths.
