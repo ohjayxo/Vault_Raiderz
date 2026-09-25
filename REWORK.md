@@ -538,7 +538,7 @@ no code). Prompt B (bugs): the item's own settings. Prompt G (design
 gap): Opus · medium. Commit: Sonnet · low.
 
 ### Status (tick when committed; Vault Ops reads these lines)
-- [ ] R1-00 Movement trust (M1) · Opus high
+- [x] R1-00 Movement trust (M1) · Opus high
 - [ ] R1-01 Branch, switches, pointer · Sonnet medium
 - [ ] R1-08a Quarry geometry (right after R1-01) · Sonnet high
 - [ ] R1-08b Plot fill order, spawns and respawns · Opus high
@@ -920,6 +920,11 @@ One line per build-time call: `date · item · decision · reason`.
 - 2026-09-24 · R1-01 · Features.Reaches = false and Features.TruceSquare = true · §16 parked the Reaches without a switch; the truce square needs one.
 - 2026-09-24 · §14 · R1-08 split into R1-08a (geometry), R1-08b (plots and spawns), R1-08c (dressing); 08a/08b build right after R1-01 · R1-05, R1-12b and R1-13 depend on the map.
 - 2026-09-24 · — · Map layout locked for R1; new map additions wait for R1-15 playtest data.
+- 2026-09-24 · R1-00 · Not skipped: backlog M1 was only partial (no isPositionTrusted, no rise/wall check, non-raid players log-only) · Done-when needs all three.
+- 2026-09-24 · R1-00 · Every player is snapped back on an impossible move (raid participants strict, others looser); `Config.Raiding.Movement.EnforceOutsideRaid = false` returns non-raid players to log-only · Josh's pick; only option that meets "can't mine".
+- 2026-09-24 · R1-00 · Rise check (jump arc from the server's JumpPower and gravity) and wall check (only walls taller than a jump, with no way around) built now · Josh's pick; voids and vault walls make fly/noclip worth closing. Base Walls/Gates (6 studs) are jumpable, so passing them can't be told from a jump.
+- 2026-09-24 · R1-00 · Trust also gates breach, sabotage and placed gadgets (Smoke Bomb, Shock Trap, Disruptor) besides the listed uses; bank, sell, build and trade wait (backlog) · Josh's pick; teleport-to-breach was the obvious hole.
+- 2026-09-24 · R1-00 · Rule for later items: every position-based action calls `MovementService.isPositionTrusted(player)` first; every server move of a player calls `expectTeleport(player, destination)` (or `expectPush` for knockback). Owed by R1-03/04 (pedestals), R1-05 (camp lockpick/grab/escape + `setEnforced` on camp raiders; escape uses `isGrounded`), R1-07 (bounty hit), R1-08b (spawns, Plaza respawn), R1-09 (bench), R1-10 (buyer), R1-14 (truce square) · one trust source for R5.
 
 ---
 

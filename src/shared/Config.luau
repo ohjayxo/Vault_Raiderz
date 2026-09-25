@@ -1097,13 +1097,39 @@ local Config = {
 		-- LagAllowanceSeconds of walking (laggy updates pass; a speed hack
 		-- runs dry). A carrier's position is checked before every escape
 		-- check.
+		-- REWORK §14 R1-00: the same budget for everyone (raid participants
+		-- strict, the rest looser), plus teleport, rise (fly) and wall
+		-- (noclip) checks. A failed move is snapped back and leaves the
+		-- player untrusted for a while; MovementService.isPositionTrusted
+		-- is what mining, raids, hits and gadgets ask. Timings that depend
+		-- on a late client also add 2 x the player's ping.
 		Movement = {
-			CheckSeconds = 0.25, -- everyone else: log-only sampling
-			SpeedTolerance = 1.6, -- x WalkSpeed, log-only players
+			CheckSeconds = 0.25, -- every player is sampled this often
+			SpeedTolerance = 1.3, -- REWORK §14 R1-00 [PH]: x WalkSpeed, players outside a raid
 			EnforcedSpeedTolerance = 1.2, -- [PH] invented: x current WalkSpeed, raid participants
 			BurstStuds = 8, -- knockback, jumps, lag spikes
 			LagAllowanceSeconds = 0.5, -- [PH] invented: walking a raid participant may "catch up" at once
+			NormalLagSeconds = 1.0, -- REWORK §14 R1-00 [PH]: the same, players outside a raid (phones lag more)
 			PushDecayPerSecond = 30, -- [PH] invented: unused knockback allowance drains this fast
+			PushHoldSeconds = 0.3, -- REWORK §14 R1-00 [PH]: + 2 x ping before a knockback allowance starts draining
+			SpeedHistorySeconds = 0.25, -- REWORK §14 R1-00 [PH]: + 2 x ping; the fastest WalkSpeed/jump in this window counts (a fresh stun or slow reaches the client late)
+			MaxPingSeconds = 1, -- REWORK §14 R1-00 [PH]: a worse ping counts as this
+			TeleportStuds = 40, -- REWORK §14 R1-00 [PH]: a failed move this long (and over TeleportRateSeconds of walking) is a teleport
+			TeleportRateSeconds = 2.5, -- REWORK §14 R1-00 [PH]
+			UntrustedSeconds = 2, -- REWORK §14 R1-00 [PH]: no mining/grabs/hits this long after a failed move
+			TeleportUntrustedSeconds = 5, -- REWORK §14 R1-00 [PH]: the same after a teleport
+			SettleExtraSeconds = 0.15, -- REWORK §14 R1-00 [PH]: + 2 x ping; client updates sent before a snap-back arrives are ignored this long
+			SettleMinSeconds = 0.3, -- REWORK §14 R1-00 [PH]
+			SettleMaxSeconds = 1, -- REWORK §14 R1-00 [PH]
+			SettleStuds = 6, -- REWORK §14 R1-00 [PH]: + walking during the settle; further away = the snap-back was ignored
+			TrustWindowSeconds = 0.3, -- REWORK §14 R1-00 [PH]: isPositionTrusted also checks the last this-many seconds of movement...
+			TrustSlackStuds = 4, -- REWORK §14 R1-00 [PH]: ...with this little slack, so saved-up budget can't be spent as a blink
+			GroundProbeSlack = 1.5, -- REWORK §14 R1-00 [PH]: studs below the feet that still count as standing
+			RiseSlackStuds = 3, -- REWORK §14 R1-00 [PH]: kerbs, steps and a knockback's lift on top of a jump
+			RiseLagSeconds = 0.25, -- REWORK §14 R1-00 [PH]: + 2 x ping; how late a jump's positions may arrive
+			ClimbRatio = 1, -- REWORK §14 R1-00 [PH]: studs up per stud walked between the last "standing" sample and the jump
+			StepSlackStuds = 1, -- REWORK §14 R1-00 [PH]: wall check; a wall lower than the feet could have been + this is jumpable
+			EnforceOutsideRaid = true, -- REWORK §14 R1-00 [PH]: false = players outside a raid are only logged + untrusted, not snapped back
 		},
 		Ui = {
 			RaidLogVisibleAttribute = "HudRaidLog",

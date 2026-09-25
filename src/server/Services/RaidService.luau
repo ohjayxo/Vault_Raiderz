@@ -526,14 +526,15 @@ end
 -- same distance on every plot, whatever the layout. Only while standing on
 -- something: jumping off an island can't cross the line in mid-air and then
 -- fall to a respawn with the loot (the fall fails the raid, § Escape and
--- carrier death).
+-- carrier death). "Standing" is the server's own ground check (REWORK §14
+-- R1-00); a client's Humanoid.FloorMaterial is whatever it says.
 local function chaseDistance(raid: Raid, root: BasePart): number
 	local offset = root.Position - raid.plotHitbox.Position
 	return Vector3.new(offset.X, 0, offset.Z).Magnitude
 end
 
-local function hasEscaped(raid: Raid, root: BasePart, humanoid: Humanoid): boolean
-	return chaseDistance(raid, root) > raidCfg.EscapeRadiusStuds and humanoid.FloorMaterial ~= Enum.Material.Air
+local function hasEscaped(raid: Raid, root: BasePart): boolean
+	return chaseDistance(raid, root) > raidCfg.EscapeRadiusStuds and MovementService.isGrounded(raid.raider)
 end
 
 -- Chase progress for the raid's players (Josh, 2026-09-23): their banners
@@ -751,6 +752,10 @@ breachInner = function(player: Player): (boolean, string?)
 	if not root then
 		return false, "Dead"
 	end
+	-- REWORK §14 R1-00 (Josh's pick: breach too): no teleporting to a base.
+	if not MovementService.isPositionTrusted(player) then
+		return false, "TooFar"
+	end
 	local base = PlotService.baseNear(root.Position, raidCfg.BreachRange)
 	if not base then
 		return false, "NoBase"
@@ -810,7 +815,12 @@ breachInner = function(player: Player): (boolean, string?)
 		targetBand = target.band
 		-- The raider may have moved or died while we waited.
 		local stillRoot = rootOf(player)
-		if not stillRoot or not player.Parent or NodeMath.distanceToHitbox(base.hitbox, stillRoot.Position) > raidCfg.BreachRecheckRange then
+		if
+			not stillRoot
+			or not player.Parent
+			or not MovementService.isPositionTrusted(player)
+			or NodeMath.distanceToHitbox(base.hitbox, stillRoot.Position) > raidCfg.BreachRecheckRange
+		then
 			return giveUp("TooFar")
 		end
 		-- The waits above can take a while: start the raid on a fresh lock
@@ -911,10 +921,15 @@ end
 -- responds (LockpickFeel). Dead on, a stage takes FullTurn / TurnSpeed
 -- seconds, which is also the floor no script can beat.
 
+-- Lockpicking, lock input and the grab all need this. REWORK §14 R1-00:
+-- only from a position the server accepted.
 local function nearCore(player: Player, raid: Raid): boolean
 	local root = rootOf(player)
 	local core = coreOf(raid.victimId)
-	return root ~= nil and core ~= nil and NodeMath.distanceToHitbox(core, root.Position) <= raidCfg.CoreRange
+	return root ~= nil
+		and core ~= nil
+		and NodeMath.distanceToHitbox(core, root.Position) <= raidCfg.CoreRange
+		and MovementService.isPositionTrusted(player)
 end
 
 local function roundTo(value: number, step: number): number
@@ -1150,7 +1165,13 @@ local function sabotage(player: Player, defenseArg: unknown): (boolean, string?)
 	end
 	local hitbox = model:FindFirstChild("Hitbox")
 	local root = rootOf(player)
-	if not hitbox or not hitbox:IsA("BasePart") or not root or NodeMath.distanceToHitbox(hitbox, root.Position) > raidCfg.SabotageRange then
+	if
+		not hitbox
+		or not hitbox:IsA("BasePart")
+		or not root
+		or NodeMath.distanceToHitbox(hitbox, root.Position) > raidCfg.SabotageRange
+		or not MovementService.isPositionTrusted(player) -- REWORK §14 R1-00
+	then
 		return false, "TooFar"
 	end
 	raid.sabotaged = true
@@ -1350,13 +1371,14 @@ function RaidService.start()
 				-- drops the loot home, the same path as a knock-loose hit.
 				-- Leaving the game is PlayerRemoving below. The server checks
 				-- every frame; no client "I escaped" is ever trusted.
-				local root, humanoid = rootOf(raid.raider)
-				if not root or not humanoid then
+				local root = rootOf(raid.raider)
+				if not root then
 					task.spawn(failRaid, raid, "Died", `{raid.raider.Name} went down`)
-				elseif MovementService.checkNow(raid.raider) then
+				elseif MovementService.isPositionTrusted(raid.raider) then
 					-- Checked first: an escape is never judged on a teleport
-					-- the movement check would undo (review 2026-09-22 #6).
-					if hasEscaped(raid, root, humanoid) then
+					-- the movement check would undo (review 2026-09-22 #6),
+					-- nor while the carrier is untrusted (REWORK §14 R1-00).
+					if hasEscaped(raid, root) then
 						task.spawn(escape, raid)
 					else
 						updateChaseProgress(raid, root)

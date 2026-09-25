@@ -317,6 +317,11 @@ local function onSwing(player: Player)
 	comboStep[player] = step
 
 	CombatService.playSwing(player)
+	-- REWORK §14 R1-00: the swing still plays, but a hit only lands from a
+	-- position the server accepted (no teleport-hits on a carrier).
+	if not MovementService.isPositionTrusted(player) then
+		return
+	end
 	local target = pickTarget(player, root)
 	if target then
 		hit(player, root, target, step)
@@ -343,7 +348,7 @@ local function onCharacter(player: Player, character: Model)
 	if diedOnce[player] and respawnOnPlot(player) then
 		local spawnAt = PlotService.getSpawnCFrame(player)
 		if spawnAt then
-			MovementService.expectTeleport(player)
+			MovementService.expectTeleport(player, spawnAt)
 			character:PivotTo(spawnAt)
 		end
 	end

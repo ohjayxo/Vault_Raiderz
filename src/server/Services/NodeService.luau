@@ -32,6 +32,7 @@ local AnomalyLog = require(ServerScriptService.Util.AnomalyLog)
 local VaultService = require(script.Parent.VaultService)
 local PickaxeService = require(script.Parent.PickaxeService)
 local CombatService = require(script.Parent.CombatService)
+local MovementService = require(script.Parent.MovementService)
 local BroadcastQueue = require(script.Parent.BroadcastQueue)
 local ReputationService = require(script.Parent.ReputationService)
 
@@ -157,6 +158,14 @@ end
 
 local logAnomaly = AnomalyLog.new("MineNode")
 
+-- Studio only: why a mine request did nothing (the anomaly log is throttled
+-- and some refusals are quiet on purpose). Testing aid for REWORK R1-00.
+local function studioWhy(player: Player, why: string)
+	if RunService:IsStudio() then
+		print(`[MineDebug] {player.Name}: {why}`)
+	end
+end
+
 -- Defined below onMineRequest, which uses them.
 local strike: (player: Player, node: Node) -> boolean
 local nearestOtherNode: (node: Node, radius: number) -> Node?
@@ -164,6 +173,7 @@ local nearestOtherNode: (node: Node, radius: number) -> Node?
 local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nodeArg: unknown)
 	-- 1. Rate limit first, so spam costs the server almost nothing.
 	if not allowRate(player) then
+		studioWhy(player, "rate limited")
 		return
 	end
 
@@ -180,6 +190,7 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 		if not CollectionService:HasTag(instance, nodeCfg.Tag) then
 			logAnomaly(player, "tried to mine a non-node", instance:GetFullName())
 		end
+		studioWhy(player, "node isn't live (depleted?)")
 		return
 	end
 
@@ -189,11 +200,19 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	if not root or not humanoid or humanoid.Health <= 0 then
+		studioWhy(player, "no live character")
+		return
+	end
+	-- REWORK §14 R1-00: only a position the server accepted counts (a
+	-- teleport next to the node is refused; MovementService logged it).
+	if not MovementService.isPositionTrusted(player) then
+		studioWhy(player, "position not trusted (see [MovementTrust])")
 		return
 	end
 	local distance = NodeMath.distanceToHitbox(node.hitbox, root.Position)
 	if distance > nodeCfg.MineDistance then
 		logAnomaly(player, "too far from a node", `{math.floor(distance)} > {nodeCfg.MineDistance} studs`)
+		studioWhy(player, `too far: {math.floor(distance)} > {nodeCfg.MineDistance} studs`)
 		return
 	end
 
@@ -201,7 +220,9 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 	-- (13-build-guide.md § Anti-exploit baseline).
 	local from = root.Position
 	if workspace:Raycast(from, node.hitbox.Position - from, losParams) then
+		local blocker = workspace:Raycast(from, node.hitbox.Position - from, losParams)
 		logAnomaly(player, "mined through world geometry")
+		studioWhy(player, `no line of sight (blocked by {if blocker then blocker.Instance:GetFullName() else "?"})`)
 		return
 	end
 
@@ -209,14 +230,17 @@ local function onMineRequest(player: Player, allowRate: (Player) -> boolean, nod
 	local now = os.clock()
 	local last = lastMineAt[player]
 	if last and now - last < PickaxeService.mineCooldown(player) then
+		studioWhy(player, "mining cooldown")
 		return
 	end
 
 	-- All checks passed. Nothing below yields, so two players hitting the
 	-- same node can't both take its last hit.
 	if not strike(player, node) then
+		studioWhy(player, "strike refused (profile not loaded?)")
 		return -- profile not loaded: don't consume the hit
 	end
+	studioWhy(player, `mined {node.model.Name}`)
 	lastMineAt[player] = now
 	CombatService.playSwing(player)
 

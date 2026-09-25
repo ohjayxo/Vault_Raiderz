@@ -219,6 +219,12 @@ local function use(player: Player, gadgetArg: unknown): (boolean, string?)
 	if player:GetAttribute(gadgetCfg.CarryingLootAttribute) then
 		return false, "Carrying" -- 02 § The Chase point 2
 	end
+	-- REWORK §14 R1-00 (Josh's pick): gadgets placed where the player
+	-- stands only from a position the server accepted. Checked before the
+	-- gadget is used up.
+	if gadgetId ~= "SprintSerum" and not MovementService.isPositionTrusted(player) then
+		return false, "Failed"
+	end
 	local disruptTarget: Model? = nil
 	if gadgetId == "Disruptor" then
 		disruptTarget = DefenseService.findDisruptTarget(player, root.Position)

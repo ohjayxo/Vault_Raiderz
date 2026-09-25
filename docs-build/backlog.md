@@ -5,15 +5,6 @@ Design questions go in `design-changes.md`. Remove an entry when it's done.
 
 ## From the step 2 review (2026-09-20)
 
-- **M1: movement / position trust. Do in step 7 at the latest.** Each
-  player's client controls their own character position, so an exploiter can
-  teleport next to any node and pass NodeService's distance check
-  (`src/server/Services/NodeService.luau`, distance check in
-  `onMineRequest`). The mine cooldown still caps income; the hole is
-  *where* they can mine (and later: raids, the Chase, escaping). Fix: a
-  server-side movement check (max speed / teleport detection) that other
-  services can ask "is this player's position trustworthy?".
-  `13-build-guide.md § Anti-exploit baseline`; `10-roadmap.md § Known Risks #1`.
 - **L2: client look numbers are `[PH] invented`. Revisit with real art/UI.**
   Moved into Config and tagged "REVISIT (step 2 review L2)":
   `Config.Nodes.PickRangeStuds`, `.WalkCloserHintSeconds`,
@@ -149,14 +140,28 @@ rules + layout) and 1 skeptic that tried to refute each finding.
 - **Carrier marker on the client:** draw the Highlight/label/trail from the
   CarryingLoot attribute in a client script (CLAUDE.md: visuals are
   client-side); the server keeps only the attribute.
-- **Vertical movement isn't checked** (flying). Escape already needs solid
-  ground; a rise check would also stop flying over walls.
 
 ## From step 7 (2026-09-22)
 
-- **M1 movement check: done** (MovementService). Logs impossible moves for
-  everyone; snaps back raid participants only. Numbers in
-  `Config.Raiding.Movement` are [PH]; watch the logs for false positives.
+- **M1 movement check: done in REWORK R1-00** (MovementService). Speed,
+  teleport, rise (fly) and wall (noclip) checks; everyone is snapped back
+  and untrusted for a while; `isPositionTrusted(player)` gates mining,
+  lockpick/grab, escape, hits, breach, sabotage and placed gadgets. Numbers
+  in `Config.Raiding.Movement` are [PH]; watch the `[Anomaly] Movement`
+  logs for false positives on a live server (phones).
+- **Movement trust not yet asked by:** bank, sell (EconomyService), build
+  (PlotService), trade (TradeService, parked). Also: defenses and Scav
+  targeting read client positions on their own tick, and the Shock Trap
+  uses `Touched` (client-simulated). Low risk; do when one of them is
+  touched next.
+- **R1-00 tests still owed (Josh, 2026-09-25):** G (repeat normal play with
+  Studio Incoming Replication Lag 0.3 s: nothing may rubber-band) and H (live
+  private server, phone + second device: full raid and chase, note any
+  pull-back without cheating). Both before R1-15. If H shows false
+  pull-backs, loosen `Config.Raiding.Movement` or set `EnforceOutsideRaid = false`.
+- **Movement trust residual:** a player can still blink about TrustSlackStuds
+  (4) plus ~20-30% of their walk over 0.3 s, and move 20-30% faster than
+  their WalkSpeed for a while (the tolerance). Tighten on live data.
 - **Can't be tested in Studio, test on a live private server** (two devices
   or a friend): victim rejoins mid-raid; two raiders on different servers
   hit the same offline base; MemoryStore/DataStore failure paths.
