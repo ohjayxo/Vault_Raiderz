@@ -538,7 +538,7 @@ no code). Prompt B (bugs): the item's own settings. Prompt G (design
 gap): Opus · medium. Commit: Sonnet · low.
 
 ### Status (tick when committed; Vault Ops reads these lines)
-- [x] R1-00 Movement trust (M1) · Opus high
+- [ ] R1-00 Movement trust (M1) · Opus high
 - [ ] R1-01 Branch, switches, pointer · Sonnet medium
 - [ ] R1-08a Quarry geometry (right after R1-01) · Sonnet high
 - [ ] R1-08b Plot fill order, spawns and respawns · Opus high
@@ -925,6 +925,7 @@ One line per build-time call: `date · item · decision · reason`.
 - 2026-09-24 · R1-00 · Rise check (jump arc from the server's JumpPower and gravity) and wall check (only walls taller than a jump, with no way around) built now · Josh's pick; voids and vault walls make fly/noclip worth closing. Base Walls/Gates (6 studs) are jumpable, so passing them can't be told from a jump.
 - 2026-09-24 · R1-00 · Trust also gates breach, sabotage and placed gadgets (Smoke Bomb, Shock Trap, Disruptor) besides the listed uses; bank, sell, build and trade wait (backlog) · Josh's pick; teleport-to-breach was the obvious hole.
 - 2026-09-24 · R1-00 · Rule for later items: every position-based action calls `MovementService.isPositionTrusted(player)` first; every server move of a player calls `expectTeleport(player, destination)` (or `expectPush` for knockback). Owed by R1-03/04 (pedestals), R1-05 (camp lockpick/grab/escape + `setEnforced` on camp raiders; escape uses `isGrounded`), R1-07 (bounty hit), R1-08b (spawns, Plaza respawn), R1-09 (bench), R1-10 (buyer), R1-14 (truce square) · one trust source for R5.
+- 2026-09-25 · R1-00 · Saved-up catch-up distance follows real ping (`LagBaseSeconds` + 2 x ping, capped at the old fixed amounts), so blinks over ~12 studs fail at low ping; R1-00 unticked until Studio tests pass · Studio test E3 blinked ~16 studs to a Vault Core unnoticed; Josh accepts rare snap-backs on laggy phones.
 
 ---
 

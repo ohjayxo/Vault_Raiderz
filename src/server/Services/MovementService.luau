@@ -245,18 +245,19 @@ local function standing(character: Model, root: BasePart, humanoid: Humanoid): b
 	return hit ~= nil
 end
 
--- Nothing solid and fixed between a and b.
-local function clear(a: Vector3, b: Vector3): boolean
+-- The solid, fixed thing between a and b, if any.
+local function blocker(a: Vector3, b: Vector3): Instance?
 	local hit = workspace:Raycast(a, b - a, wallParams)
-	return hit == nil or not hit.Instance.Anchored
+	return if hit and hit.Instance.Anchored then hit.Instance else nil
 end
 
--- Could they have walked from a to b? Straight, or around something on
--- either side (a fast turn past a corner cuts it between two samples).
-local function walkable(a: Vector3, b: Vector3): boolean
-	if clear(a, b) then
-		return true
-	end
+local function clear(a: Vector3, b: Vector3): boolean
+	return blocker(a, b) == nil
+end
+
+-- Blocked straight, but could they have gone around it on either side (a
+-- fast turn past a corner cuts it between two samples)?
+local function around(a: Vector3, b: Vector3): boolean
 	local offset = b - a
 	local side = Vector3.new(-offset.Z, 0, offset.X) / 2
 	local middle = (a + b) / 2
@@ -408,7 +409,11 @@ local function checkPlayer(player: Player, now: number): boolean
 	-- Speed: the distance budget. Knockback allowance is spent first.
 	local strict = enforced[player] == true
 	local rate = walk * (if strict then moveCfg.EnforcedSpeedTolerance else moveCfg.SpeedTolerance)
-	local cap = moveCfg.BurstStuds + rate * (if strict then moveCfg.LagAllowanceSeconds else moveCfg.NormalLagSeconds)
+	-- Saved-up catch-up distance follows this player's real ping, up to the
+	-- old fixed amount: at a low ping, a blink of more than ~12 studs fails
+	-- here instead of being paid for from saved budget (Studio test E3).
+	local maxLag = if strict then moveCfg.LagAllowanceSeconds else moveCfg.NormalLagSeconds
+	local cap = moveCfg.BurstStuds + rate * math.min(maxLag, moveCfg.LagBaseSeconds + rtt)
 	track.budget = math.min(cap, track.budget + rate * dt)
 	if now >= track.pushHoldUntil then
 		track.push = math.max(0, track.push - moveCfg.PushDecayPerSecond * dt)
@@ -467,13 +472,22 @@ local function checkPlayer(player: Player, now: number): boolean
 	-- Walls: blocked straight and around, and too tall for the highest
 	-- their feet could have been in between (a jump arc over the time
 	-- since `from` was first seen, a round trip and late positions).
-	if moved > 0 and not humanoid.SeatPart and not walkable(from, position) then
-		local window = now - track.movedAt + rtt + moveCfg.RiseLagSeconds
-		local apex = if gravity > 0 then jump * jump / (2 * gravity) else math.huge
-		local lift = math.min(apex, gravity * window * window / 8) + moveCfg.StepSlackStuds
-		local feetY = math.max(from.Y, position.Y) - rootToFeet(humanoid, root) + lift
-		if not clear(Vector3.new(from.X, feetY, from.Z), Vector3.new(position.X, feetY, position.Z)) then
-			return fail(player, track, character, now, walk, "walked through a wall", `{math.floor(moved)} studs`, false)
+	local wall = if moved > 0 and not humanoid.SeatPart then blocker(from, position) else nil
+	if wall then
+		local passed = "could have gone around it"
+		if not around(from, position) then
+			local window = now - track.movedAt + rtt + moveCfg.RiseLagSeconds
+			local apex = if gravity > 0 then jump * jump / (2 * gravity) else math.huge
+			local lift = math.min(apex, gravity * window * window / 8) + moveCfg.StepSlackStuds
+			local feetY = math.max(from.Y, position.Y) - rootToFeet(humanoid, root) + lift
+			if not clear(Vector3.new(from.X, feetY, from.Z), Vector3.new(position.X, feetY, position.Z)) then
+				return fail(player, track, character, now, walk, "walked through a wall", `{math.floor(moved)} studs, {wall:GetFullName()}`, false)
+			end
+			passed = "low enough to jump"
+		end
+		if RunService:IsStudio() then
+			-- Why a blocked move was let through (a tester can't see it otherwise).
+			print(`[WallDebug] {player.Name} passed {wall:GetFullName()} ({math.floor(moved)} studs): {passed}`)
 		end
 	end
 
