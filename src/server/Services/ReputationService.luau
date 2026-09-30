@@ -127,6 +127,15 @@ function ReputationService.debugSetTrackLevel(player: Player, track: string, lev
 	ReputationService.refresh(player)
 end
 
+-- Has this player ever sold to the NPC buyer? (Shows the Credits row.) Read
+-- here, not in EconomyService, so GetProgressState can answer it too:
+-- EconomyService requires this module, so the reverse would be a cycle.
+function ReputationService.hasSoldToNpc(player: Player): boolean
+	local sales: { Day: number, EverSold: boolean }? = PlayerDataService.get(player, "NpcSales")
+	-- Saves from before EverSold existed have Day > 0 but the Reconcile default false.
+	return sales ~= nil and (sales.EverSold == true or sales.Day > 0)
+end
+
 function ReputationService.start()
 	PlayerDataService.Loaded:Connect(function(player: Player)
 		ReputationService.refresh(player)
@@ -134,12 +143,12 @@ function ReputationService.start()
 
 	-- Start-up snapshot for the Bag / Trade button, in case they missed the push.
 	local allow = RateLimiter.new("GetProgressState", progCfg.StateCooldownSeconds)
-	Remotes.getFunction("GetProgressState").OnServerInvoke = function(player: Player): (number?, Types.ReputationState?)
+	Remotes.getFunction("GetProgressState").OnServerInvoke = function(player: Player): (number?, Types.ReputationState?, boolean?)
 		if not allow(player) then
-			return nil, nil
+			return nil, nil, nil
 		end
 		local credits = PlayerDataService.get(player, "Credits")
-		return credits, ReputationService.getState(player)
+		return credits, ReputationService.getState(player), ReputationService.hasSoldToNpc(player)
 	end
 end
 

@@ -1139,7 +1139,6 @@ local Config = {
 			GripBarHeight = 14,
 			ChaseBarHeight = 14, -- [PH] invented: the labelled chase-distance bar under the banner
 			HowToSeconds = 5, -- [PH] invented: how long "Drag to aim, hold TURN" shows when a pick starts
-			ConfirmSeconds = 4, -- [PH] invented: how long the Breach button says "Confirm: ends shield"
 			GripColor = Color3.fromRGB(255, 200, 60),
 			ShowBeforeFtue = true, -- TEMPORARY until step 14
 			MessageSeconds = 2, -- [PH] invented: raid UI toasts
@@ -1202,7 +1201,8 @@ local Config = {
 		},
 		-- Josh's call, step 8: breaching a player's base ends YOUR shields.
 		-- The first Breach while shielded is refused with a warning; Breach
-		-- again within this many seconds to confirm. [PH] invented.
+		-- again within this many seconds to confirm (the Breach button warns
+		-- for this long too). [PH] invented.
 		ConfirmSeconds = 10,
 		StateCooldownSeconds = 1, -- [PH] invented: GetShieldState rate limit (not gameplay)
 		-- Studio-only test keys: fast-forward steps for Util/Clock.

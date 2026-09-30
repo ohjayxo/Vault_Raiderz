@@ -53,9 +53,7 @@ local EconomyService = {}
 local function sendCredits(player: Player)
 	local credits = PlayerDataService.get(player, "Credits")
 	if credits then
-		local sales: Sales? = PlayerDataService.get(player, "NpcSales")
-		-- Saves from before EverSold existed have Day > 0 but the Reconcile default false.
-		Remotes.getEvent("CreditsChanged"):FireClient(player, credits, sales ~= nil and (sales.EverSold == true or sales.Day > 0))
+		Remotes.getEvent("CreditsChanged"):FireClient(player, credits, ReputationService.hasSoldToNpc(player))
 	end
 end
 

@@ -240,3 +240,8 @@ rules + layout) and 1 skeptic that tried to refute each finding.
   farming with an alt is expensive). Add one if playtests show abuse.
 - **Trade UI is greybox** (one scrolling column). A proper layout + the UI
   templates pass come before step 14, like the other menus.
+- **Escape check does a second ground Blockcast per frame** (ultrareview
+  2026-09-29, nit): `RaidService.hasEscaped` calls `MovementService.isGrounded`
+  right after `isPositionTrusted` already ran `standing()` for the same player
+  that frame. Cheap with a few chases; if R1-11's phone check shows server
+  cost, keep the last ground result on the Track and reuse it.

@@ -1,9 +1,30 @@
 # R1-00 movement trust: remaining Studio tests
 
-Status 2026-09-25 (evening): on 625a512, A, B, C2 and E (except E3) passed;
-C's script was wrong (gravity cancels it); D and E3 failed. Fix: saved-up
-catch-up distance now follows real ping. Re-run on the fix: C (new script),
-D (new steps), E3, then F and I. G and H can wait (backlog).
+## Where we are (2026-09-29)
+
+**Passed:** A, B, C2 and E (except E3), on 625a512.
+
+**Changed since** (so these need re-running):
+- `Push 3` (0635dce, committed): saved-up catch-up distance now follows
+  real ping, so a blink of more than ~12 studs fails at low ping. It also
+  adds a new C script, new D steps and Studio `[WallDebug]` lines.
+- **Uncommitted** ultrareview fixes, on disk: the Breach shield warning
+  now lasts 10 s (the server's window), and the Credits row start-up
+  backup now knows "has sold to NPC". The escape ground-check nit is in
+  backlog.md.
+
+**Still to run, in this order:**
+1. **W. Can you jump a Base Wall?** (below). Decides whether D1's result
+   is fine.
+2. **C** with the new script (not reported yet).
+3. **D1 on a Vault Core** (last run hit a Base Wall instead: 8-stud blink,
+   `[WallDebug] … Wall.Hitbox: low enough to jump`), then **D2**.
+4. **E3** (new start distance: 15–30 studs, standing still).
+5. **R. Review fixes** (below).
+6. **F**, then **I**.
+
+When all pass, tell Claude: it commits everything and ticks R1-00 in
+REWORK.md §14. G and H stay in the backlog.
 
 ## 0. Setup (every time)
 1. `rojo serve` running; Studio Plugins tab → Rojo says **Connected**.
@@ -52,6 +73,11 @@ puts you inside it; Roblox pushes you out.
 3. If you get through something and there's no `[Movement]` line, send
    the `[WallDebug]` line (it names what you passed and why it allowed it).
 
+## W. Base Wall jump check (Play, 1 player)
+Walk up to one of your Base Walls and try to jump over it normally, a few
+times. Can get over = D1 on a Base Wall is fine (the server treats it as
+jumpable). Can't = tell Claude; the "jumpable" height needs tightening.
+
 ## E. Raid (Clients and Servers, 2 players; P1 raider, P2 owner)
 1. P1 window: press 5 (Breach Charges) and 9 (lockpicks). P2 shielded:
    press - in P2's window.
@@ -67,6 +93,20 @@ puts you inside it; Roblox pushes you out.
    `local t=workspace:FindFirstChild("Player1") local c=game.Players.LocalPlayer.Character c:PivotTo(t:GetPivot()*CFrame.new(0,0,3))`
    then swing at once. Expect: swing plays, no hit, no grip lost.
 8. P1 walks out 140 studs onto solid ground. Expect: escape works.
+
+## R. Ultrareview fixes
+Shield warning (Clients and Servers, 2 players):
+1. P1's window: press `-` (P1 shielded).
+2. P1 walks to P2's base, taps **Breach** once. Expect: button turns
+   warn-coloured, "Confirm: ends shield".
+3. Don't tap. Expect: it stays ~10 s, then back to "Breach".
+4. Tap Breach after it reverted. Expect: the warning again, no raid.
+
+Credits row (Play, 1 player):
+1. Sell something to the NPC buyer. Expect: the Credits row appears.
+2. Stop, Play again. Expect: the Credits row is there right after joining.
+   (This only checks the normal case still works. The actual bug was a
+   start-up timing race you can't easily trigger on purpose.)
 
 ## F. Normal play never trips it (no `[Movement]`/`[MovementTrust]` lines)
 1. Mine and walk ~5 min. 2. Sprint Serum (J for gadgets). 3. Jump onto a

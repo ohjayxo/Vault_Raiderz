@@ -90,7 +90,7 @@ local definitions: { [string]: RemoteKind } = {
 	OpenNpcShop = "Event", -- server -> client: () the buyer's Sell prompt was used
 	CreditsChanged = "Event", -- server -> owner: (credits: number, soldToNpc: boolean) soldToNpc = made a first NPC sale (HUD shows Credits after that)
 	ReputationChanged = "Event", -- server -> owner: (ReputationState)
-	GetProgressState = "Function", -- () -> (credits, ReputationState)?: Bag / Trade button start-up
+	GetProgressState = "Function", -- () -> (credits, ReputationState, soldToNpc)?: Bag / Trade button and Credits row start-up
 	GetNearbyTraders = "Function", -- () -> { { UserId, Name } } Level-10 players in invite range
 	TradeInvite = "Function", -- (targetUserId) -> (ok, reason?)
 	TradeInviteOffer = "Event", -- server -> target: (inviteId, fromName, seconds)

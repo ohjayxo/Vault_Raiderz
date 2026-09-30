@@ -128,19 +128,19 @@ local function render(state: Types.VaultState?)
 	scrapValue.Text = `{money(state.ScrapBanked)} / {money(state.ScrapCapacity)}  ·  {money(state.ScrapExposed)} exposed`
 end
 
--- The server sends (credits, soldToNpc) on join and after every change. Holding
--- any Credits also counts, in case the join message came before this script started.
+-- The server sends (credits, soldToNpc) on join and after every change. If the
+-- join message came before this script started, GetProgressState answers both.
 local function showCredits(amount: number, soldToNpc: boolean)
 	creditsRow.Visible = soldToNpc or amount > 0
 	creditsValue.Text = money(amount)
 end
 Remotes.getEvent("CreditsChanged").OnClientEvent:Connect(showCredits)
 task.spawn(function()
-	local ok, amount = pcall(function()
+	local ok, amount, _, soldToNpc = pcall(function()
 		return Remotes.getFunction("GetProgressState"):InvokeServer()
 	end)
 	if ok and type(amount) == "number" and not creditsRow.Visible then
-		showCredits(amount, false)
+		showCredits(amount, soldToNpc == true)
 	end
 end)
 

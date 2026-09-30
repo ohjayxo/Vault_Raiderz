@@ -686,7 +686,7 @@ actionButton.Activated:Connect(function()
 	if actionKind == "Breach" then
 		local _, reason = ask(Remotes.getFunction("Breach"))
 		if reason == "ConfirmShield" then
-			confirmUntil = os.clock() + raidCfg.Ui.ConfirmSeconds
+			confirmUntil = os.clock() + Config.RaidProtection.ConfirmSeconds -- the server's own window: a tap inside it ends the shield
 		end
 	elseif actionKind == "Pick" then
 		if ask(Remotes.getFunction("StartLockpick")) then
